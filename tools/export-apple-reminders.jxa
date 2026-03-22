@@ -1,0 +1,69 @@
+/*
+Run on macOS:
+  osascript -l JavaScript tools/export-apple-reminders.jxa ~/Desktop/apple-reminders-export.json
+
+Optional second argument:
+  --include-completed
+*/
+
+ObjC.import("Foundation");
+
+function toIsoOrNull(dateValue) {
+  if (!dateValue) return null;
+  try {
+    const d = new Date(dateValue.toString());
+    if (Number.isNaN(d.getTime())) return null;
+    return d.toISOString();
+  } catch {
+    return null;
+  }
+}
+
+function toStringOrEmpty(v) {
+  if (v === null || v === undefined) return "";
+  return String(v);
+}
+
+function main(argv) {
+  const outputPath = argv[0] || "~/Desktop/apple-reminders-export.json";
+  const includeCompleted = argv.includes("--include-completed");
+
+  const reminders = Application("Reminders");
+  reminders.includeStandardAdditions = true;
+
+  const lists = reminders.lists();
+  const out = [];
+
+  for (let i = 0; i < lists.length; i += 1) {
+    const list = lists[i];
+    const listName = toStringOrEmpty(list.name());
+    const items = list.reminders();
+
+    for (let j = 0; j < items.length; j += 1) {
+      const r = items[j];
+      const completed = Boolean(r.completed());
+      if (!includeCompleted && completed) continue;
+
+      out.push({
+        id: toStringOrEmpty(r.id()),
+        title: toStringOrEmpty(r.name()),
+        notes: toStringOrEmpty(r.body()),
+        list: listName,
+        completed,
+        dueDate: toIsoOrNull(r.dueDate()),
+        priority: Number(r.priority()),
+      });
+    }
+  }
+
+  const json = JSON.stringify(out, null, 2);
+  const path = $(outputPath).stringByExpandingTildeInPath.js;
+  const ok = $(json).writeToFileAtomicallyEncodingError(path, true, $.NSUTF8StringEncoding, null);
+  if (!ok) {
+    throw new Error(`Could not write export file: ${path}`);
+  }
+
+  console.log(`Exported ${out.length} reminders to ${path}`);
+}
+
+main($.NSProcessInfo.processInfo.arguments.js.slice(4));
