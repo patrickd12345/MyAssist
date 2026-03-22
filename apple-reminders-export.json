@@ -1,0 +1,6679 @@
+[
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33703b10> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2022-03-02T15:38:19Z",
+    "dueDate" : "2022-07-27T04:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 27,
+      "era" : 1,
+      "month" : 7,
+      "year" : 2022
+    },
+    "externalId" : "78616466-E13E-4080-A54F-83BD18932571",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : true,
+    "id" : "78616466-E13E-4080-A54F-83BD18932571",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+      {
+        "daysOfTheMonth" : [
+
+        ],
+        "daysOfTheWeek" : [
+
+        ],
+        "daysOfTheYear" : [
+
+        ],
+        "firstDayOfTheWeek" : 2,
+        "frequency" : 2,
+        "interval" : 1,
+        "monthsOfTheYear" : [
+
+        ],
+        "setPositions" : [
+
+        ],
+        "weeksOfTheYear" : [
+
+        ]
+      }
+    ],
+    "title" : "Do my transfer for Videotron charge"
+  },
+  {
+    "alarms" : [
+      {
+        "absoluteDate" : "2025-09-30T22:26:00Z",
+        "proximity" : 0,
+        "relativeOffset" : 0
+      }
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33703bf0> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2025-08-27T22:21:43Z",
+    "dueDate" : "2025-09-30T22:26:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 30,
+      "era" : 1,
+      "hour" : 18,
+      "minute" : 26,
+      "month" : 9,
+      "second" : 0,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "year" : 2025
+    },
+    "externalId" : "305EB0A3-2791-4280-8736-90118E33D5B1",
+    "hasAlarms" : true,
+    "hasRecurrenceRules" : false,
+    "id" : "305EB0A3-2791-4280-8736-90118E33D5B1",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "startDate" : "2025-09-30T22:26:00Z",
+    "startDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 30,
+      "era" : 1,
+      "hour" : 18,
+      "isLeapMonth" : false,
+      "minute" : 26,
+      "month" : 9,
+      "nanosecond" : 0,
+      "quarter" : 4,
+      "second" : 0,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "weekOfMonth" : 5,
+      "weekOfYear" : 40,
+      "weekday" : 3,
+      "weekdayOrdinal" : 5,
+      "year" : 2025,
+      "yearForWeekOfYear" : 2025
+    },
+    "title" : "Call Beneva"
+  },
+  {
+    "alarms" : [
+      {
+        "absoluteDate" : "2025-11-05T18:38:24Z",
+        "proximity" : 0,
+        "relativeOffset" : 0
+      }
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33703640> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2025-11-05T17:38:23Z",
+    "dueDate" : "2025-11-05T18:38:24Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 5,
+      "era" : 1,
+      "hour" : 13,
+      "minute" : 38,
+      "month" : 11,
+      "second" : 24,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "year" : 2025
+    },
+    "externalId" : "272D6F58-6CE9-4764-B4CA-3A8855AEA2CC",
+    "hasAlarms" : true,
+    "hasRecurrenceRules" : false,
+    "id" : "272D6F58-6CE9-4764-B4CA-3A8855AEA2CC",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Check for reimbursement of Physio"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33703410> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2021-03-08T21:28:55Z",
+    "dueDate" : "2025-11-28T05:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 28,
+      "era" : 1,
+      "month" : 11,
+      "year" : 2025
+    },
+    "externalId" : "33EEF8A6-82E9-4BDC-B42F-AFABD2262985",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : true,
+    "id" : "33EEF8A6-82E9-4BDC-B42F-AFABD2262985",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+      {
+        "daysOfTheMonth" : [
+
+        ],
+        "daysOfTheWeek" : [
+
+        ],
+        "daysOfTheYear" : [
+
+        ],
+        "firstDayOfTheWeek" : 2,
+        "frequency" : 3,
+        "interval" : 1,
+        "monthsOfTheYear" : [
+
+        ],
+        "setPositions" : [
+
+        ],
+        "weeksOfTheYear" : [
+
+        ]
+      }
+    ],
+    "startDate" : "2025-11-28T05:00:00Z",
+    "startDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 28,
+      "era" : 1,
+      "hour" : 0,
+      "minute" : 0,
+      "month" : 11,
+      "second" : 0,
+      "year" : 2025
+    },
+    "title" : "Buy EpiPen"
+  },
+  {
+    "alarms" : [
+      {
+        "absoluteDate" : "2025-12-03T20:41:50Z",
+        "proximity" : 0,
+        "relativeOffset" : 0
+      }
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33703090> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2025-12-03T20:40:49Z",
+    "dueDate" : "2025-12-03T20:41:50Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 3,
+      "era" : 1,
+      "hour" : 16,
+      "minute" : 41,
+      "month" : 12,
+      "second" : 50,
+      "timeZoneIdentifier" : "America\/Santo_Domingo",
+      "year" : 2025
+    },
+    "externalId" : "AAC642F5-3204-4D9C-B055-F1115FAFBB45",
+    "hasAlarms" : true,
+    "hasRecurrenceRules" : false,
+    "id" : "AAC642F5-3204-4D9C-B055-F1115FAFBB45",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Ask for the reimbursement of $118 for Sarah's teeth"
+  },
+  {
+    "alarms" : [
+      {
+        "absoluteDate" : "2026-01-09T14:30:00Z",
+        "proximity" : 0,
+        "relativeOffset" : 0
+      }
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33702bc0> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2026-01-09T13:06:29Z",
+    "dueDate" : "2026-01-09T14:30:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 9,
+      "era" : 1,
+      "hour" : 9,
+      "minute" : 30,
+      "month" : 1,
+      "second" : 0,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "year" : 2026
+    },
+    "externalId" : "44F72499-D408-4EE4-952F-D1AC2596B60B",
+    "hasAlarms" : true,
+    "hasRecurrenceRules" : false,
+    "id" : "44F72499-D408-4EE4-952F-D1AC2596B60B",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Call qtrade"
+  },
+  {
+    "alarms" : [
+      {
+        "absoluteDate" : "2026-02-24T14:59:07Z",
+        "proximity" : 0,
+        "relativeOffset" : 0
+      }
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33702b50> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2026-02-24T09:59:07Z",
+    "dueDate" : "2026-02-24T14:59:07Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 24,
+      "era" : 1,
+      "hour" : 9,
+      "minute" : 59,
+      "month" : 2,
+      "second" : 7,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "year" : 2026
+    },
+    "externalId" : "5560F8A6-C5D2-44F8-A665-807E842F3F89",
+    "hasAlarms" : true,
+    "hasRecurrenceRules" : false,
+    "id" : "5560F8A6-C5D2-44F8-A665-807E842F3F89",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Apply to get Gemini for AI position"
+  },
+  {
+    "alarms" : [
+      {
+        "absoluteDate" : "2026-02-26T16:40:26Z",
+        "proximity" : 0,
+        "relativeOffset" : 0
+      }
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33702610> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2026-02-26T16:35:26Z",
+    "dueDate" : "2026-02-26T16:40:26Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 26,
+      "era" : 1,
+      "hour" : 11,
+      "minute" : 40,
+      "month" : 2,
+      "second" : 26,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "year" : 2026
+    },
+    "externalId" : "C1F0BE0C-25D9-4096-B46E-F860C8950BEE",
+    "hasAlarms" : true,
+    "hasRecurrenceRules" : false,
+    "id" : "C1F0BE0C-25D9-4096-B46E-F860C8950BEE",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Fix my sleeping machine"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa337016c0> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2025-12-03T22:31:30Z",
+    "dueDate" : "2026-03-04T05:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 4,
+      "era" : 1,
+      "month" : 3,
+      "year" : 2026
+    },
+    "externalId" : "B0D92328-4909-4AD6-8865-E81B7273C60C",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "B0D92328-4909-4AD6-8865-E81B7273C60C",
+    "lastModifiedDate" : "2026-03-21T14:50:24Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "startDate" : "2026-03-04T05:00:00Z",
+    "startDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 4,
+      "era" : 1,
+      "hour" : 0,
+      "minute" : 0,
+      "month" : 3,
+      "second" : 0,
+      "year" : 2026
+    },
+    "title" : "Rembourser 2484 pour Punta Cana"
+  },
+  {
+    "alarms" : [
+      {
+        "absoluteDate" : "2026-03-04T14:09:29Z",
+        "proximity" : 0,
+        "relativeOffset" : 0
+      }
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33701650> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2026-03-04T14:04:29Z",
+    "dueDate" : "2026-03-04T14:09:29Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 4,
+      "era" : 1,
+      "hour" : 9,
+      "minute" : 9,
+      "month" : 3,
+      "second" : 29,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "year" : 2026
+    },
+    "externalId" : "242E7018-7C1B-44E2-96AA-EF69B3F779D6",
+    "hasAlarms" : true,
+    "hasRecurrenceRules" : false,
+    "id" : "242E7018-7C1B-44E2-96AA-EF69B3F779D6",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Wait for callback for from Dr. Claudie Paquette for the collective action"
+  },
+  {
+    "alarms" : [
+      {
+        "absoluteDate" : "2026-03-04T14:10:50Z",
+        "proximity" : 0,
+        "relativeOffset" : 0
+      }
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33701180> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2026-03-04T10:10:54Z",
+    "dueDate" : "2026-03-04T14:10:50Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 4,
+      "era" : 1,
+      "hour" : 9,
+      "minute" : 10,
+      "month" : 3,
+      "second" : 50,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "year" : 2026
+    },
+    "externalId" : "7BDA07E8-E4CB-440B-9DF9-E8318DEA1983",
+    "hasAlarms" : true,
+    "hasRecurrenceRules" : false,
+    "id" : "7BDA07E8-E4CB-440B-9DF9-E8318DEA1983",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "startDate" : "2026-03-04T14:10:50Z",
+    "startDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 4,
+      "era" : 1,
+      "hour" : 9,
+      "isLeapMonth" : false,
+      "minute" : 10,
+      "month" : 3,
+      "nanosecond" : 0,
+      "quarter" : 1,
+      "second" : 50,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "weekOfMonth" : 1,
+      "weekOfYear" : 10,
+      "weekday" : 4,
+      "weekdayOrdinal" : 1,
+      "year" : 2026,
+      "yearForWeekOfYear" : 2026
+    },
+    "title" : "Fix passwords"
+  },
+  {
+    "alarms" : [
+      {
+        "absoluteDate" : "2026-03-06T11:25:29Z",
+        "proximity" : 0,
+        "relativeOffset" : 0
+      }
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33703f70> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2026-03-06T11:20:28Z",
+    "dueDate" : "2026-03-06T11:25:29Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 6,
+      "era" : 1,
+      "hour" : 6,
+      "minute" : 25,
+      "month" : 3,
+      "second" : 29,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "year" : 2026
+    },
+    "externalId" : "C8219053-BBA0-431C-87DA-DDE382010224",
+    "hasAlarms" : true,
+    "hasRecurrenceRules" : false,
+    "id" : "C8219053-BBA0-431C-87DA-DDE382010224",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "My professional website"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33703f00> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2024-11-11T18:03:32Z",
+    "dueDate" : "2026-03-14T04:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 14,
+      "era" : 1,
+      "month" : 3,
+      "year" : 2026
+    },
+    "externalId" : "3A944EC7-076E-46A1-933E-F8E54E3C58EB",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : true,
+    "id" : "3A944EC7-076E-46A1-933E-F8E54E3C58EB",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+      {
+        "daysOfTheMonth" : [
+
+        ],
+        "daysOfTheWeek" : [
+          {
+            "dayOfWeek" : 7,
+            "weekNumber" : 0
+          }
+        ],
+        "daysOfTheYear" : [
+
+        ],
+        "firstDayOfTheWeek" : 2,
+        "frequency" : 1,
+        "interval" : 2,
+        "monthsOfTheYear" : [
+
+        ],
+        "setPositions" : [
+
+        ],
+        "weeksOfTheYear" : [
+
+        ]
+      }
+    ],
+    "startDate" : "2026-03-13T04:00:00Z",
+    "startDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 13,
+      "era" : 1,
+      "hour" : 0,
+      "minute" : 0,
+      "month" : 3,
+      "second" : 0,
+      "year" : 2026
+    },
+    "title" : "Cabanon FinanceIT automatique  40.39"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf3f70> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2026-03-06T20:31:34Z",
+    "dueDate" : "2026-03-15T04:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 15,
+      "era" : 1,
+      "month" : 3,
+      "year" : 2026
+    },
+    "externalId" : "FE48FC53-063A-4BDE-B427-FA14BA82086A",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "FE48FC53-063A-4BDE-B427-FA14BA82086A",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Go to TD Bank to open checking account to manage the credit card"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf3f00> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2026-03-09T15:00:12Z",
+    "dueDate" : "2026-03-16T04:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 16,
+      "era" : 1,
+      "month" : 3,
+      "year" : 2026
+    },
+    "externalId" : "8E8CBB87-E640-40AD-8DF4-FF200C8CCA7F",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "8E8CBB87-E640-40AD-8DF4-FF200C8CCA7F",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "startDate" : "2026-03-16T04:00:00Z",
+    "startDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 16,
+      "era" : 1,
+      "hour" : 0,
+      "minute" : 0,
+      "month" : 3,
+      "second" : 0,
+      "year" : 2026
+    },
+    "title" : "Call back Stephane"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf3e90> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2026-03-09T01:31:03Z",
+    "dueDate" : "2026-03-17T04:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 17,
+      "era" : 1,
+      "month" : 3,
+      "year" : 2026
+    },
+    "externalId" : "932528B5-615A-4973-B839-1CCA6CBA6FE9",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "932528B5-615A-4973-B839-1CCA6CBA6FE9",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "Conseiller(ère) principal(e)- Ingénierie IA\n\nDate: 27 févr. 2026\n\nLieu de travail: Montréal, QC, CA, H3B 4T9\n\nEntreprise: Deloitte\n\nType de poste : Permanent \nModèle de travail : Hybride \nNuméro de demande: 131085 \nRecruteur: Andrea Bergeron-Cote\nLieu principal : Montréal, QC  \nEmplacements additionnels : Montréal, QC; Brossard, QC; Laval, QC; ville de Québec, QC\n \nNotre raison d’être\n \nChez Deloitte, notre raison d’être est d’avoir une influence marquante. Nous existons pour inspirer et aider nos gens, nos organisations, nos collectivités et nos pays à prospérer en créant un avenir meilleur. Notre travail soutient une société prospère où les gens peuvent s’épanouir et saisir des occasions. Il renforce la confiance des consommateurs et des entreprises, aide les organisations à trouver des moyens créatifs de déployer des capitaux, habilite des institutions sociales et économiques justes, fiables et efficaces, et permet à nos amis, à nos familles et à nos collectivités de profiter de la qualité de vie qui accompagne un avenir durable. Étant le plus grand cabinet de services professionnels détenu et exploité à 100 % par des Canadiens dans notre pays, nous sommes fiers de travailler aux côtés de nos clients pour avoir une influence positive sur tous les Canadiens.\n\nEn incarnant notre raison d’être, nous aurons une influence marquante.\nDiversifiez votre carrière au sein du Cabinet.\nTirez parti d’avantages souples, proactifs et pratiques qui favorisent une culture de bien-être et la création de liens solides.\n Approfondissez vos connaissances grâce au mentorat d’experts et à du coaching au travail.\n--\nNous sommes à la recherche d’un chercheur ou d’une chercheuse passionné(e) en IA pour se joindre à notre équipe. Vous travaillerez à la jonction de la recherche de pointe en IA et de l’ingénierie de produits : conception, évaluation et déploiement de systèmes d’IA générative qui sont à la fois fiables et efficaces. Ce rôle allie la recherche fondamentale, l'évaluation de modèles et l'ingénierie de logiciels pratiques pour faire progresser la prochaine génération d'applications intelligentes.\nÀ quoi ressemblera votre journée type\nResponsabilités\n•    Collaborer avec les gestionnaires et les ingénieurs de produits et avec les parties prenantes pour concevoir des solutions axées sur l’IA qui répondent aux exigences techniques et d’affaires. \n•    Effectuer la recherche, le prototypage et le développement d’applications d’IA générative en combinant des GML non déterministes et des techniques déterministes de génie logiciel.  \n•    Établir des cadres d’évaluation et des points de référence pour mesurer la qualité des modèles, leur fiabilité et l’incidence sur l’entreprise.  \n•    Générer régulièrement des rapports sur l’exactitude, la dérive et le rendement des modèles.  \n•    Déboguer, optimiser et améliorer les applications d’IA générative à l’aide de pratiques exemplaires d’ingénierie de requêtes, d’apprentissage par renforcement, d’affinage et d’ingénierie logicielle.  \n•    Entraîner et affiner des grands modèles de langage à l'aide des transformeurs de Hugging Face.  \n•    Appliquer des techniques d'affinage de l’apprentissage par renforcement à l'aide de la bibliothèque TRL (Transformers Reinforcement Learning) de Hugging Face.  \n•    Gérer les flux d’entraînement à l’aide d’outils de suivi des expériences et d’accélérateurs de l’apprentissage distribué (DeepSpeed, Accelerate, FSDP).  \n•    Exécuter et optimiser l’entraînement et l'inférence de multiples unités de traitement graphique, en tirant parti de vLLM pour un service à haut débit de traitement et à faible latence.  \n•    Contribuer à la conception de pipelines d’opérations d’apprentissage machine (OAM)\/DevOps évolutifs pour le déploiement de modèles, la surveillance et l’entraînement continu.  \n•    Assurer la conformité aux directives sur la confidentialité et la sécurité des données et sur l’IA responsable lors de la gestion de l’entraînement ou des ensembles de données de test. \n•    Se tenir au courant des recherches émergentes dans le domaine des GML, de l’apprentissage par renforcement à partir de la rétroaction humaine ou de la rétroaction de l’IA, de l’IA multimodale et des modèles génératifs; appliquer les résultats pour améliorer nos systèmes.  \n•    Rédiger de la documentation technique et contribuer à des publications, des brevets ou des projets de code source libre, le cas échéant. \nRenseignements sur l’équipe\nÀ titre de conseiller principal ou de conseillère principale en ingénierie AI chez Deloitte, vous aiderez les organisations à tirer parti de l’intelligence artificielle pour améliorer leur performance, leur efficacité et leur innovation, tout en garantissant la sécurité et la conformité. \n \nPourquoi Deloitte?\n•    Occasion de travailler sur des projets d’IA et de gouvernance des données de pointe avec des organisations de premier plan.\n•    Environnement inclusif propice au travail de collaboration.\n•    Apprentissage continu et perfectionnement professionnel.\n•    Régime de rémunération et d’avantages sociaux concurrentiel.\nAssez parlé de nous, parlons de vous\nEnvironnement technologique privilégié\nLes candidats ayant de l’expérience relativement aux outils et cadres suivants seront fortement privilégiés :\n•    Transformeurs (Hugging Face) pour l’entraînement des modèles, l’affinage et l'inférence.  \n•    Bibliothèque TRL (Transformers Reinforcement Learning) pour l’affinage basé sur l’apprentissage par renforcement (optimisation des politiques proximales – PPO, optimisation directe des préférences – DPO, optimisation de la politique relative de groupe – GRPO, apprentissage par renforcement à partir de la rétroaction de l’IA).  \n•    DeepSpeed, Accelerate ou FSDP pour l’entraînement de multiples unités de traitement graphique et l’apprentissage distribué.  \n•    vLLM pour une inférence optimisée et le service de grands modèles.  \n•    Weights & Biases (W&B) ou MLflow pour le suivi et la reproductibilité des expériences.  \n•    LangChain, AutoGen (A2A) ou MCP pour le développement d'applications d’IA générative.  \n•    PyTorch comme principal cadre d’apprentissage profond.  \n \nCompétences\n•    Au moins trois ans d’expérience en ingénierie de l’apprentissage machine, en ingénierie des données ou en recherche appliquée (secteur d’activité ou milieu universitaire).  \n•    Solides compétences en programmation Python et expérience avec des cadres comme PyTorch, TensorFlow, JAX.  \n•    Expérience pratique avec les transformeurs de Hugging Face pour le préentraînement, l’affinage ou l'inférence.  \n•    Expérience avec la bibliothèque TRL de Hugging Face pour l’affinage de l’apprentissage par renforcement (p. ex., optimisation des politiques proximales – PPO, optimisation directe des préférences – DPO, optimisation de la politique relative de groupe – GRPO, apprentissage par renforcement à partir de la rétroaction de l’IA).    \n•    Expérience pratique dans la gestion de l’entraînement de multiples unités de traitement graphique et l’apprentissage distribué à grande échelle à l’aide de DeepSpeed, Accelerate ou FSDP.  \n•    Expérience de l'inférence sur les grands modèles à l'aide de vLLM ou de cadres de service optimisés similaires.  \n•    Bonne connaissance des outils de suivi et de reproductibilité des expériences (p. ex., W&B, MLflow).  \n•    Connaissance des pratiques liées aux opérations d’apprentissage machine, incluant l’entraînement continu, la surveillance continue et la gestion du cycle de vie des modèles.  \n•    Expérience des cadres d’IA générative comme LangChain, AutoGen (A2A) ou MCP.  \n•    Capacité démontrée d’écrire du code propre, maintenable et prêt à la production.  \n•    Expérience dans la création ou le soutien de systèmes d’IA infonuagiques (GCP, AWS ou Azure; certifications privilégiées).  \n•    Solide connaissance de l’apprentissage par renforcement, du traitement automatique du langage naturel (TALN) ou de la modélisation générative (transformeurs, diffusion, génération améliorée par récupération d’information, etc.).  \n•    Antécédents de contributions à la recherche (articles, brevets, projets de code source libre), un atout.  \n \n\nLes compétences suivantes sont considérées comme des atouts :\n•    Expérience en apprentissage par renforcement à partir de la rétroaction humaine ou de la rétroaction de l’IA.  \n•    Contributions à des cadres d’IA de source libre.  \n•    Bonne connaissance des lois d’échelle, des paramètres d’évaluation et de l’analyse comparative de grands modèles.  \n•    Intérêt à repousser les limites de l’IA fiable, explicable et sécuritaire.\nRémunération totale\n\nL’échelle salariale pour ce poste est de 72,000 $ à 138,000 $. Certaines personnes peuvent être admissibles à notre programme de prime. Sur le plan salarial, Deloitte se concentre sur l’équité et la compétitivité. Nous établissons régulièrement des comparaisons aux données de référence du marché établies pour divers postes, secteurs, cibles et niveaux. Notre approche est fondée sur l’importance de reconnaître les forces et les contributions uniques de chaque personne et de récompenser celle-ci pour la valeur qu’elle apporte.\n\nLa rémunération totale offerte par Deloitte s’étend bien au-delà des programmes traditionnels de rémunération et d’avantages sociaux et est conçue pour reconnaître les contributions des employés, favoriser le mieux-être personnel et soutenir la croissance du Cabinet. En plus de nos jours de congé payés réguliers, quelques exemples incluent : 4 000 $ par an pour les avantages de soutien en santé mentale, un compte de dépenses flexibles de 1 300 $, des fermetures à l'échelle de l'entreprise connues sous le nom de \"Jours Deloitte\", des journées dédiées à l'apprentissage (connues sous le nom de Jours de Développement et d'Innovation), des arrangements de travail flexibles et une structure de travail hybride.\n \nNotre promesse à nos gens : Deloitte est là où vous pouvez propulsez vos ambitions.\n \nVous, et plus encore.\nÉvoluez au sein d’une équipe passionnée et déterminée à apprendre et à développer de nouvelles compétences. Bâtissez votre réseau et faites le plein d’expériences qui vous permettront de vous épanouir et vous mèneront vers la prochaine étape de votre carrière.\n\nVos chemins nous portent plus loin.\nLa diversité de vos compétences, perspectives et expériences nous rend meilleurs. Nous voulons que vous vous sentiez comme chez vous, qui que vous soyez et d’où que vous veniez. Nous vous oﬀrons des options de travail ﬂexibles et personnalisées pour répondre à vos besoins, peu importe votre mode de vie.\n\nDevenez le leader que vous désirez être.\nCertains dirigent des équipes, d’autres sont au cœur d’un changement de culture, d’autres encore bâtissent une expertise de pointe. Nous soutiendrons votre croissance en tant que leader par l’entremise d’expériences, d’occasions et de défis variés et enrichissants.\n\nAyez autant de carrières que vous le souhaitez.\nNous sommes en mesure de vous offrir de nouveaux rôles et de nouvelles responsabilités, et de vous aider à vous y préparer. Notre objectif est de conjuguer vos aspirations à vos compétences et à l’excellence de votre savoir-faire. Nous sommes l’endroit pour développer un réseau durable d’amis, de pairs et de mentors.\n \nLa balle est dans votre camp\n \nChez Deloitte, nous avons à cœur de faire des affaires de manière inclusive – cela commence par une diversité parmi les collègues de toutes les compétences! Deloitte encourage tous les candidats qualifiés qui représentent la diversité des collectivités partout au Canada à soumettre leur candidature. Cela comprend, sans s’y limiter, les personnes handicapées, les candidats des communautés autochtones et les candidats de la communauté noire qui souhaitent incarner nos valeurs, participer à la création d’une culture de diversité, d’équité et d’inclusion, et contribuer à notre engagement envers notre Plan d’action pour l’accessibilité notre Plan d’action pour la réconciliation  et l’initiative BlackNorth\n \nNous vous encourageons à communiquer avec nous à accessiblecareers@deloitte.ca si vous avez besoin d’un accommodement dans le cadre du processus de recrutement (y compris du matériel sous une autre forme, des salles de réunion accessibles ou d’autres mesures d’adaptation). Pour toute question liée aux occasions de carrière pour les personnes autochtones chez Deloitte (Premières Nations, Inuits ou Métis), envoyez un courriel à indigenouscareers@deloitte.ca.\n \nLorsque vous posez votre candidature, nous l’examinerons en fonction des Normes mondiales en matière de talents de Deloitte afin d’assurer une expérience de recrutement uniforme. Nos conseillers en recrutement et nos équipes responsables de l’embauche procéderont à un examen humain des candidatures combiné à des technologies d’IA pour déterminer les compétences et les qualités qui comptent le plus pour notre entreprise, tout en protégeant votre vie privée et en utilisant l’IA de manière responsable.\n \nDeloitte Canada compte 20 bureaux et est présent dans la plupart des régions du pays. Nous reconnaissons que nos bureaux sont situés sur des territoires traditionnels, des territoires couverts par des traités et des territoires non cédés faisant partie de l'île de la Tortue (Amérique du Nord), et que ces territoires sont toujours habités par de nombreux membres des Premières Nations, des Inuits et des Métis. Nous reconnaissons également les propriétaires traditionnels des terres où sont situés nos bureaux au Chili et nous rendons hommage à ces propriétaires passés, présents et futurs.\n\nSegment de l’offre d’emploi: QC, Developer, Quality, Technology\n\n",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "startDate" : "2026-03-16T14:00:00Z",
+    "startDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 16,
+      "era" : 1,
+      "hour" : 10,
+      "minute" : 0,
+      "month" : 3,
+      "second" : 0,
+      "year" : 2026
+    },
+    "title" : "Postuler chez Deloitte pour le poste"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf3e20> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2026-03-17T21:25:28Z",
+    "dueDate" : "2026-03-17T04:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 17,
+      "era" : 1,
+      "month" : 3,
+      "year" : 2026
+    },
+    "externalId" : "63B030B2-B083-4887-9B2B-0161DC2BC4EF",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "63B030B2-B083-4887-9B2B-0161DC2BC4EF",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Email Full dossier to notaire about Jonathan exit"
+  },
+  {
+    "alarms" : [
+      {
+        "absoluteDate" : "2026-03-17T11:00:00Z",
+        "proximity" : 0,
+        "relativeOffset" : 0
+      }
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf3db0> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2026-03-06T01:38:43Z",
+    "dueDate" : "2026-03-17T11:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 17,
+      "era" : 1,
+      "hour" : 7,
+      "minute" : 0,
+      "month" : 3,
+      "second" : 0,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "year" : 2026
+    },
+    "externalId" : "A9770B64-701E-4B48-A57B-4619BC835DF1",
+    "hasAlarms" : true,
+    "hasRecurrenceRules" : false,
+    "id" : "A9770B64-701E-4B48-A57B-4619BC835DF1",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "startDate" : "2026-03-17T11:00:00Z",
+    "startDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 17,
+      "era" : 1,
+      "hour" : 7,
+      "isLeapMonth" : false,
+      "minute" : 0,
+      "month" : 3,
+      "nanosecond" : 0,
+      "quarter" : 1,
+      "second" : 0,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "weekOfMonth" : 3,
+      "weekOfYear" : 12,
+      "weekday" : 3,
+      "weekdayOrdinal" : 3,
+      "year" : 2026,
+      "yearForWeekOfYear" : 2026
+    },
+    "title" : "Exchange exterior lightbulb"
+  },
+  {
+    "alarms" : [
+      {
+        "absoluteDate" : "2026-03-17T15:52:05Z",
+        "proximity" : 0,
+        "relativeOffset" : 0
+      }
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf3d40> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2026-03-17T15:47:05Z",
+    "dueDate" : "2026-03-17T15:52:05Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 17,
+      "era" : 1,
+      "hour" : 11,
+      "minute" : 52,
+      "month" : 3,
+      "second" : 5,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "year" : 2026
+    },
+    "externalId" : "D460DC1A-F333-45DB-84A9-B4B49B587F87",
+    "hasAlarms" : true,
+    "hasRecurrenceRules" : false,
+    "id" : "D460DC1A-F333-45DB-84A9-B4B49B587F87",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Lab Tests"
+  },
+  {
+    "alarms" : [
+      {
+        "absoluteDate" : "2026-03-17T21:32:23Z",
+        "proximity" : 0,
+        "relativeOffset" : 0
+      }
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf3cd0> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2026-03-17T21:27:23Z",
+    "dueDate" : "2026-03-17T21:32:23Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 17,
+      "era" : 1,
+      "hour" : 17,
+      "minute" : 32,
+      "month" : 3,
+      "second" : 23,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "year" : 2026
+    },
+    "externalId" : "88C23B57-65BC-468D-A213-6F3E7F161436",
+    "hasAlarms" : true,
+    "hasRecurrenceRules" : false,
+    "id" : "88C23B57-65BC-468D-A213-6F3E7F161436",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Pick up medication and aldara"
+  },
+  {
+    "alarms" : [
+      {
+        "absoluteDate" : "2026-03-18T21:29:13Z",
+        "proximity" : 0,
+        "relativeOffset" : 0
+      }
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf3c60> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2026-03-18T21:24:13Z",
+    "dueDate" : "2026-03-18T21:29:13Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 18,
+      "era" : 1,
+      "hour" : 17,
+      "minute" : 29,
+      "month" : 3,
+      "second" : 13,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "year" : 2026
+    },
+    "externalId" : "BDAF326E-A422-4363-A849-52573ECA8971",
+    "hasAlarms" : true,
+    "hasRecurrenceRules" : false,
+    "id" : "BDAF326E-A422-4363-A849-52573ECA8971",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Call electrician"
+  },
+  {
+    "alarms" : [
+      {
+        "absoluteDate" : "2026-03-19T00:38:05Z",
+        "proximity" : 0,
+        "relativeOffset" : 0
+      }
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf3bf0> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2026-03-19T00:32:49Z",
+    "dueDate" : "2026-03-19T00:38:05Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 18,
+      "era" : 1,
+      "hour" : 20,
+      "minute" : 38,
+      "month" : 3,
+      "second" : 5,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "year" : 2026
+    },
+    "externalId" : "B15E83EF-F9AD-4E08-812F-120FD75AB479",
+    "hasAlarms" : true,
+    "hasRecurrenceRules" : false,
+    "id" : "B15E83EF-F9AD-4E08-812F-120FD75AB479",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Prepare my will"
+  },
+  {
+    "alarms" : [
+      {
+        "absoluteDate" : "2026-03-19T10:00:00Z",
+        "proximity" : 0,
+        "relativeOffset" : 0
+      }
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf3b80> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2026-03-18T20:44:14Z",
+    "dueDate" : "2026-03-19T10:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 19,
+      "era" : 1,
+      "hour" : 6,
+      "minute" : 0,
+      "month" : 3,
+      "second" : 0,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "year" : 2026
+    },
+    "externalId" : "4C02CC53-C810-457D-914A-D16C6BB83FF3",
+    "hasAlarms" : true,
+    "hasRecurrenceRules" : false,
+    "id" : "4C02CC53-C810-457D-914A-D16C6BB83FF3",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Go for lab test from 6:30"
+  },
+  {
+    "alarms" : [
+      {
+        "absoluteDate" : "2026-03-19T18:00:00Z",
+        "proximity" : 0,
+        "relativeOffset" : 0
+      }
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf39c0> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2025-09-17T23:32:09Z",
+    "dueDate" : "2026-03-19T18:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 19,
+      "era" : 1,
+      "hour" : 14,
+      "minute" : 0,
+      "month" : 3,
+      "second" : 0,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "year" : 2026
+    },
+    "externalId" : "F4F7A46F-A48D-496E-B8E9-7FE789D59118",
+    "hasAlarms" : true,
+    "hasRecurrenceRules" : true,
+    "id" : "F4F7A46F-A48D-496E-B8E9-7FE789D59118",
+    "lastModifiedDate" : "2026-03-22T19:41:34Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+      {
+        "daysOfTheMonth" : [
+
+        ],
+        "daysOfTheWeek" : [
+
+        ],
+        "daysOfTheYear" : [
+
+        ],
+        "firstDayOfTheWeek" : 2,
+        "frequency" : 1,
+        "interval" : 1,
+        "monthsOfTheYear" : [
+
+        ],
+        "setPositions" : [
+
+        ],
+        "weeksOfTheYear" : [
+
+        ]
+      }
+    ],
+    "startDate" : "2026-03-19T18:00:00Z",
+    "startDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 19,
+      "era" : 1,
+      "hour" : 14,
+      "isLeapMonth" : false,
+      "minute" : 0,
+      "month" : 3,
+      "nanosecond" : 0,
+      "quarter" : 1,
+      "second" : 0,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "weekOfMonth" : 3,
+      "weekOfYear" : 12,
+      "weekday" : 5,
+      "weekdayOrdinal" : 3,
+      "year" : 2026,
+      "yearForWeekOfYear" : 2026
+    },
+    "title" : "Compost"
+  },
+  {
+    "alarms" : [
+      {
+        "absoluteDate" : "2026-03-19T20:45:00Z",
+        "proximity" : 0,
+        "relativeOffset" : 0
+      }
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf3950> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2025-09-04T12:03:40Z",
+    "dueDate" : "2026-03-19T20:45:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 19,
+      "era" : 1,
+      "hour" : 16,
+      "minute" : 45,
+      "month" : 3,
+      "second" : 0,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "year" : 2026
+    },
+    "externalId" : "05CC9BFA-4190-4449-9EC8-FBC111123777",
+    "hasAlarms" : true,
+    "hasRecurrenceRules" : true,
+    "id" : "05CC9BFA-4190-4449-9EC8-FBC111123777",
+    "lastModifiedDate" : "2026-03-22T19:41:33Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 1,
+    "recurrenceRules" : [
+      {
+        "daysOfTheMonth" : [
+
+        ],
+        "daysOfTheWeek" : [
+          {
+            "dayOfWeek" : 2,
+            "weekNumber" : 0
+          },
+          {
+            "dayOfWeek" : 5,
+            "weekNumber" : 0
+          }
+        ],
+        "daysOfTheYear" : [
+
+        ],
+        "firstDayOfTheWeek" : 2,
+        "frequency" : 1,
+        "interval" : 1,
+        "monthsOfTheYear" : [
+
+        ],
+        "setPositions" : [
+
+        ],
+        "weeksOfTheYear" : [
+
+        ]
+      }
+    ],
+    "title" : "Switch car side"
+  },
+  {
+    "alarms" : [
+      {
+        "absoluteDate" : "2026-03-19T23:00:00Z",
+        "proximity" : 0,
+        "relativeOffset" : 0
+      }
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf3b10> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2026-02-20T08:04:18Z",
+    "dueDate" : "2026-03-19T23:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 19,
+      "era" : 1,
+      "hour" : 19,
+      "minute" : 0,
+      "month" : 3,
+      "second" : 0,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "year" : 2026
+    },
+    "externalId" : "E2476A8E-262A-436F-BB1F-3B2F77070298",
+    "hasAlarms" : true,
+    "hasRecurrenceRules" : true,
+    "id" : "E2476A8E-262A-436F-BB1F-3B2F77070298",
+    "lastModifiedDate" : "2026-03-22T19:41:33Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+      {
+        "daysOfTheMonth" : [
+
+        ],
+        "daysOfTheWeek" : [
+          {
+            "dayOfWeek" : 1,
+            "weekNumber" : 0
+          },
+          {
+            "dayOfWeek" : 3,
+            "weekNumber" : 0
+          },
+          {
+            "dayOfWeek" : 4,
+            "weekNumber" : 0
+          },
+          {
+            "dayOfWeek" : 5,
+            "weekNumber" : 0
+          },
+          {
+            "dayOfWeek" : 7,
+            "weekNumber" : 0
+          }
+        ],
+        "daysOfTheYear" : [
+
+        ],
+        "firstDayOfTheWeek" : 2,
+        "frequency" : 1,
+        "interval" : 1,
+        "monthsOfTheYear" : [
+
+        ],
+        "setPositions" : [
+
+        ],
+        "weeksOfTheYear" : [
+
+        ]
+      }
+    ],
+    "startDate" : "2026-03-20T00:00:00Z",
+    "startDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 19,
+      "era" : 1,
+      "hour" : 20,
+      "isLeapMonth" : false,
+      "minute" : 0,
+      "month" : 3,
+      "nanosecond" : 0,
+      "quarter" : 1,
+      "second" : 0,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "weekOfMonth" : 3,
+      "weekOfYear" : 12,
+      "weekday" : 5,
+      "weekdayOrdinal" : 3,
+      "year" : 2026,
+      "yearForWeekOfYear" : 2026
+    },
+    "title" : "Imiquimod"
+  },
+  {
+    "alarms" : [
+      {
+        "absoluteDate" : "2026-03-20T00:00:00Z",
+        "proximity" : 0,
+        "relativeOffset" : 0
+      }
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf3aa0> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2026-02-23T06:44:57Z",
+    "dueDate" : "2026-03-20T00:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 19,
+      "era" : 1,
+      "hour" : 20,
+      "minute" : 0,
+      "month" : 3,
+      "second" : 0,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "year" : 2026
+    },
+    "externalId" : "293D637B-375F-4C33-A188-0980F7EDDB92",
+    "hasAlarms" : true,
+    "hasRecurrenceRules" : true,
+    "id" : "293D637B-375F-4C33-A188-0980F7EDDB92",
+    "lastModifiedDate" : "2026-03-22T19:41:33Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+      {
+        "daysOfTheMonth" : [
+
+        ],
+        "daysOfTheWeek" : [
+
+        ],
+        "daysOfTheYear" : [
+
+        ],
+        "firstDayOfTheWeek" : 2,
+        "frequency" : 0,
+        "interval" : 1,
+        "monthsOfTheYear" : [
+
+        ],
+        "setPositions" : [
+
+        ],
+        "weeksOfTheYear" : [
+
+        ]
+      }
+    ],
+    "startDate" : "2026-03-20T01:00:00Z",
+    "startDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 19,
+      "era" : 1,
+      "hour" : 21,
+      "isLeapMonth" : false,
+      "minute" : 0,
+      "month" : 3,
+      "nanosecond" : 0,
+      "quarter" : 1,
+      "second" : 0,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "weekOfMonth" : 3,
+      "weekOfYear" : 12,
+      "weekday" : 5,
+      "weekdayOrdinal" : 3,
+      "year" : 2026,
+      "yearForWeekOfYear" : 2026
+    },
+    "title" : "Melatonine"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf3a30> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2022-06-30T19:57:49Z",
+    "dueDate" : "2026-03-20T04:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 20,
+      "era" : 1,
+      "month" : 3,
+      "year" : 2026
+    },
+    "externalId" : "F03F6B8A-FAC3-4D42-983E-5B423F43D383",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : true,
+    "id" : "F03F6B8A-FAC3-4D42-983E-5B423F43D383",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+      {
+        "daysOfTheMonth" : [
+
+        ],
+        "daysOfTheWeek" : [
+          {
+            "dayOfWeek" : 7,
+            "weekNumber" : 0
+          }
+        ],
+        "daysOfTheYear" : [
+
+        ],
+        "firstDayOfTheWeek" : 2,
+        "frequency" : 1,
+        "interval" : 4,
+        "monthsOfTheYear" : [
+
+        ],
+        "setPositions" : [
+
+        ],
+        "weeksOfTheYear" : [
+
+        ]
+      },
+      {
+        "daysOfTheMonth" : [
+
+        ],
+        "daysOfTheWeek" : [
+          {
+            "dayOfWeek" : 6,
+            "weekNumber" : 0
+          }
+        ],
+        "daysOfTheYear" : [
+
+        ],
+        "firstDayOfTheWeek" : 2,
+        "frequency" : 1,
+        "interval" : 2,
+        "monthsOfTheYear" : [
+
+        ],
+        "setPositions" : [
+
+        ],
+        "weeksOfTheYear" : [
+
+        ]
+      }
+    ],
+    "title" : "Pay Brim & Triangle completely"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf3480> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2023-04-19T15:44:38Z",
+    "dueDate" : "2026-03-20T04:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 20,
+      "era" : 1,
+      "month" : 3,
+      "year" : 2026
+    },
+    "externalId" : "BBF6B73E-FBF8-47DF-BA73-561929C98285",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : true,
+    "id" : "BBF6B73E-FBF8-47DF-BA73-561929C98285",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+      {
+        "daysOfTheMonth" : [
+
+        ],
+        "daysOfTheWeek" : [
+          {
+            "dayOfWeek" : 6,
+            "weekNumber" : 0
+          }
+        ],
+        "daysOfTheYear" : [
+
+        ],
+        "firstDayOfTheWeek" : 2,
+        "frequency" : 1,
+        "interval" : 2,
+        "monthsOfTheYear" : [
+
+        ],
+        "setPositions" : [
+
+        ],
+        "weeksOfTheYear" : [
+
+        ]
+      }
+    ],
+    "title" : "Paye Deloitte"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf3410> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2023-05-06T12:45:35Z",
+    "dueDate" : "2026-03-20T04:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 20,
+      "era" : 1,
+      "month" : 3,
+      "year" : 2026
+    },
+    "externalId" : "1E140228-D0AE-45D7-AA61-A6387B06A1E8",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : true,
+    "id" : "1E140228-D0AE-45D7-AA61-A6387B06A1E8",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+      {
+        "daysOfTheMonth" : [
+
+        ],
+        "daysOfTheWeek" : [
+
+        ],
+        "daysOfTheYear" : [
+
+        ],
+        "firstDayOfTheWeek" : 2,
+        "frequency" : 1,
+        "interval" : 2,
+        "monthsOfTheYear" : [
+
+        ],
+        "setPositions" : [
+
+        ],
+        "weeksOfTheYear" : [
+
+        ]
+      }
+    ],
+    "title" : "Hypothèque"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf33a0> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2025-05-29T10:45:21Z",
+    "dueDate" : "2026-03-20T04:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 20,
+      "era" : 1,
+      "month" : 3,
+      "year" : 2026
+    },
+    "externalId" : "5CE475F4-DFDA-403C-BDD9-BAB36C7B47E7",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : true,
+    "id" : "5CE475F4-DFDA-403C-BDD9-BAB36C7B47E7",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+      {
+        "daysOfTheMonth" : [
+
+        ],
+        "daysOfTheWeek" : [
+
+        ],
+        "daysOfTheYear" : [
+
+        ],
+        "firstDayOfTheWeek" : 2,
+        "frequency" : 2,
+        "interval" : 1,
+        "monthsOfTheYear" : [
+
+        ],
+        "setPositions" : [
+
+        ],
+        "weeksOfTheYear" : [
+
+        ]
+      }
+    ],
+    "startDate" : "2026-03-20T04:00:00Z",
+    "startDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 20,
+      "era" : 1,
+      "hour" : 0,
+      "minute" : 0,
+      "month" : 3,
+      "second" : 0,
+      "year" : 2026
+    },
+    "title" : "Cancel LinkedIn Premium subscription?"
+  },
+  {
+    "alarms" : [
+      {
+        "absoluteDate" : "2026-03-20T23:00:00Z",
+        "proximity" : 0,
+        "relativeOffset" : 0
+      }
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf3330> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2026-02-25T03:53:16Z",
+    "dueDate" : "2026-03-20T23:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 20,
+      "era" : 1,
+      "hour" : 19,
+      "minute" : 0,
+      "month" : 3,
+      "second" : 0,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "year" : 2026
+    },
+    "externalId" : "9DB3F555-6044-4F5C-8118-CA702E1537FC",
+    "hasAlarms" : true,
+    "hasRecurrenceRules" : true,
+    "id" : "9DB3F555-6044-4F5C-8118-CA702E1537FC",
+    "lastModifiedDate" : "2026-03-22T19:41:33Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+      {
+        "daysOfTheMonth" : [
+
+        ],
+        "daysOfTheWeek" : [
+          {
+            "dayOfWeek" : 6,
+            "weekNumber" : 0
+          }
+        ],
+        "daysOfTheYear" : [
+
+        ],
+        "firstDayOfTheWeek" : 2,
+        "frequency" : 1,
+        "interval" : 1,
+        "monthsOfTheYear" : [
+
+        ],
+        "setPositions" : [
+
+        ],
+        "weeksOfTheYear" : [
+
+        ]
+      }
+    ],
+    "title" : "Vagisil"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf32c0> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2025-08-21T15:58:59Z",
+    "dueDate" : "2026-03-21T04:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 21,
+      "era" : 1,
+      "month" : 3,
+      "year" : 2026
+    },
+    "externalId" : "5B35E367-DE11-4C99-904C-3EDD93E50EA1",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : true,
+    "id" : "5B35E367-DE11-4C99-904C-3EDD93E50EA1",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+      {
+        "daysOfTheMonth" : [
+
+        ],
+        "daysOfTheWeek" : [
+
+        ],
+        "daysOfTheYear" : [
+
+        ],
+        "firstDayOfTheWeek" : 2,
+        "frequency" : 2,
+        "interval" : 1,
+        "monthsOfTheYear" : [
+
+        ],
+        "setPositions" : [
+
+        ],
+        "weeksOfTheYear" : [
+
+        ]
+      }
+    ],
+    "title" : "Rebalance my portfolio"
+  },
+  {
+    "alarms" : [
+      {
+        "absoluteDate" : "2026-03-21T08:30:00Z",
+        "proximity" : 0,
+        "relativeOffset" : 0
+      }
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf3250> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2023-09-09T18:04:41Z",
+    "dueDate" : "2026-03-21T08:30:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 21,
+      "era" : 1,
+      "hour" : 4,
+      "minute" : 30,
+      "month" : 3,
+      "second" : 0,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "year" : 2026
+    },
+    "externalId" : "DD784531-821F-410C-BC91-EC0E4B071099",
+    "hasAlarms" : true,
+    "hasRecurrenceRules" : true,
+    "id" : "DD784531-821F-410C-BC91-EC0E4B071099",
+    "lastModifiedDate" : "2026-03-22T19:41:33Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+      {
+        "daysOfTheMonth" : [
+
+        ],
+        "daysOfTheWeek" : [
+
+        ],
+        "daysOfTheYear" : [
+
+        ],
+        "firstDayOfTheWeek" : 2,
+        "frequency" : 1,
+        "interval" : 1,
+        "monthsOfTheYear" : [
+
+        ],
+        "setPositions" : [
+
+        ],
+        "weeksOfTheYear" : [
+
+        ]
+      }
+    ],
+    "startDate" : "2026-03-21T08:30:00Z",
+    "startDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 21,
+      "era" : 1,
+      "hour" : 4,
+      "isLeapMonth" : false,
+      "minute" : 30,
+      "month" : 3,
+      "nanosecond" : 0,
+      "quarter" : 1,
+      "second" : 0,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "weekOfMonth" : 3,
+      "weekOfYear" : 12,
+      "weekday" : 7,
+      "weekdayOrdinal" : 3,
+      "year" : 2026,
+      "yearForWeekOfYear" : 2026
+    },
+    "title" : "Clean toilet cover"
+  },
+  {
+    "alarms" : [
+      {
+        "absoluteDate" : "2026-03-22T04:00:00Z",
+        "proximity" : 0,
+        "relativeOffset" : 0
+      }
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf31e0> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2019-09-27T11:44:00Z",
+    "dueDate" : "2026-03-22T04:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 22,
+      "era" : 1,
+      "month" : 3,
+      "year" : 2026
+    },
+    "externalId" : "573AA91F-908D-5ADE-93B8-B055D9CDA4EC",
+    "hasAlarms" : true,
+    "hasRecurrenceRules" : true,
+    "id" : "573AA91F-908D-5ADE-93B8-B055D9CDA4EC",
+    "lastModifiedDate" : "2026-03-22T19:41:33Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+      {
+        "daysOfTheMonth" : [
+
+        ],
+        "daysOfTheWeek" : [
+
+        ],
+        "daysOfTheYear" : [
+
+        ],
+        "firstDayOfTheWeek" : 2,
+        "frequency" : 1,
+        "interval" : 1,
+        "monthsOfTheYear" : [
+
+        ],
+        "setPositions" : [
+
+        ],
+        "weeksOfTheYear" : [
+
+        ]
+      }
+    ],
+    "startDate" : "2026-03-22T04:00:00Z",
+    "startDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 22,
+      "era" : 1,
+      "hour" : 0,
+      "minute" : 0,
+      "month" : 3,
+      "second" : 0,
+      "year" : 2026
+    },
+    "title" : "Open my home mail"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf3170> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2024-04-25T22:59:18Z",
+    "dueDate" : "2026-03-25T04:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 25,
+      "era" : 1,
+      "month" : 3,
+      "year" : 2026
+    },
+    "externalId" : "5D1D86F9-9C26-4AA7-BC20-6712129D83C7",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "5D1D86F9-9C26-4AA7-BC20-6712129D83C7",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Renew Odensetron for Sarah"
+  },
+  {
+    "alarms" : [
+      {
+        "absoluteDate" : "2026-03-25T20:00:00Z",
+        "proximity" : 0,
+        "relativeOffset" : 0
+      }
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf3100> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2025-09-16T11:25:27Z",
+    "dueDate" : "2026-03-25T20:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 25,
+      "era" : 1,
+      "hour" : 16,
+      "minute" : 0,
+      "month" : 3,
+      "second" : 0,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "year" : 2026
+    },
+    "externalId" : "1CA72911-F3A1-4A75-A916-68ED3D0E1AF5",
+    "hasAlarms" : true,
+    "hasRecurrenceRules" : true,
+    "id" : "1CA72911-F3A1-4A75-A916-68ED3D0E1AF5",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+      {
+        "daysOfTheMonth" : [
+
+        ],
+        "daysOfTheWeek" : [
+
+        ],
+        "daysOfTheYear" : [
+
+        ],
+        "firstDayOfTheWeek" : 2,
+        "frequency" : 1,
+        "interval" : 2,
+        "monthsOfTheYear" : [
+
+        ],
+        "setPositions" : [
+
+        ],
+        "weeksOfTheYear" : [
+
+        ]
+      }
+    ],
+    "title" : "Put the garbage in the street"
+  },
+  {
+    "alarms" : [
+      {
+        "absoluteDate" : "2026-03-26T11:00:00Z",
+        "proximity" : 0,
+        "relativeOffset" : 0
+      }
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf3870> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2023-04-19T15:46:04Z",
+    "dueDate" : "2026-03-26T11:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 26,
+      "era" : 1,
+      "hour" : 7,
+      "minute" : 0,
+      "month" : 3,
+      "second" : 0,
+      "year" : 2026
+    },
+    "externalId" : "5A80C0C8-B967-49DC-A6DA-D54CC94B3DB1",
+    "hasAlarms" : true,
+    "hasRecurrenceRules" : true,
+    "id" : "5A80C0C8-B967-49DC-A6DA-D54CC94B3DB1",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+      {
+        "daysOfTheMonth" : [
+
+        ],
+        "daysOfTheWeek" : [
+          {
+            "dayOfWeek" : 5,
+            "weekNumber" : 0
+          }
+        ],
+        "daysOfTheYear" : [
+
+        ],
+        "firstDayOfTheWeek" : 2,
+        "frequency" : 1,
+        "interval" : 2,
+        "monthsOfTheYear" : [
+
+        ],
+        "setPositions" : [
+
+        ],
+        "weeksOfTheYear" : [
+
+        ]
+      }
+    ],
+    "startDate" : "2026-03-26T11:00:00Z",
+    "startDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 26,
+      "era" : 1,
+      "hour" : 7,
+      "minute" : 0,
+      "month" : 3,
+      "second" : 0,
+      "year" : 2026
+    },
+    "title" : "Transférer 1800 au compte conjoint"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf3800> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2024-05-31T02:51:45Z",
+    "dueDate" : "2026-03-27T04:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 27,
+      "era" : 1,
+      "month" : 3,
+      "year" : 2026
+    },
+    "externalId" : "C2B69FA5-36C4-4EE7-99BE-9F95B5D4D75F",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : true,
+    "id" : "C2B69FA5-36C4-4EE7-99BE-9F95B5D4D75F",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+      {
+        "daysOfTheMonth" : [
+
+        ],
+        "daysOfTheWeek" : [
+          {
+            "dayOfWeek" : 6,
+            "weekNumber" : 0
+          }
+        ],
+        "daysOfTheYear" : [
+
+        ],
+        "firstDayOfTheWeek" : 2,
+        "frequency" : 1,
+        "interval" : 4,
+        "monthsOfTheYear" : [
+
+        ],
+        "setPositions" : [
+
+        ],
+        "weeksOfTheYear" : [
+
+        ]
+      }
+    ],
+    "startDate" : "2026-03-27T04:00:00Z",
+    "startDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 27,
+      "era" : 1,
+      "hour" : 0,
+      "minute" : 0,
+      "month" : 3,
+      "second" : 0,
+      "year" : 2026
+    },
+    "title" : "Pay flexity 100"
+  },
+  {
+    "alarms" : [
+      {
+        "absoluteDate" : "2026-03-31T15:00:00Z",
+        "proximity" : 0,
+        "relativeOffset" : 0
+      }
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf3790> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2025-07-30T14:24:55Z",
+    "dueDate" : "2026-03-31T15:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 31,
+      "era" : 1,
+      "hour" : 11,
+      "minute" : 0,
+      "month" : 3,
+      "second" : 0,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "year" : 2026
+    },
+    "externalId" : "DCD3AE5F-6FEC-4F00-99AF-C9C8FA0B6085",
+    "hasAlarms" : true,
+    "hasRecurrenceRules" : false,
+    "id" : "DCD3AE5F-6FEC-4F00-99AF-C9C8FA0B6085",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "startDate" : "2026-03-31T15:00:00Z",
+    "startDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 31,
+      "era" : 1,
+      "hour" : 11,
+      "isLeapMonth" : false,
+      "minute" : 0,
+      "month" : 3,
+      "nanosecond" : 0,
+      "quarter" : 2,
+      "second" : 0,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "weekOfMonth" : 5,
+      "weekOfYear" : 14,
+      "weekday" : 3,
+      "weekdayOrdinal" : 5,
+      "year" : 2026,
+      "yearForWeekOfYear" : 2026
+    },
+    "title" : "400$ Josee?"
+  },
+  {
+    "alarms" : [
+      {
+        "absoluteDate" : "2026-03-31T18:58:00Z",
+        "proximity" : 0,
+        "relativeOffset" : 0
+      }
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf3720> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2026-02-04T19:53:26Z",
+    "dueDate" : "2026-03-31T18:58:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 31,
+      "era" : 1,
+      "hour" : 14,
+      "minute" : 58,
+      "month" : 3,
+      "second" : 0,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "year" : 2026
+    },
+    "externalId" : "B51B10E5-2EE5-4CEC-A1BC-5983DE022304",
+    "hasAlarms" : true,
+    "hasRecurrenceRules" : false,
+    "id" : "B51B10E5-2EE5-4CEC-A1BC-5983DE022304",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "startDate" : "2026-03-31T18:58:00Z",
+    "startDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 31,
+      "era" : 1,
+      "hour" : 14,
+      "isLeapMonth" : false,
+      "minute" : 58,
+      "month" : 3,
+      "nanosecond" : 0,
+      "quarter" : 2,
+      "second" : 0,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "weekOfMonth" : 5,
+      "weekOfYear" : 14,
+      "weekday" : 3,
+      "weekdayOrdinal" : 5,
+      "year" : 2026,
+      "yearForWeekOfYear" : 2026
+    },
+    "title" : "Cancel LinkedIn prime"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf36b0> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2026-02-17T21:16:07Z",
+    "dueDate" : "2026-04-01T04:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 1,
+      "era" : 1,
+      "month" : 4,
+      "year" : 2026
+    },
+    "externalId" : "F4F82D22-D67E-4142-92C9-EF84504BD3D6",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "F4F82D22-D67E-4142-92C9-EF84504BD3D6",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Pay funeral home"
+  },
+  {
+    "alarms" : [
+      {
+        "absoluteDate" : "2026-04-01T18:00:00Z",
+        "proximity" : 0,
+        "relativeOffset" : 0
+      }
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33703e90> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2025-09-17T23:26:00Z",
+    "dueDate" : "2026-04-01T18:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 1,
+      "era" : 1,
+      "hour" : 14,
+      "minute" : 0,
+      "month" : 4,
+      "second" : 0,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "year" : 2026
+    },
+    "externalId" : "64887BBC-2E9F-40A6-952C-9EFDDD40D106",
+    "hasAlarms" : true,
+    "hasRecurrenceRules" : true,
+    "id" : "64887BBC-2E9F-40A6-952C-9EFDDD40D106",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+      {
+        "daysOfTheMonth" : [
+
+        ],
+        "daysOfTheWeek" : [
+
+        ],
+        "daysOfTheYear" : [
+
+        ],
+        "firstDayOfTheWeek" : 2,
+        "frequency" : 1,
+        "interval" : 2,
+        "monthsOfTheYear" : [
+
+        ],
+        "setPositions" : [
+
+        ],
+        "weeksOfTheYear" : [
+
+        ]
+      }
+    ],
+    "startDate" : "2026-04-01T18:00:00Z",
+    "startDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 1,
+      "era" : 1,
+      "hour" : 14,
+      "isLeapMonth" : false,
+      "minute" : 0,
+      "month" : 4,
+      "nanosecond" : 0,
+      "quarter" : 2,
+      "second" : 0,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "weekOfMonth" : 1,
+      "weekOfYear" : 14,
+      "weekday" : 4,
+      "weekdayOrdinal" : 1,
+      "year" : 2026,
+      "yearForWeekOfYear" : 2026
+    },
+    "title" : "Recyclage"
+  },
+  {
+    "alarms" : [
+      {
+        "absoluteDate" : "2026-04-02T02:06:00Z",
+        "proximity" : 0,
+        "relativeOffset" : 0
+      }
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33703e20> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2026-02-05T18:12:22Z",
+    "dueDate" : "2026-04-02T02:06:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 1,
+      "era" : 1,
+      "hour" : 22,
+      "minute" : 6,
+      "month" : 4,
+      "second" : 0,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "year" : 2026
+    },
+    "externalId" : "D583B75F-25F4-4FFB-AD9A-BE7FCC04051A",
+    "hasAlarms" : true,
+    "hasRecurrenceRules" : true,
+    "id" : "D583B75F-25F4-4FFB-AD9A-BE7FCC04051A",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+      {
+        "daysOfTheMonth" : [
+          1
+        ],
+        "daysOfTheWeek" : [
+
+        ],
+        "daysOfTheYear" : [
+          1
+        ],
+        "firstDayOfTheWeek" : 2,
+        "frequency" : 2,
+        "interval" : 1,
+        "monthsOfTheYear" : [
+
+        ],
+        "setPositions" : [
+
+        ],
+        "weeksOfTheYear" : [
+
+        ]
+      }
+    ],
+    "startDate" : "2026-03-08T19:00:00Z",
+    "startDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 8,
+      "era" : 1,
+      "hour" : 15,
+      "isLeapMonth" : false,
+      "minute" : 0,
+      "month" : 3,
+      "nanosecond" : 0,
+      "quarter" : 1,
+      "second" : 0,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "weekOfMonth" : 2,
+      "weekOfYear" : 11,
+      "weekday" : 1,
+      "weekdayOrdinal" : 2,
+      "year" : 2026,
+      "yearForWeekOfYear" : 2026
+    },
+    "title" : "Pay"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33703db0> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2019-09-27T11:46:00Z",
+    "dueDate" : "2026-04-03T04:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 3,
+      "era" : 1,
+      "month" : 4,
+      "year" : 2026
+    },
+    "externalId" : "4E19B2E0-A086-56E2-B58F-BBBA144F0E77",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : true,
+    "id" : "4E19B2E0-A086-56E2-B58F-BBBA144F0E77",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+      {
+        "daysOfTheMonth" : [
+
+        ],
+        "daysOfTheWeek" : [
+
+        ],
+        "daysOfTheYear" : [
+
+        ],
+        "firstDayOfTheWeek" : 2,
+        "frequency" : 2,
+        "interval" : 1,
+        "monthsOfTheYear" : [
+
+        ],
+        "setPositions" : [
+
+        ],
+        "weeksOfTheYear" : [
+
+        ]
+      }
+    ],
+    "startDate" : "2026-03-01T04:00:00Z",
+    "startDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 28,
+      "era" : 1,
+      "hour" : 23,
+      "minute" : 0,
+      "month" : 2,
+      "second" : 0,
+      "year" : 2026
+    },
+    "title" : "Payer CIBC"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33703d40> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2024-05-31T02:51:45Z",
+    "dueDate" : "2026-04-05T04:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 5,
+      "era" : 1,
+      "month" : 4,
+      "year" : 2026
+    },
+    "externalId" : "1C7FB04C-0052-48C4-9465-C103FD81DC34",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : true,
+    "id" : "1C7FB04C-0052-48C4-9465-C103FD81DC34",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+      {
+        "daysOfTheMonth" : [
+
+        ],
+        "daysOfTheWeek" : [
+          {
+            "dayOfWeek" : 1,
+            "weekNumber" : 0
+          }
+        ],
+        "daysOfTheYear" : [
+
+        ],
+        "firstDayOfTheWeek" : 2,
+        "frequency" : 1,
+        "interval" : 4,
+        "monthsOfTheYear" : [
+
+        ],
+        "setPositions" : [
+
+        ],
+        "weeksOfTheYear" : [
+
+        ]
+      }
+    ],
+    "startDate" : "2026-05-20T22:00:00Z",
+    "startDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 20,
+      "era" : 1,
+      "hour" : 18,
+      "minute" : 0,
+      "month" : 5,
+      "second" : 0,
+      "year" : 2026
+    },
+    "title" : "Pay flexity 100"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33703cd0> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2026-02-23T01:07:21Z",
+    "dueDate" : "2026-04-12T04:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 12,
+      "era" : 1,
+      "month" : 4,
+      "year" : 2026
+    },
+    "externalId" : "8673B7B5-FEF1-489E-9E44-7C7EC35D89F7",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : true,
+    "id" : "8673B7B5-FEF1-489E-9E44-7C7EC35D89F7",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+      {
+        "daysOfTheMonth" : [
+
+        ],
+        "daysOfTheWeek" : [
+
+        ],
+        "daysOfTheYear" : [
+
+        ],
+        "firstDayOfTheWeek" : 2,
+        "frequency" : 1,
+        "interval" : 4,
+        "monthsOfTheYear" : [
+
+        ],
+        "setPositions" : [
+
+        ],
+        "weeksOfTheYear" : [
+
+        ]
+      }
+    ],
+    "startDate" : "2026-04-12T04:00:00Z",
+    "startDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 12,
+      "era" : 1,
+      "hour" : 0,
+      "minute" : 0,
+      "month" : 4,
+      "second" : 0,
+      "year" : 2026
+    },
+    "title" : "Telus"
+  },
+  {
+    "alarms" : [
+      {
+        "absoluteDate" : "2026-04-21T13:00:00Z",
+        "proximity" : 0,
+        "relativeOffset" : 0
+      }
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33703c60> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2024-04-09T18:40:16Z",
+    "dueDate" : "2026-04-21T13:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 21,
+      "era" : 1,
+      "hour" : 9,
+      "minute" : 0,
+      "month" : 4,
+      "second" : 0,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "year" : 2026
+    },
+    "externalId" : "7E0FA242-C98D-40E3-94D1-CB459CA91D21",
+    "hasAlarms" : true,
+    "hasRecurrenceRules" : true,
+    "id" : "7E0FA242-C98D-40E3-94D1-CB459CA91D21",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+      {
+        "daysOfTheMonth" : [
+
+        ],
+        "daysOfTheWeek" : [
+
+        ],
+        "daysOfTheYear" : [
+
+        ],
+        "firstDayOfTheWeek" : 2,
+        "frequency" : 3,
+        "interval" : 1,
+        "monthsOfTheYear" : [
+
+        ],
+        "setPositions" : [
+
+        ],
+        "weeksOfTheYear" : [
+
+        ]
+      }
+    ],
+    "startDate" : "2026-03-01T00:00:00Z",
+    "startDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 28,
+      "era" : 1,
+      "hour" : 19,
+      "isLeapMonth" : false,
+      "minute" : 0,
+      "month" : 2,
+      "nanosecond" : 0,
+      "quarter" : 1,
+      "second" : 0,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "weekOfMonth" : 4,
+      "weekOfYear" : 9,
+      "weekday" : 7,
+      "weekdayOrdinal" : 4,
+      "year" : 2026,
+      "yearForWeekOfYear" : 2026
+    },
+    "title" : "Impôts pour tout le monde"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33703b80> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2022-08-13T21:34:01Z",
+    "dueDate" : "2026-04-22T04:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 22,
+      "era" : 1,
+      "month" : 4,
+      "year" : 2026
+    },
+    "externalId" : "4D0D5175-45DF-445B-B1D0-3F7B82A052B9",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : true,
+    "id" : "4D0D5175-45DF-445B-B1D0-3F7B82A052B9",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+      {
+        "daysOfTheMonth" : [
+
+        ],
+        "daysOfTheWeek" : [
+
+        ],
+        "daysOfTheYear" : [
+
+        ],
+        "firstDayOfTheWeek" : 2,
+        "frequency" : 3,
+        "interval" : 1,
+        "monthsOfTheYear" : [
+
+        ],
+        "setPositions" : [
+
+        ],
+        "weeksOfTheYear" : [
+
+        ]
+      }
+    ],
+    "title" : "Fill the propane tank"
+  },
+  {
+    "alarms" : [
+      {
+        "absoluteDate" : "2026-05-01T04:00:00Z",
+        "proximity" : 0,
+        "relativeOffset" : 0
+      }
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33703aa0> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2019-09-29T22:50:00Z",
+    "dueDate" : "2026-05-01T04:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 1,
+      "era" : 1,
+      "month" : 5,
+      "year" : 2026
+    },
+    "externalId" : "91AD1975-2CC8-53B4-804F-77FCFC82C993",
+    "hasAlarms" : true,
+    "hasRecurrenceRules" : true,
+    "id" : "91AD1975-2CC8-53B4-804F-77FCFC82C993",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 5,
+    "recurrenceRules" : [
+      {
+        "daysOfTheMonth" : [
+
+        ],
+        "daysOfTheWeek" : [
+
+        ],
+        "daysOfTheYear" : [
+
+        ],
+        "firstDayOfTheWeek" : 2,
+        "frequency" : 3,
+        "interval" : 1,
+        "monthsOfTheYear" : [
+
+        ],
+        "setPositions" : [
+
+        ],
+        "weeksOfTheYear" : [
+
+        ]
+      }
+    ],
+    "startDate" : "2026-05-01T04:00:00Z",
+    "startDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 1,
+      "era" : 1,
+      "hour" : 0,
+      "minute" : 0,
+      "month" : 5,
+      "second" : 0,
+      "year" : 2026
+    },
+    "title" : "Vérifier les assurances de la voiture"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33703a30> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2024-06-03T18:44:54Z",
+    "dueDate" : "2026-05-01T04:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 1,
+      "era" : 1,
+      "month" : 5,
+      "year" : 2026
+    },
+    "externalId" : "78ED51DF-C350-4AD7-9B63-ADF8748BE8F5",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : true,
+    "id" : "78ED51DF-C350-4AD7-9B63-ADF8748BE8F5",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+      {
+        "daysOfTheMonth" : [
+
+        ],
+        "daysOfTheWeek" : [
+
+        ],
+        "daysOfTheYear" : [
+
+        ],
+        "firstDayOfTheWeek" : 2,
+        "frequency" : 3,
+        "interval" : 1,
+        "monthsOfTheYear" : [
+
+        ],
+        "setPositions" : [
+
+        ],
+        "weeksOfTheYear" : [
+
+        ]
+      }
+    ],
+    "startDate" : "2026-05-01T04:00:00Z",
+    "startDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 1,
+      "era" : 1,
+      "hour" : 0,
+      "minute" : 0,
+      "month" : 5,
+      "second" : 0,
+      "year" : 2026
+    },
+    "title" : "Vérifier plaques auto"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf3640> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2025-12-14T20:06:05Z",
+    "dueDate" : "2026-05-01T04:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 1,
+      "era" : 1,
+      "month" : 5,
+      "year" : 2026
+    },
+    "externalId" : "90D82234-DBF0-479A-AE99-1F465C40157C",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "90D82234-DBF0-479A-AE99-1F465C40157C",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Check for 24H Tremblant Deloitte Team ( Room already reserved at Fermont on booking.com"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf35d0> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2026-02-25T01:29:20Z",
+    "dueDate" : "2026-05-01T04:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 1,
+      "era" : 1,
+      "month" : 5,
+      "year" : 2026
+    },
+    "externalId" : "D5652647-3288-4830-90E3-A88FCFB3A242",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "D5652647-3288-4830-90E3-A88FCFB3A242",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Kid Laroi show le 16"
+  },
+  {
+    "alarms" : [
+      {
+        "absoluteDate" : "2026-05-02T00:00:00Z",
+        "proximity" : 0,
+        "relativeOffset" : 0
+      }
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf3560> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2023-05-28T23:06:11Z",
+    "dueDate" : "2026-05-02T00:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 1,
+      "era" : 1,
+      "hour" : 20,
+      "minute" : 0,
+      "month" : 5,
+      "second" : 0,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "year" : 2026
+    },
+    "externalId" : "9B8AA61D-4EA9-4E3C-A273-C3BBEFE71F72",
+    "hasAlarms" : true,
+    "hasRecurrenceRules" : false,
+    "id" : "9B8AA61D-4EA9-4E3C-A273-C3BBEFE71F72",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "startDate" : "2025-05-10T00:00:00Z",
+    "startDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 9,
+      "era" : 1,
+      "hour" : 20,
+      "isLeapMonth" : false,
+      "minute" : 0,
+      "month" : 5,
+      "nanosecond" : 0,
+      "quarter" : 2,
+      "second" : 0,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "weekOfMonth" : 2,
+      "weekOfYear" : 19,
+      "weekday" : 6,
+      "weekdayOrdinal" : 2,
+      "year" : 2025,
+      "yearForWeekOfYear" : 2025
+    },
+    "title" : "Cancel Sirius XM, otherwise increase to 25$ per month!!!!"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf34f0> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2022-08-28T19:37:38Z",
+    "dueDate" : "2026-07-01T04:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 1,
+      "era" : 1,
+      "month" : 7,
+      "year" : 2026
+    },
+    "externalId" : "968FE878-5A2D-4D18-900B-E928B82B74C7",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : true,
+    "id" : "968FE878-5A2D-4D18-900B-E928B82B74C7",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+      {
+        "daysOfTheMonth" : [
+
+        ],
+        "daysOfTheWeek" : [
+
+        ],
+        "daysOfTheYear" : [
+
+        ],
+        "firstDayOfTheWeek" : 2,
+        "frequency" : 3,
+        "interval" : 1,
+        "monthsOfTheYear" : [
+
+        ],
+        "setPositions" : [
+
+        ],
+        "weeksOfTheYear" : [
+
+        ]
+      }
+    ],
+    "title" : "Send last year transaction to my accountant"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf3020> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2025-08-14T07:54:31Z",
+    "dueDate" : "2026-08-11T04:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 11,
+      "era" : 1,
+      "month" : 8,
+      "year" : 2026
+    },
+    "externalId" : "F7CF515B-ECA8-4E59-8E02-32877159A1D3",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : true,
+    "id" : "F7CF515B-ECA8-4E59-8E02-32877159A1D3",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+      {
+        "daysOfTheMonth" : [
+
+        ],
+        "daysOfTheWeek" : [
+
+        ],
+        "daysOfTheYear" : [
+
+        ],
+        "firstDayOfTheWeek" : 2,
+        "frequency" : 3,
+        "interval" : 1,
+        "monthsOfTheYear" : [
+
+        ],
+        "setPositions" : [
+
+        ],
+        "weeksOfTheYear" : [
+
+        ]
+      }
+    ],
+    "title" : "Perseides?"
+  },
+  {
+    "alarms" : [
+      {
+        "absoluteDate" : "2026-09-02T00:48:00Z",
+        "proximity" : 0,
+        "relativeOffset" : 0
+      }
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf3090> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2024-04-12T00:43:38Z",
+    "dueDate" : "2026-09-02T00:48:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 1,
+      "era" : 1,
+      "hour" : 20,
+      "minute" : 48,
+      "month" : 9,
+      "second" : 0,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "year" : 2026
+    },
+    "externalId" : "F3781C1B-8B27-43B1-A160-5D197872B1CC",
+    "hasAlarms" : true,
+    "hasRecurrenceRules" : true,
+    "id" : "F3781C1B-8B27-43B1-A160-5D197872B1CC",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+      {
+        "daysOfTheMonth" : [
+
+        ],
+        "daysOfTheWeek" : [
+
+        ],
+        "daysOfTheYear" : [
+
+        ],
+        "firstDayOfTheWeek" : 2,
+        "frequency" : 3,
+        "interval" : 1,
+        "monthsOfTheYear" : [
+
+        ],
+        "setPositions" : [
+
+        ],
+        "weeksOfTheYear" : [
+
+        ]
+      }
+    ],
+    "title" : "Bring winter coat to the cleaners"
+  },
+  {
+    "alarms" : [
+      {
+        "absoluteDate" : "2026-10-11T12:45:00Z",
+        "proximity" : 0,
+        "relativeOffset" : 0
+      }
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf2ed0> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2019-10-12T14:55:28Z",
+    "dueDate" : "2026-10-11T12:45:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 11,
+      "era" : 1,
+      "hour" : 8,
+      "minute" : 45,
+      "month" : 10,
+      "second" : 0,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "year" : 2026
+    },
+    "externalId" : "951A74D0-FCD4-4855-B1AD-848C4CC2AD90",
+    "hasAlarms" : true,
+    "hasRecurrenceRules" : true,
+    "id" : "951A74D0-FCD4-4855-B1AD-848C4CC2AD90",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+      {
+        "daysOfTheMonth" : [
+
+        ],
+        "daysOfTheWeek" : [
+          {
+            "dayOfWeek" : 1,
+            "weekNumber" : 2
+          }
+        ],
+        "daysOfTheYear" : [
+
+        ],
+        "firstDayOfTheWeek" : 1,
+        "frequency" : 3,
+        "interval" : 1,
+        "monthsOfTheYear" : [
+          10
+        ],
+        "setPositions" : [
+
+        ],
+        "weeksOfTheYear" : [
+
+        ]
+      }
+    ],
+    "startDate" : "2026-08-18T07:45:00Z",
+    "startDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 18,
+      "era" : 1,
+      "hour" : 3,
+      "isLeapMonth" : false,
+      "minute" : 45,
+      "month" : 8,
+      "nanosecond" : 0,
+      "quarter" : 3,
+      "second" : 0,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "weekOfMonth" : 4,
+      "weekOfYear" : 34,
+      "weekday" : 3,
+      "weekdayOrdinal" : 3,
+      "year" : 2026,
+      "yearForWeekOfYear" : 2026
+    },
+    "title" : "Prendre selfie étoile annuell avec Sarah"
+  },
+  {
+    "alarms" : [
+      {
+        "absoluteDate" : "2026-10-19T12:55:00Z",
+        "proximity" : 0,
+        "relativeOffset" : 0
+      }
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf2e60> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2019-09-27T11:47:00Z",
+    "dueDate" : "2026-10-19T12:55:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 19,
+      "era" : 1,
+      "hour" : 12,
+      "minute" : 55,
+      "month" : 10,
+      "second" : 0,
+      "timeZoneIdentifier" : "GMT",
+      "year" : 2026
+    },
+    "externalId" : "F318E363-E451-588A-99FC-24A3C0B5C987",
+    "hasAlarms" : true,
+    "hasRecurrenceRules" : true,
+    "id" : "F318E363-E451-588A-99FC-24A3C0B5C987",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+      {
+        "daysOfTheMonth" : [
+
+        ],
+        "daysOfTheWeek" : [
+
+        ],
+        "daysOfTheYear" : [
+
+        ],
+        "firstDayOfTheWeek" : 2,
+        "frequency" : 3,
+        "interval" : 1,
+        "monthsOfTheYear" : [
+
+        ],
+        "setPositions" : [
+
+        ],
+        "weeksOfTheYear" : [
+
+        ]
+      }
+    ],
+    "startDate" : "2026-10-19T13:00:00Z",
+    "startDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 19,
+      "era" : 1,
+      "hour" : 13,
+      "isLeapMonth" : false,
+      "minute" : 0,
+      "month" : 10,
+      "nanosecond" : 0,
+      "quarter" : 4,
+      "second" : 0,
+      "timeZoneIdentifier" : "GMT",
+      "weekOfMonth" : 4,
+      "weekOfYear" : 43,
+      "weekday" : 2,
+      "weekdayOrdinal" : 3,
+      "year" : 2026,
+      "yearForWeekOfYear" : 2026
+    },
+    "title" : "Fête Isabelle la semaine prochaine"
+  },
+  {
+    "alarms" : [
+      {
+        "absoluteDate" : "2026-10-26T09:00:00Z",
+        "proximity" : 0,
+        "relativeOffset" : 0
+      }
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf2fb0> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2022-10-26T00:50:53Z",
+    "dueDate" : "2026-10-26T09:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 26,
+      "era" : 1,
+      "hour" : 5,
+      "minute" : 0,
+      "month" : 10,
+      "second" : 0,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "year" : 2026
+    },
+    "externalId" : "DFCC2CC4-AEBD-45EB-B772-49D44AEFC1DA",
+    "hasAlarms" : true,
+    "hasRecurrenceRules" : true,
+    "id" : "DFCC2CC4-AEBD-45EB-B772-49D44AEFC1DA",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+      {
+        "daysOfTheMonth" : [
+
+        ],
+        "daysOfTheWeek" : [
+
+        ],
+        "daysOfTheYear" : [
+
+        ],
+        "firstDayOfTheWeek" : 2,
+        "frequency" : 3,
+        "interval" : 1,
+        "monthsOfTheYear" : [
+
+        ],
+        "setPositions" : [
+
+        ],
+        "weeksOfTheYear" : [
+
+        ]
+      }
+    ],
+    "title" : "Fête Isabelle"
+  },
+  {
+    "alarms" : [
+      {
+        "absoluteDate" : "2026-10-30T11:00:00Z",
+        "proximity" : 0,
+        "relativeOffset" : 0
+      }
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf2f40> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2021-10-26T16:22:20Z",
+    "dueDate" : "2026-10-30T11:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 30,
+      "era" : 1,
+      "hour" : 7,
+      "minute" : 0,
+      "month" : 10,
+      "second" : 0,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "year" : 2026
+    },
+    "externalId" : "2DCA0DD9-656B-4D41-BDDA-3631B7F0D48D",
+    "hasAlarms" : true,
+    "hasRecurrenceRules" : true,
+    "id" : "2DCA0DD9-656B-4D41-BDDA-3631B7F0D48D",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+      {
+        "daysOfTheMonth" : [
+
+        ],
+        "daysOfTheWeek" : [
+
+        ],
+        "daysOfTheYear" : [
+
+        ],
+        "firstDayOfTheWeek" : 2,
+        "frequency" : 3,
+        "interval" : 1,
+        "monthsOfTheYear" : [
+
+        ],
+        "setPositions" : [
+
+        ],
+        "weeksOfTheYear" : [
+
+        ]
+      }
+    ],
+    "title" : "Close the pool"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf2bc0> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2025-12-14T20:04:12Z",
+    "dueDate" : "2026-11-01T04:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 1,
+      "era" : 1,
+      "month" : 11,
+      "year" : 2026
+    },
+    "externalId" : "073C9737-8C97-449D-8DF5-A09A9D48CB66",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "073C9737-8C97-449D-8DF5-A09A9D48CB66",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Cancel room for 24H Tremblant. To be billed on Dec 7(Booking.com)"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf2b50> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2025-08-14T07:55:23Z",
+    "dueDate" : "2026-12-10T05:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 10,
+      "era" : 1,
+      "month" : 12,
+      "year" : 2026
+    },
+    "externalId" : "964CF064-2F2E-471F-9C3D-C6443F2E5AB7",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : true,
+    "id" : "964CF064-2F2E-471F-9C3D-C6443F2E5AB7",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+      {
+        "daysOfTheMonth" : [
+
+        ],
+        "daysOfTheWeek" : [
+
+        ],
+        "daysOfTheYear" : [
+
+        ],
+        "firstDayOfTheWeek" : 2,
+        "frequency" : 3,
+        "interval" : 1,
+        "monthsOfTheYear" : [
+
+        ],
+        "setPositions" : [
+
+        ],
+        "weeksOfTheYear" : [
+
+        ]
+      }
+    ],
+    "title" : "Gemenides?"
+  },
+  {
+    "alarms" : [
+      {
+        "absoluteDate" : "2027-01-01T13:55:00Z",
+        "proximity" : 0,
+        "relativeOffset" : 0
+      }
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf2ae0> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2019-09-28T18:37:00Z",
+    "dueDate" : "2027-01-01T13:55:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 1,
+      "era" : 1,
+      "hour" : 8,
+      "minute" : 55,
+      "month" : 1,
+      "second" : 0,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "year" : 2027
+    },
+    "externalId" : "A3A995C3-570B-5259-9CB7-AB160EE0D87F",
+    "hasAlarms" : true,
+    "hasRecurrenceRules" : true,
+    "id" : "A3A995C3-570B-5259-9CB7-AB160EE0D87F",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+      {
+        "daysOfTheMonth" : [
+
+        ],
+        "daysOfTheWeek" : [
+
+        ],
+        "daysOfTheYear" : [
+
+        ],
+        "firstDayOfTheWeek" : 2,
+        "frequency" : 3,
+        "interval" : 1,
+        "monthsOfTheYear" : [
+
+        ],
+        "setPositions" : [
+
+        ],
+        "weeksOfTheYear" : [
+
+        ]
+      }
+    ],
+    "startDate" : "2027-07-01T12:55:00Z",
+    "startDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 1,
+      "era" : 1,
+      "hour" : 8,
+      "isLeapMonth" : false,
+      "minute" : 55,
+      "month" : 7,
+      "nanosecond" : 0,
+      "quarter" : 3,
+      "second" : 0,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "weekOfMonth" : 1,
+      "weekOfYear" : 27,
+      "weekday" : 5,
+      "weekdayOrdinal" : 1,
+      "year" : 2027,
+      "yearForWeekOfYear" : 2027
+    },
+    "title" : "Prendre mon rendez-vous avec Dr Lemarquant"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf2a70> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2022-08-26T22:32:00Z",
+    "dueDate" : "2027-01-10T05:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 10,
+      "era" : 1,
+      "month" : 1,
+      "year" : 2027
+    },
+    "externalId" : "56F098E4-5D7D-4139-B3DB-96389878C2DB",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : true,
+    "id" : "56F098E4-5D7D-4139-B3DB-96389878C2DB",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+      {
+        "daysOfTheMonth" : [
+
+        ],
+        "daysOfTheWeek" : [
+
+        ],
+        "daysOfTheYear" : [
+
+        ],
+        "firstDayOfTheWeek" : 2,
+        "frequency" : 3,
+        "interval" : 1,
+        "monthsOfTheYear" : [
+
+        ],
+        "setPositions" : [
+
+        ],
+        "weeksOfTheYear" : [
+
+        ]
+      }
+    ],
+    "title" : "Borrow from my company"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf2a00> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2022-02-19T15:28:37Z",
+    "dueDate" : "2027-03-10T05:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 10,
+      "era" : 1,
+      "month" : 3,
+      "year" : 2027
+    },
+    "externalId" : "0A2C3B43-38FD-42A4-8666-CE3767678A94",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : true,
+    "id" : "0A2C3B43-38FD-42A4-8666-CE3767678A94",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+      {
+        "daysOfTheMonth" : [
+
+        ],
+        "daysOfTheWeek" : [
+
+        ],
+        "daysOfTheYear" : [
+
+        ],
+        "firstDayOfTheWeek" : 2,
+        "frequency" : 3,
+        "interval" : 1,
+        "monthsOfTheYear" : [
+
+        ],
+        "setPositions" : [
+
+        ],
+        "weeksOfTheYear" : [
+
+        ]
+      }
+    ],
+    "title" : "Dating anniversary"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf2df0> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2024-05-17T11:21:40Z",
+    "externalId" : "8C0FC834-34EA-4DE1-A269-D8903B4CEF58",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "8C0FC834-34EA-4DE1-A269-D8903B4CEF58",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Call Macdonald"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf2d80> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2024-05-30T19:28:52Z",
+    "externalId" : "F2712EAC-D4FA-4341-AA7D-8CFBEE5F1268",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "F2712EAC-D4FA-4341-AA7D-8CFBEE5F1268",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Get surgery"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf2d10> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2024-06-03T21:05:09Z",
+    "externalId" : "3A46220D-BECA-4925-96E9-F65844F5F6E3",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "3A46220D-BECA-4925-96E9-F65844F5F6E3",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Reimburse myself for"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf2ca0> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2024-07-14T18:06:46Z",
+    "externalId" : "245185F9-BD82-4EF9-84FA-BB0EDC7BE3C5",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "245185F9-BD82-4EF9-84FA-BB0EDC7BE3C5",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Change AirTag"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf2c30> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2024-08-11T21:41:23Z",
+    "externalId" : "E95902CA-9D07-4CC2-8DF1-E9310EDE9CB5",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "E95902CA-9D07-4CC2-8DF1-E9310EDE9CB5",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Fill propane tank"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf2610> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2024-08-16T00:38:26Z",
+    "externalId" : "E0DD4CA7-7E55-4FE3-8EED-F45D606B1D16",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "E0DD4CA7-7E55-4FE3-8EED-F45D606B1D16",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Add two missing stocks in GIMS in one minute"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf25a0> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2024-08-24T15:37:38Z",
+    "externalId" : "EE09FF42-A5B0-46A2-8015-C3043296A39D",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "EE09FF42-A5B0-46A2-8015-C3043296A39D",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Charge time"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf2530> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2024-08-24T15:37:47Z",
+    "externalId" : "106BB076-1DC7-4D7F-A771-C087504EC812",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "106BB076-1DC7-4D7F-A771-C087504EC812",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Charge Garmin get home"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf24c0> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2024-09-15T12:50:11Z",
+    "externalId" : "F52D6682-6207-4970-98B0-882F0C19ADBB",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "F52D6682-6207-4970-98B0-882F0C19ADBB",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Put back your phone"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf2450> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2024-10-01T12:35:06Z",
+    "externalId" : "DBFBD147-8626-47B1-9294-B456F3AC002D",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "DBFBD147-8626-47B1-9294-B456F3AC002D",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Put my extra"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf23e0> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2024-10-08T13:47:08Z",
+    "externalId" : "A5826B11-1649-42F9-BCE7-550D88E73C98",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "A5826B11-1649-42F9-BCE7-550D88E73C98",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Remboursement de Josee 150$"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf2370> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2024-10-16T13:40:21Z",
+    "externalId" : "00182554-0F0D-4073-88E3-33781481C85B",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "00182554-0F0D-4073-88E3-33781481C85B",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Buy Halloween costume"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa337039c0> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2024-11-16T09:39:36Z",
+    "externalId" : "23E273BB-31C2-4AAB-A147-4CFC37D8512B",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "23E273BB-31C2-4AAB-A147-4CFC37D8512B",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Add my company credit card to my Apple wallet"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa337038e0> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2024-12-01T20:27:16Z",
+    "externalId" : "AECD63BA-91EA-4EFA-9658-6E2CD13B5768",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "AECD63BA-91EA-4EFA-9658-6E2CD13B5768",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Record star selfie"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33703800> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2024-12-02T01:20:12Z",
+    "externalId" : "AFBCE90E-F557-4892-A7A7-695E39A6435B",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "AFBCE90E-F557-4892-A7A7-695E39A6435B",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Go to clsc"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33703790> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2025-01-12T14:18:09Z",
+    "externalId" : "7ACF6609-D87C-4B83-BD53-904208D4B493",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "7ACF6609-D87C-4B83-BD53-904208D4B493",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "The pasta that is shaped like a twisted macaroni"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33703720> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2025-01-18T15:14:28Z",
+    "externalId" : "34F6A9E7-BBE3-49E8-9A61-DD2F5F0D8C1A",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "34F6A9E7-BBE3-49E8-9A61-DD2F5F0D8C1A",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Organize fish trip with"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa337036b0> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2025-02-24T19:22:00Z",
+    "externalId" : "269993BC-B9AF-4325-9097-C72E1CFE2DF6",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "269993BC-B9AF-4325-9097-C72E1CFE2DF6",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Check in 15 minutes for the Transport"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa337035d0> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2025-03-01T04:18:45Z",
+    "externalId" : "24D98472-74B7-44A3-98B9-3288D6A248F4",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "24D98472-74B7-44A3-98B9-3288D6A248F4",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Send back the iPhone charger to Amazon tomorrow morning"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33703250> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2025-03-02T02:57:23Z",
+    "externalId" : "1C1DFC14-30A5-453E-843C-4D4C63CA0D9D",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "1C1DFC14-30A5-453E-843C-4D4C63CA0D9D",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Run"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa337031e0> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2025-03-25T01:35:41Z",
+    "externalId" : "4F745201-6134-4AF8-8D06-062531998DD5",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "4F745201-6134-4AF8-8D06-062531998DD5",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Reimburse my"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33703560> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2025-06-16T14:17:11Z",
+    "externalId" : "B7D2FADD-DE78-41E9-8190-5693C8E2A414",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "B7D2FADD-DE78-41E9-8190-5693C8E2A414",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Check for the $99 reimbursement from Physio"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa337034f0> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2025-07-05T00:10:17Z",
+    "externalId" : "2FD58088-272C-4B27-86BA-D1C4538343AA",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "2FD58088-272C-4B27-86BA-D1C4538343AA",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Charge my trade"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33703480> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2025-07-11T20:06:18Z",
+    "externalId" : "DC7F016E-FD1E-4021-B9FD-58CCEC132ECA",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "DC7F016E-FD1E-4021-B9FD-58CCEC132ECA",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Reimburse 105 and $"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa337033a0> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2025-08-10T17:03:40Z",
+    "externalId" : "06551B8A-90AA-4DFC-83EA-2A26FCBC6CE5",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "06551B8A-90AA-4DFC-83EA-2A26FCBC6CE5",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Bring back family frame to dad"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33703330> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2025-08-21T17:04:42Z",
+    "externalId" : "E9D6E134-23FB-4332-AE78-6DACA0324366",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "E9D6E134-23FB-4332-AE78-6DACA0324366",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Order"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa337032c0> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2025-08-21T17:05:09Z",
+    "externalId" : "4867F615-CD25-4D54-9424-52E694AD00F7",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "4867F615-CD25-4D54-9424-52E694AD00F7",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Always pull up the nutritional information and like the entry each time I talk to you about food or that I snapped a picture for you"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33703170> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2025-11-01T15:08:22Z",
+    "externalId" : "062DF0E6-A5A3-4B75-96F6-BF25922FE11C",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "062DF0E6-A5A3-4B75-96F6-BF25922FE11C",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "To pay Vid??otron"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33702df0> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2025-12-23T17:38:28Z",
+    "externalId" : "D453A76D-5CEC-4868-B3D2-E8EF663D9CD6",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "D453A76D-5CEC-4868-B3D2-E8EF663D9CD6",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Three pack bacon"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33702d80> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2025-12-24T05:42:27Z",
+    "externalId" : "80FAC688-9494-443E-8B02-A094170DA6FB",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "80FAC688-9494-443E-8B02-A094170DA6FB",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Call emergency tomorrow for the ER care plan"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33702d10> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2026-02-05T18:10:49Z",
+    "externalId" : "E7C64079-D0D5-4A57-8875-0858E7A3ADB9",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "E7C64079-D0D5-4A57-8875-0858E7A3ADB9",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Pay 21 and $"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33702ca0> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2026-02-05T18:11:10Z",
+    "externalId" : "FB803680-2EEE-49B1-BEBC-86DED7A2E1F5",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "FB803680-2EEE-49B1-BEBC-86DED7A2E1F5",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Pay $"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33703100> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2026-02-06T04:03:09Z",
+    "externalId" : "00886ABE-37D3-49C4-9F0D-27BBACB393F3",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "00886ABE-37D3-49C4-9F0D-27BBACB393F3",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Call Telus to join account"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33703020> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2026-02-12T02:24:50Z",
+    "externalId" : "DA8266EF-F7E1-4F8B-A578-D738A51D1D1D",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "DA8266EF-F7E1-4F8B-A578-D738A51D1D1D",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Call the Lyne"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33702fb0> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2026-02-12T20:51:06Z",
+    "externalId" : "16B9C14C-9280-46DF-8DC1-B9DBC73E6E92",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "16B9C14C-9280-46DF-8DC1-B9DBC73E6E92",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Non-completed email dated from before today"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33702f40> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2026-02-23T12:12:39Z",
+    "externalId" : "BAAC3833-2AC7-474D-AD04-296F323C1E4A",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "BAAC3833-2AC7-474D-AD04-296F323C1E4A",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Take appointment with Dr. Reddy RATTE"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33702ed0> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2026-03-04T14:06:50Z",
+    "externalId" : "C9CBBE06-59BD-4F0D-8BB9-E9AF8FDB0C36",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "C9CBBE06-59BD-4F0D-8BB9-E9AF8FDB0C36",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Wait for the return"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33702e60> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2026-03-08T01:18:33Z",
+    "externalId" : "68B9FACB-9C91-46C7-B646-24CC59533E57",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "68B9FACB-9C91-46C7-B646-24CC59533E57",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Buy Eldorado"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33702c30> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2026-03-09T14:59:24Z",
+    "externalId" : "109D1D98-CC5C-4288-89A3-148F9837A6A6",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "109D1D98-CC5C-4288-89A3-148F9837A6A6",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Call"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33702ae0> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2026-03-18T20:42:47Z",
+    "externalId" : "389370E0-301A-4DB8-970F-103D0C47EBA5",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "389370E0-301A-4DB8-970F-103D0C47EBA5",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Go"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33702990> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2026-03-18T20:42:58Z",
+    "externalId" : "99BDA3F7-78D4-4183-B0E1-E98F3570DB61",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "99BDA3F7-78D4-4183-B0E1-E98F3570DB61",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Go for lab test"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33702920> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2026-03-19T16:22:37Z",
+    "externalId" : "71F15AE0-16CA-4A80-B767-E7318ED471E8",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "71F15AE0-16CA-4A80-B767-E7318ED471E8",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Buy milk"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa337028b0> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2026-03-19T16:24:25Z",
+    "externalId" : "27056674-0A82-41EF-9FA5-FF67FA21F766",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "27056674-0A82-41EF-9FA5-FF67FA21F766",
+    "lastModifiedDate" : "2026-03-19T17:48:16Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Buy milk using Todoist"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33702840> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.8 0.45098 0.882353 1 ))",
+      "id" : "96978CE3-4226-47BA-825C-B4C9B5932DA3",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Piano songs",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2019-08-21T15:56:00Z",
+    "externalId" : "49E6BE08-3A33-58DF-A1B4-8B64EA885CA8",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "49E6BE08-3A33-58DF-A1B4-8B64EA885CA8",
+    "lastModifiedDate" : "2019-08-21T15:56:00Z",
+    "list" : "Piano songs",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Home sweet home"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa337027d0> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0 0.478431 1 1 ))",
+      "id" : "9E00219C-8DF0-411E-8D0B-F49FFF594AD6",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Guitare",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2020-01-19T15:09:32Z",
+    "externalId" : "9F120602-9113-46B1-9554-FC8882FF6572",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "9F120602-9113-46B1-9554-FC8882FF6572",
+    "lastModifiedDate" : "2020-01-19T15:09:32Z",
+    "list" : "Guitare",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Aint no sunshine"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa337026f0> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.917647 0.733333 0 1 ))",
+      "id" : "E0025F15-FFD8-427B-8465-F65793BC7BE3",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Koala",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2019-08-23T01:27:00Z",
+    "externalId" : "FF7CD5EC-06B1-5401-A6FC-13F193A339A4",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "FF7CD5EC-06B1-5401-A6FC-13F193A339A4",
+    "lastModifiedDate" : "2019-08-23T01:27:00Z",
+    "list" : "Koala",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Creed guitare"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33702680> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0 0.478431 1 1 ))",
+      "id" : "54AC071A-C628-442F-8C0F-90803790F2DF",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Vacation",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2022-02-21T12:17:29Z",
+    "externalId" : "BC300C28-61A5-42DB-96EF-5658E32F1623",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "BC300C28-61A5-42DB-96EF-5658E32F1623",
+    "lastModifiedDate" : "2022-02-21T12:17:29Z",
+    "list" : "Vacation",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Haircut"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa337025a0> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0 0.478431 1 1 ))",
+      "id" : "10B8FFD0-DB8C-40DB-B734-D874FE6EA51B",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Walmart",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2023-06-04T11:34:55Z",
+    "externalId" : "1C72ECD0-F274-4487-9EE5-36EFDB5725E1",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "1C72ECD0-F274-4487-9EE5-36EFDB5725E1",
+    "lastModifiedDate" : "2023-06-04T11:34:55Z",
+    "list" : "Walmart",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Coffee thermos"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf2300> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0 0.478431 1 1 ))",
+      "id" : "B8F81949-367B-4AAF-A3CD-D3874A00D218",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Marathon",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2024-03-10T15:00:23Z",
+    "externalId" : "534CC03A-096A-48EB-AF78-B25FA76BC51D",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "534CC03A-096A-48EB-AF78-B25FA76BC51D",
+    "lastModifiedDate" : "2024-03-10T15:00:23Z",
+    "list" : "Marathon",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "America"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf2990> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.8 0.45098 0.882353 1 ))",
+      "id" : "96978CE3-4226-47BA-825C-B4C9B5932DA3",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Piano songs",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2019-08-21T15:58:00Z",
+    "externalId" : "73CF1C73-2977-5E2B-94F3-627DF599C7C9",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "73CF1C73-2977-5E2B-94F3-627DF599C7C9",
+    "lastModifiedDate" : "2019-08-21T15:58:00Z",
+    "list" : "Piano songs",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Dream on"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf2920> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.917647 0.733333 0 1 ))",
+      "id" : "E0025F15-FFD8-427B-8465-F65793BC7BE3",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Koala",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2019-08-23T01:28:00Z",
+    "externalId" : "1AA2FB91-B46E-5140-A1F5-77E7D26DF9B3",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "1AA2FB91-B46E-5140-A1F5-77E7D26DF9B3",
+    "lastModifiedDate" : "2019-08-23T01:29:00Z",
+    "list" : "Koala",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Kickstart guitare"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf28b0> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0 0.478431 1 1 ))",
+      "id" : "54AC071A-C628-442F-8C0F-90803790F2DF",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Vacation",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2022-02-21T12:17:45Z",
+    "externalId" : "333BF65F-76AF-4659-8F81-28FB903B66FF",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "333BF65F-76AF-4659-8F81-28FB903B66FF",
+    "lastModifiedDate" : "2022-02-21T12:17:45Z",
+    "list" : "Vacation",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "House value"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf2840> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0 0.478431 1 1 ))",
+      "id" : "B8F81949-367B-4AAF-A3CD-D3874A00D218",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Marathon",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2024-03-10T15:02:27Z",
+    "externalId" : "8579FBF0-907A-4C4A-9F6C-C09C1448A7B9",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "8579FBF0-907A-4C4A-9F6C-C09C1448A7B9",
+    "lastModifiedDate" : "2024-03-10T15:02:27Z",
+    "list" : "Marathon",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Higher love"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf27d0> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.8 0.45098 0.882353 1 ))",
+      "id" : "96978CE3-4226-47BA-825C-B4C9B5932DA3",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Piano songs",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2019-08-22T10:51:00Z",
+    "externalId" : "F5BC7A53-6439-523D-B91E-4E563983EE57",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "F5BC7A53-6439-523D-B91E-4E563983EE57",
+    "lastModifiedDate" : "2019-08-22T10:51:00Z",
+    "list" : "Piano songs",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Right now"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf2760> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.917647 0.733333 0 1 ))",
+      "id" : "E0025F15-FFD8-427B-8465-F65793BC7BE3",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Koala",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2019-08-23T01:28:00Z",
+    "externalId" : "3BA0EE5A-98A6-5811-9102-9339DC72587F",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "3BA0EE5A-98A6-5811-9102-9339DC72587F",
+    "lastModifiedDate" : "2019-08-23T01:28:00Z",
+    "list" : "Koala",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Perfect Stranger clavier"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf26f0> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0 0.478431 1 1 ))",
+      "id" : "54AC071A-C628-442F-8C0F-90803790F2DF",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Vacation",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2022-02-21T21:55:01Z",
+    "externalId" : "6C8F5DA7-A92A-4AC1-8E80-59EB79700E36",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "6C8F5DA7-A92A-4AC1-8E80-59EB79700E36",
+    "lastModifiedDate" : "2022-02-21T21:55:01Z",
+    "list" : "Vacation",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Buy boots"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf2680> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0 0.478431 1 1 ))",
+      "id" : "B8F81949-367B-4AAF-A3CD-D3874A00D218",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Marathon",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2024-03-10T15:08:42Z",
+    "externalId" : "5FC6ECA6-6FF8-448F-AE65-D7A0CB74493A",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "5FC6ECA6-6FF8-448F-AE65-D7A0CB74493A",
+    "lastModifiedDate" : "2024-03-10T15:08:42Z",
+    "list" : "Marathon",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Stay"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf2290> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.8 0.45098 0.882353 1 ))",
+      "id" : "96978CE3-4226-47BA-825C-B4C9B5932DA3",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Piano songs",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2019-08-22T10:52:00Z",
+    "externalId" : "35424513-D05E-5046-B34A-6B6524E31205",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "35424513-D05E-5046-B34A-6B6524E31205",
+    "lastModifiedDate" : "2019-08-22T10:52:00Z",
+    "list" : "Piano songs",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Dreams"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf2220> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.917647 0.733333 0 1 ))",
+      "id" : "E0025F15-FFD8-427B-8465-F65793BC7BE3",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Koala",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2019-08-23T03:33:00Z",
+    "externalId" : "268903C0-906D-57D5-9D7F-9C01AA780836",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "268903C0-906D-57D5-9D7F-9C01AA780836",
+    "lastModifiedDate" : "2019-08-23T03:33:00Z",
+    "list" : "Koala",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Sweet child of mine guitar"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf21b0> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0 0.478431 1 1 ))",
+      "id" : "B8F81949-367B-4AAF-A3CD-D3874A00D218",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Marathon",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2024-03-10T15:47:08Z",
+    "externalId" : "6C0DF3D6-4086-431F-9546-48B0508C4C5A",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "6C0DF3D6-4086-431F-9546-48B0508C4C5A",
+    "lastModifiedDate" : "2024-03-10T15:47:08Z",
+    "list" : "Marathon",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "You can't tame her"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf2140> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.8 0.45098 0.882353 1 ))",
+      "id" : "96978CE3-4226-47BA-825C-B4C9B5932DA3",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Piano songs",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2019-09-21T01:21:00Z",
+    "externalId" : "C04ADD98-E75B-5BBF-BD42-95749EB77CA5",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "C04ADD98-E75B-5BBF-BD42-95749EB77CA5",
+    "lastModifiedDate" : "2019-09-21T01:21:00Z",
+    "list" : "Piano songs",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Carry on my wayward son"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf20d0> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0 0.478431 1 1 ))",
+      "id" : "B8F81949-367B-4AAF-A3CD-D3874A00D218",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Marathon",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2024-03-10T15:48:26Z",
+    "externalId" : "A20A8130-F8AF-4F17-98E6-5CA1AF70D591",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "A20A8130-F8AF-4F17-98E6-5CA1AF70D591",
+    "lastModifiedDate" : "2024-03-10T15:48:26Z",
+    "list" : "Marathon",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Hold my hands"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf2060> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 1 0.176471 0.333333 1 ))",
+      "id" : "D81AF85B-6202-4271-AE72-FC439BA31AE9",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Jacques",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2021-01-05T16:17:38Z",
+    "externalId" : "BA53DA9E-C909-40DD-9D3B-E25CCC0F5772",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "BA53DA9E-C909-40DD-9D3B-E25CCC0F5772",
+    "lastModifiedDate" : "2021-01-05T16:18:25Z",
+    "list" : "Jacques",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Enlever Isabelle de SSQ"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa34cf1ff0> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.635294 0.517647 0.368627 1 ))",
+      "id" : "5DF7D31F-63F6-4665-8A1A-51FFE1E0A010",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Bills",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2019-06-26T17:46:00Z",
+    "dueDate" : "2026-03-20T11:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 20,
+      "era" : 1,
+      "hour" : 7,
+      "minute" : 0,
+      "month" : 3,
+      "second" : 0,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "year" : 2026
+    },
+    "externalId" : "480CF798-F77F-5050-BC29-B508EF87680A",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : true,
+    "id" : "480CF798-F77F-5050-BC29-B508EF87680A",
+    "lastModifiedDate" : "2026-02-20T18:12:51Z",
+    "list" : "Bills",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+      {
+        "daysOfTheMonth" : [
+
+        ],
+        "daysOfTheWeek" : [
+
+        ],
+        "daysOfTheYear" : [
+
+        ],
+        "firstDayOfTheWeek" : 2,
+        "frequency" : 2,
+        "interval" : 1,
+        "monthsOfTheYear" : [
+
+        ],
+        "setPositions" : [
+
+        ],
+        "weeksOfTheYear" : [
+
+        ]
+      }
+    ],
+    "startDate" : "2026-03-20T15:00:00Z",
+    "startDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 20,
+      "era" : 1,
+      "hour" : 11,
+      "isLeapMonth" : false,
+      "minute" : 0,
+      "month" : 3,
+      "nanosecond" : 0,
+      "quarter" : 1,
+      "second" : 0,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "weekOfMonth" : 3,
+      "weekOfYear" : 12,
+      "weekday" : 6,
+      "weekdayOrdinal" : 3,
+      "year" : 2026,
+      "yearForWeekOfYear" : 2026
+    },
+    "title" : "Manuvie 152$"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33702a70> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.635294 0.517647 0.368627 1 ))",
+      "id" : "5DF7D31F-63F6-4665-8A1A-51FFE1E0A010",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Bills",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2019-06-26T17:47:00Z",
+    "dueDate" : "2026-04-01T11:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 1,
+      "era" : 1,
+      "hour" : 7,
+      "minute" : 0,
+      "month" : 4,
+      "second" : 0,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "year" : 2026
+    },
+    "externalId" : "8F751723-58F5-5C47-B3B1-D00302956ABD",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : true,
+    "id" : "8F751723-58F5-5C47-B3B1-D00302956ABD",
+    "lastModifiedDate" : "2026-03-02T23:09:45Z",
+    "list" : "Bills",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+      {
+        "daysOfTheMonth" : [
+
+        ],
+        "daysOfTheWeek" : [
+
+        ],
+        "daysOfTheYear" : [
+
+        ],
+        "firstDayOfTheWeek" : 2,
+        "frequency" : 2,
+        "interval" : 1,
+        "monthsOfTheYear" : [
+
+        ],
+        "setPositions" : [
+
+        ],
+        "weeksOfTheYear" : [
+
+        ]
+      }
+    ],
+    "startDate" : "2026-04-01T15:00:00Z",
+    "startDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 1,
+      "era" : 1,
+      "hour" : 11,
+      "isLeapMonth" : false,
+      "minute" : 0,
+      "month" : 4,
+      "nanosecond" : 0,
+      "quarter" : 2,
+      "second" : 0,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "weekOfMonth" : 1,
+      "weekOfYear" : 14,
+      "weekday" : 4,
+      "weekdayOrdinal" : 1,
+      "year" : 2026,
+      "yearForWeekOfYear" : 2026
+    },
+    "title" : "Assurances Desjardins 238$"
+  },
+  {
+    "alarms" : [
+      {
+        "absoluteDate" : "2026-04-02T11:00:00Z",
+        "proximity" : 0,
+        "relativeOffset" : 0
+      }
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33702a00> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.635294 0.517647 0.368627 1 ))",
+      "id" : "5DF7D31F-63F6-4665-8A1A-51FFE1E0A010",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Bills",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2019-08-24T19:58:00Z",
+    "dueDate" : "2026-04-02T11:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 2,
+      "era" : 1,
+      "hour" : 7,
+      "minute" : 0,
+      "month" : 4,
+      "second" : 0,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "year" : 2026
+    },
+    "externalId" : "78DD0D3C-91DA-5875-AF8D-263484479350",
+    "hasAlarms" : true,
+    "hasRecurrenceRules" : true,
+    "id" : "78DD0D3C-91DA-5875-AF8D-263484479350",
+    "lastModifiedDate" : "2026-03-19T17:42:14Z",
+    "list" : "Bills",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+      {
+        "daysOfTheMonth" : [
+
+        ],
+        "daysOfTheWeek" : [
+
+        ],
+        "daysOfTheYear" : [
+
+        ],
+        "firstDayOfTheWeek" : 2,
+        "frequency" : 1,
+        "interval" : 2,
+        "monthsOfTheYear" : [
+
+        ],
+        "setPositions" : [
+
+        ],
+        "weeksOfTheYear" : [
+
+        ]
+      }
+    ],
+    "startDate" : "2025-10-16T15:00:00Z",
+    "startDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 16,
+      "era" : 1,
+      "hour" : 11,
+      "isLeapMonth" : false,
+      "minute" : 0,
+      "month" : 10,
+      "nanosecond" : 0,
+      "quarter" : 4,
+      "second" : 0,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "weekOfMonth" : 3,
+      "weekOfYear" : 42,
+      "weekday" : 5,
+      "weekdayOrdinal" : 3,
+      "year" : 2025,
+      "yearForWeekOfYear" : 2025
+    },
+    "title" : "Kia Forte 169.16$"
+  },
+  {
+    "alarms" : [
+      {
+        "absoluteDate" : "2026-04-05T11:00:00Z",
+        "proximity" : 0,
+        "relativeOffset" : 0
+      }
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33702760> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.635294 0.517647 0.368627 1 ))",
+      "id" : "5DF7D31F-63F6-4665-8A1A-51FFE1E0A010",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Bills",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2019-08-24T20:09:00Z",
+    "dueDate" : "2026-04-05T11:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 5,
+      "era" : 1,
+      "hour" : 7,
+      "minute" : 0,
+      "month" : 4,
+      "second" : 0,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "year" : 2026
+    },
+    "externalId" : "38371608-04C9-50E7-88DD-25340D487F5D",
+    "hasAlarms" : true,
+    "hasRecurrenceRules" : true,
+    "id" : "38371608-04C9-50E7-88DD-25340D487F5D",
+    "lastModifiedDate" : "2026-03-08T13:43:20Z",
+    "list" : "Bills",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+      {
+        "daysOfTheMonth" : [
+
+        ],
+        "daysOfTheWeek" : [
+
+        ],
+        "daysOfTheYear" : [
+
+        ],
+        "firstDayOfTheWeek" : 2,
+        "frequency" : 2,
+        "interval" : 1,
+        "monthsOfTheYear" : [
+
+        ],
+        "setPositions" : [
+
+        ],
+        "weeksOfTheYear" : [
+
+        ]
+      }
+    ],
+    "startDate" : "2026-05-06T12:00:00Z",
+    "startDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 6,
+      "era" : 1,
+      "hour" : 8,
+      "isLeapMonth" : false,
+      "minute" : 0,
+      "month" : 5,
+      "nanosecond" : 0,
+      "quarter" : 2,
+      "second" : 0,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "weekOfMonth" : 2,
+      "weekOfYear" : 19,
+      "weekday" : 4,
+      "weekdayOrdinal" : 1,
+      "year" : 2026,
+      "yearForWeekOfYear" : 2026
+    },
+    "title" : "SAAQ 27.31$"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33702450> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.635294 0.517647 0.368627 1 ))",
+      "id" : "5DF7D31F-63F6-4665-8A1A-51FFE1E0A010",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Bills",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2021-05-08T20:37:56Z",
+    "dueDate" : "2026-04-08T04:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 8,
+      "era" : 1,
+      "month" : 4,
+      "year" : 2026
+    },
+    "externalId" : "ABBA7591-6B58-40A6-9B86-507C4DA41F8F",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : true,
+    "id" : "ABBA7591-6B58-40A6-9B86-507C4DA41F8F",
+    "lastModifiedDate" : "2026-03-08T13:58:22Z",
+    "list" : "Bills",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+      {
+        "daysOfTheMonth" : [
+
+        ],
+        "daysOfTheWeek" : [
+
+        ],
+        "daysOfTheYear" : [
+
+        ],
+        "firstDayOfTheWeek" : 2,
+        "frequency" : 2,
+        "interval" : 1,
+        "monthsOfTheYear" : [
+
+        ],
+        "setPositions" : [
+
+        ],
+        "weeksOfTheYear" : [
+
+        ]
+      }
+    ],
+    "startDate" : "2026-04-08T04:00:00Z",
+    "startDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 8,
+      "era" : 1,
+      "hour" : 0,
+      "minute" : 0,
+      "month" : 4,
+      "second" : 0,
+      "year" : 2026
+    },
+    "title" : "Canadian Tire 84.92"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa337023e0> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0 0.478431 1 1 ))",
+      "id" : "A282D26D-F4AA-4CD2-962B-AAB6E71B5800",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Grocery",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2025-05-10T16:59:29Z",
+    "externalId" : "D1C43A8A-578C-4462-BD80-733DF6F25FEF",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "D1C43A8A-578C-4462-BD80-733DF6F25FEF",
+    "lastModifiedDate" : "2025-05-10T16:59:29Z",
+    "list" : "Grocery",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Cooking brush"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33702370> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0 0.478431 1 1 ))",
+      "id" : "A282D26D-F4AA-4CD2-962B-AAB6E71B5800",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Grocery",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2026-02-27T13:14:08Z",
+    "externalId" : "5F17790F-2C35-440A-A0BC-3E95666FB229",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "5F17790F-2C35-440A-A0BC-3E95666FB229",
+    "lastModifiedDate" : "2026-02-27T13:14:08Z",
+    "list" : "Grocery",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Breakfast potatoes"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33702530> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0 0.478431 1 1 ))",
+      "id" : "A282D26D-F4AA-4CD2-962B-AAB6E71B5800",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Grocery",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2026-02-28T17:22:46Z",
+    "externalId" : "AE86D5FF-036E-41F0-908F-F1F7508C78EE",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "AE86D5FF-036E-41F0-908F-F1F7508C78EE",
+    "lastModifiedDate" : "2026-02-28T17:22:46Z",
+    "list" : "Grocery",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Parmesan"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa337024c0> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0 0.478431 1 1 ))",
+      "id" : "A282D26D-F4AA-4CD2-962B-AAB6E71B5800",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Grocery",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2026-03-03T22:43:46Z",
+    "externalId" : "27412B20-AA34-43B5-B9D0-1DCBA032A5A9",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "27412B20-AA34-43B5-B9D0-1DCBA032A5A9",
+    "lastModifiedDate" : "2026-03-03T22:43:46Z",
+    "list" : "Grocery",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Ketchup"
+  },
+  {
+    "alarms" : [
+
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33702300> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2026-03-20T13:56:36Z",
+    "externalId" : "466CA86E-F5C3-454C-B78A-896C6D5C39CC",
+    "hasAlarms" : false,
+    "hasRecurrenceRules" : false,
+    "id" : "466CA86E-F5C3-454C-B78A-896C6D5C39CC",
+    "lastModifiedDate" : "2026-03-20T13:56:36Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Buy milk"
+  },
+  {
+    "alarms" : [
+      {
+        "absoluteDate" : "2026-03-20T21:00:00Z",
+        "proximity" : 0,
+        "relativeOffset" : 0
+      }
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33702290> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2026-03-20T13:59:21Z",
+    "dueDate" : "2026-03-20T21:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 20,
+      "era" : 1,
+      "hour" : 17,
+      "minute" : 0,
+      "month" : 3,
+      "second" : 0,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "year" : 2026
+    },
+    "externalId" : "DA890656-5CBD-4ADC-8764-28D038302E28",
+    "hasAlarms" : true,
+    "hasRecurrenceRules" : false,
+    "id" : "DA890656-5CBD-4ADC-8764-28D038302E28",
+    "lastModifiedDate" : "2026-03-22T19:41:33Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Buy milk"
+  },
+  {
+    "alarms" : [
+      {
+        "absoluteDate" : "2026-03-20T21:00:00Z",
+        "proximity" : 0,
+        "relativeOffset" : 0
+      }
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33702220> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2026-03-20T14:05:06Z",
+    "dueDate" : "2026-03-20T21:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 20,
+      "era" : 1,
+      "hour" : 17,
+      "minute" : 0,
+      "month" : 3,
+      "second" : 0,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "year" : 2026
+    },
+    "externalId" : "24B1ED4D-CFD9-4E7A-9B13-FA0F8FC6E401",
+    "hasAlarms" : true,
+    "hasRecurrenceRules" : false,
+    "id" : "24B1ED4D-CFD9-4E7A-9B13-FA0F8FC6E401",
+    "lastModifiedDate" : "2026-03-22T19:41:33Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Water the flower"
+  },
+  {
+    "alarms" : [
+      {
+        "absoluteDate" : "2026-03-21T09:00:00Z",
+        "proximity" : 0,
+        "relativeOffset" : 0
+      }
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa337021b0> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2026-03-21T01:41:32Z",
+    "dueDate" : "2026-03-21T09:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 21,
+      "era" : 1,
+      "hour" : 5,
+      "minute" : 0,
+      "month" : 3,
+      "second" : 0,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "year" : 2026
+    },
+    "externalId" : "D0E99280-C402-45E0-8768-2CF2FFAC0DA3",
+    "hasAlarms" : true,
+    "hasRecurrenceRules" : false,
+    "id" : "D0E99280-C402-45E0-8768-2CF2FFAC0DA3",
+    "lastModifiedDate" : "2026-03-22T19:41:33Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Do not eat nor pee"
+  },
+  {
+    "alarms" : [
+      {
+        "absoluteDate" : "2026-03-23T11:00:00Z",
+        "proximity" : 0,
+        "relativeOffset" : 0
+      }
+    ],
+    "calendar" : {
+      "allowsContentModifications" : true,
+      "color" : "Optional(<CGColor 0xa33702140> [<CGColorSpace 0xa3363cde0> (kCGColorSpaceDeviceRGB)] headroom = 1.000000 ( 0.878431 0.67451 0 1 ))",
+      "id" : "BEAD7562-989D-49EB-F4B6-DB29484CE411",
+      "isImmutable" : false,
+      "sourceTitle" : "iCloud",
+      "sourceType" : 2,
+      "title" : "Rappels",
+      "type" : 1
+    },
+    "completed" : false,
+    "creationDate" : "2026-03-21T10:42:31Z",
+    "dueDate" : "2026-03-23T11:00:00Z",
+    "dueDateComponents" : {
+      "calendarIdentifier" : "gregorian",
+      "day" : 23,
+      "era" : 1,
+      "hour" : 7,
+      "minute" : 0,
+      "month" : 3,
+      "second" : 0,
+      "timeZoneIdentifier" : "America\/Toronto",
+      "year" : 2026
+    },
+    "externalId" : "EB2ADD9B-3DC0-44F6-BC5F-F7008A5A3FD0",
+    "hasAlarms" : true,
+    "hasRecurrenceRules" : false,
+    "id" : "EB2ADD9B-3DC0-44F6-BC5F-F7008A5A3FD0",
+    "lastModifiedDate" : "2026-03-21T10:42:31Z",
+    "list" : "Rappels",
+    "notes" : "",
+    "priority" : 0,
+    "recurrenceRules" : [
+
+    ],
+    "title" : "Check for Labb?? expense reimbursement"
+  }
+]

@@ -6,7 +6,7 @@
     "web:build": "pnpm -C apps/web build",
     "web:lint": "pnpm -C apps/web lint",
     "web:start": "pnpm -C apps/web start",
-    "reminders:export:mac": "osascript -l JavaScript tools/export-apple-reminders.jxa ~/Desktop/apple-reminders-export.json",
+    "reminders:export:mac": "bash tools/export-reminders.sh",
     "reminders:import": "node tools/import-apple-reminders-to-todoist.mjs"
   }
 }
