@@ -3,132 +3,154 @@
 @tailwind utilities;
 
 :root {
-  --canvas: #f5efe3;
-  --surface: rgba(255, 251, 244, 0.74);
-  --surface-strong: rgba(248, 241, 230, 0.92);
-  --line: rgba(69, 50, 25, 0.12);
-  --ink: #20140c;
-  --muted: #6f5f50;
-  --accent: #ba4b2f;
-  --accent-soft: rgba(186, 75, 47, 0.12);
-  --glow: rgba(255, 186, 145, 0.28);
+  --background: #0a0a0b;
+  --foreground: #e5e5e5;
+  --card: #141415;
+  --card-foreground: #e5e5e5;
+  --muted: #1c1c1e;
+  --muted-foreground: #737373;
+  --border: #262628;
+  --accent: #3b82f6;
+  --accent-foreground: #e0ecff;
+  --accent-soft: rgba(59, 130, 246, 0.10);
+  --destructive: #ef4444;
+  --destructive-soft: rgba(239, 68, 68, 0.10);
+  --success: #22c55e;
+  --success-soft: rgba(34, 197, 94, 0.10);
+  --warning: #f59e0b;
+  --warning-soft: rgba(245, 158, 11, 0.10);
+  --radius: 0.75rem;
 }
 
 body {
   min-height: 100vh;
-  color: var(--ink);
-  background:
-    radial-gradient(circle at top left, rgba(255, 223, 181, 0.9), transparent 34%),
-    radial-gradient(circle at 85% 0%, rgba(196, 103, 57, 0.18), transparent 28%),
-    linear-gradient(135deg, #fbf4e7 0%, #efe0ca 45%, #f3e8d7 100%);
-  font-family: var(--font-space-grotesk), sans-serif;
+  color: var(--foreground);
+  background: var(--background);
+  font-family: var(--font-space-grotesk), system-ui, sans-serif;
 }
 
+::selection {
+  background: rgba(59, 130, 246, 0.25);
+}
+
+/* Subtle noise texture overlay */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
   pointer-events: none;
   background-image:
-    linear-gradient(rgba(32, 20, 12, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(32, 20, 12, 0.03) 1px, transparent 1px);
-  background-size: 32px 32px;
-  mask-image: radial-gradient(circle at center, black 40%, transparent 88%);
+    radial-gradient(circle at 20% 0%, rgba(59, 130, 246, 0.04), transparent 50%),
+    radial-gradient(circle at 80% 100%, rgba(59, 130, 246, 0.02), transparent 40%);
 }
 
-::selection {
-  background: rgba(186, 75, 47, 0.18);
+/* --- Panel system --- */
+.panel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
 }
 
-.glass-panel {
-  backdrop-filter: blur(18px);
-  background: var(--surface);
-  border: 1px solid var(--line);
-  box-shadow:
-    0 22px 80px rgba(50, 25, 8, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.45);
+.panel-elevated {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
 }
 
-.glass-panel-strong {
-  backdrop-filter: blur(22px);
-  background: var(--surface-strong);
-  border: 1px solid rgba(69, 50, 25, 0.1);
-  box-shadow:
-    0 30px 120px rgba(50, 25, 8, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.54);
+.panel-inset {
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
 }
 
-.metric-chip {
-  background: rgba(255, 249, 240, 0.8);
-  border: 1px solid rgba(69, 50, 25, 0.08);
+/* --- Chips & pills --- */
+.chip {
+  background: var(--muted);
+  border: 1px solid var(--border);
+  color: var(--muted-foreground);
 }
 
-.signal-pill {
+.pill-accent {
   background: var(--accent-soft);
   color: var(--accent);
 }
 
-.hero-glow {
-  position: relative;
+.pill-destructive {
+  background: var(--destructive-soft);
+  color: var(--destructive);
 }
 
-.hero-glow::after {
-  content: "";
-  position: absolute;
-  inset: auto 12% -18% auto;
-  width: 220px;
-  height: 220px;
-  background: var(--glow);
-  filter: blur(70px);
-  border-radius: 999px;
-  pointer-events: none;
+.pill-success {
+  background: var(--success-soft);
+  color: var(--success);
 }
 
-.section-title {
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+.pill-warning {
+  background: var(--warning-soft);
+  color: var(--warning);
 }
 
-.list-card {
-  border: 1px solid rgba(69, 50, 25, 0.08);
-  background: rgba(255, 252, 247, 0.72);
-}
-
+/* --- Triage tones --- */
 .tone-hot {
-  background:
-    linear-gradient(180deg, rgba(255, 239, 232, 0.9), rgba(255, 250, 245, 0.72)),
-    rgba(255, 252, 247, 0.72);
-  border-color: rgba(186, 75, 47, 0.18);
+  background: linear-gradient(180deg, rgba(239, 68, 68, 0.06), transparent);
+  border-color: rgba(239, 68, 68, 0.15);
 }
 
 .tone-soft {
-  background:
-    linear-gradient(180deg, rgba(248, 239, 228, 0.92), rgba(255, 250, 245, 0.72)),
-    rgba(255, 252, 247, 0.72);
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.05), transparent);
+  border-color: rgba(245, 158, 11, 0.12);
 }
 
 .tone-calm {
-  background:
-    linear-gradient(180deg, rgba(239, 246, 240, 0.9), rgba(255, 250, 245, 0.72)),
-    rgba(255, 252, 247, 0.72);
-  border-color: rgba(72, 122, 92, 0.16);
+  background: linear-gradient(180deg, rgba(34, 197, 94, 0.05), transparent);
+  border-color: rgba(34, 197, 94, 0.12);
 }
 
+/* --- Chat bubbles --- */
 .chat-bubble {
-  border: 1px solid rgba(69, 50, 25, 0.08);
+  border: 1px solid var(--border);
 }
 
 .chat-bubble-assistant {
-  background: rgba(255, 252, 247, 0.78);
+  background: var(--muted);
 }
 
 .chat-bubble-user {
-  background: linear-gradient(135deg, rgba(43, 26, 17, 0.92), rgba(86, 49, 31, 0.88));
+  background: linear-gradient(135deg, var(--accent), #2563eb);
+  border-color: rgba(59, 130, 246, 0.3);
 }
 
 .chat-bubble-user p,
 .chat-bubble-user span {
-  color: #fff7ef;
+  color: #fff;
+}
+
+/* --- Section header label --- */
+.section-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+/* --- Scrollbar --- */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
 }
 
 .text-balance {

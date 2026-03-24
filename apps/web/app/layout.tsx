@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 
@@ -14,8 +14,12 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MyAssist",
-  description: "Read-only daily context from n8n (Todoist, Gmail, Calendar)",
+  title: "MyAssist - Operator Dashboard",
+  description: "Your AI-powered daily command center for Todoist, Gmail, and Calendar",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0a0a0b",
 };
 
 export default function RootLayout({
@@ -24,8 +28,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${displaySans.variable} ${plexMono.variable} antialiased`}>
+    <html lang="en" className="dark">
+      <body className={`${displaySans.variable} ${plexMono.variable} font-sans antialiased`}>
         {children}
       </body>
     </html>
