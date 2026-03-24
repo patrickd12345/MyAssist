@@ -109,3 +109,6 @@ on.ico ...
  ✓ Compiled in 178ms
  ✓ Compiled in 91ms
  GET / 200 in 8934ms
+   Reload env: .env.local
+ GET / 200 in 866ms
+ GET /favicon.ico?favicon.45db1c09.ico 200 in 276ms
