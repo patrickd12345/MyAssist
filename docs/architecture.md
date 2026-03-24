@@ -1,5 +1,25 @@
 # MyAssist v1 Architecture
 
+## Current implementation posture
+
+- The active target is a local, single-user product.
+- Commercial use is a future possibility, so boundaries should stay clean, but the repo should not absorb multi-tenant or billing complexity yet.
+- The standard for current decisions is:
+  - good local UX now
+  - stable interfaces later
+
+## Operating modes
+
+- Local mode:
+  - local app -> local n8n
+- Travel/demo mode:
+  - hosted app -> tunnel -> local n8n
+  - permitted for personal testing while away from the machine
+  - only the webhook surface should be exposed
+- Hosted mode:
+  - hosted app -> hosted n8n
+  - target for pilot/commercial reliability
+
 ## System boundaries
 
 - Siri:
@@ -14,10 +34,11 @@
 - n8n:
   - Orchestration and automation runtime.
   - Executes deterministic transformations and integrations.
-- ChatGPT:
-  - Reasoning layer and **interactive planning** (what to do, how to word tasks).
-  - **Canonical task creation for obligations is manual or chat-driven**, not automated from Gmail in v1.
-  - Produces suggestions; Todoist remains system of record for committed tasks.
+- Assistant layer:
+  - Reasoning and interaction layer in `apps/web`.
+  - Reads normalized context from n8n.
+  - Uses local Ollama when reachable and deterministic fallback when not.
+  - Produces suggestions and conversational guidance; Todoist remains system of record for committed tasks.
 
 ## Why Todoist is the source of truth
 
@@ -36,11 +57,11 @@
 - It should not become a long-term task database.
 - Persistent dedupe memory is used only as automation guardrail, not business data storage.
 
-## Why ChatGPT is reasoning (and optional task drafting)
+## Why the assistant layer is reasoning only
 
 - AI output can be malformed or uncertain; n8n does not write arbitrary tasks to Todoist.
-- **Intended v1 loop:** n8n delivers **normalized JSON**; the **Custom GPT** and the optional **read-only web app** are two UIs over the same fact layer; the Custom GPT helps decide next actions and task wording; **the human confirms** and adds tasks in Todoist (paste, Siri, or a future Action / API bridge if added later).
-- Auto-create from Gmail to Todoist is **out of scope** for the shipped repo (no second workflow JSON); **not** required for the ChatGPT-first intent.
+- **Intended v1 loop:** n8n delivers normalized JSON; `apps/web` turns that into an operator-style briefing and interactive assistant experience; the human confirms and adds tasks in Todoist if needed.
+- Auto-create from Gmail to Todoist is out of scope for the shipped repo.
 
 ## Trust boundaries
 
@@ -59,10 +80,10 @@
 ### Primary: Daily context (Cron)
 
 - Input: Todoist tasks + Gmail signals + today calendar events.
-- n8n output: **normalized JSON** only (terminal node: **Normalize Aggregated Data**).
+- n8n output: **normalized JSON** only.
 - Triggers: **Cron** (scheduled) and **Webhook** (on-demand GET for the web app).
-- Reasoning and prose: **Custom GPT (MyAssist Operator)** in ChatGPT, not inside n8n.
-- **Web app (`apps/web`):** read-only display + copy JSON; does not replace Todoist or the Custom GPT; no task writes in v1.
+- Reasoning and prose: generated in the assistant layer in `apps/web`, optionally using local Ollama.
+- **Web app (`apps/web`):** interactive assistant surface over the normalized context; no task writes in v1.
 - **No** automatic Todoist task creation from this path.
 - Non-goal: no autonomous reprioritization writes back to Todoist.
 
@@ -92,4 +113,19 @@
 - No autonomous global reprioritization.
 - No persistent analytics store.
 - Gmail signal defaults to starred/recent query for maintainability.
-- n8n emits read-only structured context; briefing prose is produced in ChatGPT.
+- n8n emits read-only structured context; the assistant layer interprets it through local heuristics or Ollama.
+
+## Assistant execution modes
+
+- `fallback` mode:
+  - deterministic rule-based reasoning in `apps/web`
+  - always available if context is available
+- `ollama` mode:
+  - local model-backed reasoning through `/api/assistant`
+  - requires Ollama to be reachable from the web app process
+- Contract rule:
+  - UI renders the same response schema regardless of mode:
+    - `answer`
+    - `actions`
+    - `followUps`
+    - `mode`

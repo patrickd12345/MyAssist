@@ -3,19 +3,134 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --canvas: #f5efe3;
+  --surface: rgba(255, 251, 244, 0.74);
+  --surface-strong: rgba(248, 241, 230, 0.92);
+  --line: rgba(69, 50, 25, 0.12);
+  --ink: #20140c;
+  --muted: #6f5f50;
+  --accent: #ba4b2f;
+  --accent-soft: rgba(186, 75, 47, 0.12);
+  --glow: rgba(255, 186, 145, 0.28);
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  min-height: 100vh;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at top left, rgba(255, 223, 181, 0.9), transparent 34%),
+    radial-gradient(circle at 85% 0%, rgba(196, 103, 57, 0.18), transparent 28%),
+    linear-gradient(135deg, #fbf4e7 0%, #efe0ca 45%, #f3e8d7 100%);
+  font-family: var(--font-space-grotesk), sans-serif;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(32, 20, 12, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(32, 20, 12, 0.03) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: radial-gradient(circle at center, black 40%, transparent 88%);
+}
+
+::selection {
+  background: rgba(186, 75, 47, 0.18);
+}
+
+.glass-panel {
+  backdrop-filter: blur(18px);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow:
+    0 22px 80px rgba(50, 25, 8, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+.glass-panel-strong {
+  backdrop-filter: blur(22px);
+  background: var(--surface-strong);
+  border: 1px solid rgba(69, 50, 25, 0.1);
+  box-shadow:
+    0 30px 120px rgba(50, 25, 8, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.54);
+}
+
+.metric-chip {
+  background: rgba(255, 249, 240, 0.8);
+  border: 1px solid rgba(69, 50, 25, 0.08);
+}
+
+.signal-pill {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.hero-glow {
+  position: relative;
+}
+
+.hero-glow::after {
+  content: "";
+  position: absolute;
+  inset: auto 12% -18% auto;
+  width: 220px;
+  height: 220px;
+  background: var(--glow);
+  filter: blur(70px);
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+.section-title {
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.list-card {
+  border: 1px solid rgba(69, 50, 25, 0.08);
+  background: rgba(255, 252, 247, 0.72);
+}
+
+.tone-hot {
+  background:
+    linear-gradient(180deg, rgba(255, 239, 232, 0.9), rgba(255, 250, 245, 0.72)),
+    rgba(255, 252, 247, 0.72);
+  border-color: rgba(186, 75, 47, 0.18);
+}
+
+.tone-soft {
+  background:
+    linear-gradient(180deg, rgba(248, 239, 228, 0.92), rgba(255, 250, 245, 0.72)),
+    rgba(255, 252, 247, 0.72);
+}
+
+.tone-calm {
+  background:
+    linear-gradient(180deg, rgba(239, 246, 240, 0.9), rgba(255, 250, 245, 0.72)),
+    rgba(255, 252, 247, 0.72);
+  border-color: rgba(72, 122, 92, 0.16);
+}
+
+.chat-bubble {
+  border: 1px solid rgba(69, 50, 25, 0.08);
+}
+
+.chat-bubble-assistant {
+  background: rgba(255, 252, 247, 0.78);
+}
+
+.chat-bubble-user {
+  background: linear-gradient(135deg, rgba(43, 26, 17, 0.92), rgba(86, 49, 31, 0.88));
+}
+
+.chat-bubble-user p,
+.chat-bubble-user span {
+  color: #fff7ef;
+}
+
+.text-balance {
+  text-wrap: balance;
 }

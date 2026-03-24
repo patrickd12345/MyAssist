@@ -2,11 +2,24 @@
   "name": "myassist",
   "private": true,
   "scripts": {
-    "web:dev": "pnpm -C apps/web dev",
-    "web:build": "pnpm -C apps/web build",
-    "web:lint": "pnpm -C apps/web lint",
-    "web:start": "pnpm -C apps/web start",
+    "web:dev": "npm --prefix apps/web run dev",
+    "web:build": "npm --prefix apps/web run build",
+    "web:lint": "npm --prefix apps/web run lint",
+    "web:start": "npm --prefix apps/web run start",
+    "n8n:dev": "cross-env N8N_PORT=5678 n8n start",
+    "n8n:docker:up": "docker compose up -d n8n",
+    "n8n:docker:down": "docker compose down",
+    "n8n:docker:logs": "docker compose logs -f n8n",
+    "n8n:docker:restart": "docker compose restart n8n",
+    "tunnel:proxy": "node tools/webhook-proxy.mjs",
+    "tunnel:ngrok": "ngrok http http://127.0.0.1:8787",
     "reminders:export:mac": "bash tools/export-reminders.sh",
     "reminders:import": "node tools/import-apple-reminders-to-todoist.mjs"
+  },
+  "devDependencies": {
+    "cross-env": "^10.1.0",
+    "n8n": "1.82.0",
+    "sqlite3": "^6.0.1",
+    "zod": "3.25.76"
   }
 }

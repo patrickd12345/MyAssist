@@ -131,7 +131,7 @@ async function main() {
   const token = normalizeText(process.env.TODOIST_API_TOKEN);
   const dryRun = !hasFlag("--apply");
   const includeCompleted = hasFlag("--include-completed");
-  const disableDedupe = hasFlag("--no-dedupe");
+  let disableDedupe = hasFlag("--no-dedupe");
   const addListAsLabel = !hasFlag("--no-list-label");
 
   if (!inputPath) {
@@ -139,8 +139,14 @@ async function main() {
       "Missing --input path. Example: node tools/import-apple-reminders-to-todoist.mjs --input ~/Desktop/apple-reminders-export.json --apply",
     );
   }
-  if (!token) {
-    throw new Error("Missing TODOIST_API_TOKEN env var.");
+  if (!token && !dryRun) {
+    throw new Error("Missing TODOIST_API_TOKEN env var (required with --apply).");
+  }
+  if (!token && dryRun && !disableDedupe) {
+    console.warn(
+      "TODOIST_API_TOKEN not set: dry-run will proceed with --no-dedupe behavior.",
+    );
+    disableDedupe = true;
   }
 
   const raw = await fs.readFile(path.resolve(inputPath), "utf8");

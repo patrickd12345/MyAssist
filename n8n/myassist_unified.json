@@ -29,6 +29,8 @@
         "rule": {
           "interval": [
             {
+              "field": "days",
+              "daysInterval": 1,
               "triggerAtHour": 1,
               "triggerAtMinute": 0
             }
@@ -139,12 +141,13 @@
     {
       "parameters": {
         "mode": "append",
+        "numberInputs": 2,
         "options": {}
       },
       "id": "merge_todoist_gmail",
       "name": "Merge Todoist + Gmail",
       "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
+      "typeVersion": 3,
       "position": [
         760,
         280
@@ -155,12 +158,13 @@
     {
       "parameters": {
         "mode": "append",
+        "numberInputs": 2,
         "options": {}
       },
       "id": "merge_with_calendar",
       "name": "Merge With Calendar",
       "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
+      "typeVersion": 3,
       "position": [
         900,
         400
