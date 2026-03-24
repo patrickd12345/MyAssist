@@ -77,10 +77,17 @@ export function buildWelcomeReply(context: MyAssistDailyContext): AssistantReply
 }
 
 export function buildContextDigest(context: MyAssistDailyContext): string {
+  const firstEvent = context.calendar_today.find((event) => Boolean(event.start));
+  const firstSignal = context.gmail_signals[0];
   const digest = {
     run_date: context.run_date,
-    generated_at: context.generated_at,
-    overdue: context.todoist_overdue.slice(0, 5).map((task) => ({
+    urgent_counts: {
+      overdue: context.todoist_overdue.length,
+      due_today: context.todoist_due_today.length,
+      calendar_events: context.calendar_today.length,
+      gmail_signals: context.gmail_signals.length,
+    },
+    overdue: context.todoist_overdue.slice(0, 3).map((task) => ({
       content: taskTitle(task),
       priority: typeof task.priority === "number" ? task.priority : null,
       due: typeof (task.due as { datetime?: string; date?: string } | undefined)?.datetime === "string"
@@ -89,26 +96,28 @@ export function buildContextDigest(context: MyAssistDailyContext): string {
           ? (task.due as { date?: string }).date
           : null,
     })),
-    due_today: context.todoist_due_today.slice(0, 5).map((task) => ({
+    due_today: context.todoist_due_today.slice(0, 3).map((task) => ({
       content: taskTitle(task),
       priority: typeof task.priority === "number" ? task.priority : null,
     })),
-    strategic: context.todoist_upcoming_high_priority.slice(0, 5).map((task) => ({
+    strategic: context.todoist_upcoming_high_priority.slice(0, 2).map((task) => ({
       content: taskTitle(task),
       priority: typeof task.priority === "number" ? task.priority : null,
     })),
-    calendar: context.calendar_today.slice(0, 6).map((event) => ({
-      summary: event.summary,
-      start: event.start,
-      end: event.end,
-      location: event.location,
-    })),
-    gmail: context.gmail_signals.slice(0, 6).map((signal) => ({
-      from: firstName(signal.from),
-      subject: signal.subject,
-      snippet: signal.snippet,
-      date: signal.date,
-    })),
+    next_event: firstEvent
+      ? {
+          summary: firstEvent.summary,
+          start: firstEvent.start,
+          location: firstEvent.location,
+        }
+      : null,
+    top_email_signal: firstSignal
+      ? {
+          from: firstName(firstSignal.from),
+          subject: firstSignal.subject,
+          snippet: firstSignal.snippet.slice(0, 160),
+        }
+      : null,
   };
 
   return JSON.stringify(digest, null, 2);
@@ -260,7 +269,9 @@ function buildTaskDraftFromMessage(message: string): TaskDraft | null {
   for (const pattern of duePatterns) {
     const match = content.match(pattern.regex);
     if (match) {
-      dueString = "valueFromMatch" in pattern && pattern.valueFromMatch ? match[0] : pattern.value;
+      const resolved =
+        "valueFromMatch" in pattern && pattern.valueFromMatch ? match[0] ?? null : pattern.value ?? null;
+      dueString = resolved;
       content = content.replace(pattern.regex, "").replace(/\s{2,}/g, " ").trim();
       break;
     }

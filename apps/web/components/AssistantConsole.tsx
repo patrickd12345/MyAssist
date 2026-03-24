@@ -39,7 +39,13 @@ function replyToMessage(reply: AssistantReply): ChatMessage {
   };
 }
 
-export function AssistantConsole({ context }: { context: MyAssistDailyContext }) {
+export function AssistantConsole({
+  context,
+  compact = false,
+}: {
+  context: MyAssistDailyContext;
+  compact?: boolean;
+}) {
   const welcome = useMemo(() => {
     const reply = buildWelcomeReply(context);
     return {
@@ -58,7 +64,10 @@ export function AssistantConsole({ context }: { context: MyAssistDailyContext })
   const [error, setError] = useState<string | null>(null);
   const [creatingDraftId, setCreatingDraftId] = useState<string | null>(null);
 
-  const promptIdeas = useMemo(() => buildSuggestedPrompts(context), [context]);
+  const promptIdeas = useMemo(
+    () => (compact ? buildSuggestedPrompts(context).slice(0, 4) : buildSuggestedPrompts(context)),
+    [compact, context],
+  );
 
   async function sendMessage(message: string) {
     const trimmed = message.trim();
@@ -144,26 +153,28 @@ export function AssistantConsole({ context }: { context: MyAssistDailyContext })
   }
 
   return (
-    <section className="glass-panel-strong rounded-[32px] p-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <p className="section-title text-xs font-semibold text-[#8a654f]">Live assistant</p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[#20140c]">
-            Ask questions, challenge the plan, and pressure-test the day
-          </h2>
-          <p className="mt-3 max-w-3xl text-sm leading-7 text-[#6f5f50]">
-            This layer reads the same daily context, then answers with a local model when available and
-            falls back to deterministic guidance when it is not.
-          </p>
+    <section className={`${compact ? "theme-subpanel rounded-[26px] p-4" : "glass-panel-strong rounded-[32px] p-6"}`}>
+      {!compact ? (
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="section-title text-xs font-semibold">Live assistant</p>
+            <h2 className="theme-ink mt-2 text-2xl font-semibold tracking-[-0.03em]">
+              Ask questions, challenge the plan, and pressure-test the day
+            </h2>
+            <p className="theme-muted mt-3 max-w-3xl text-sm leading-7">
+              This layer reads the same daily context, then answers with a local model when available and
+              falls back to deterministic guidance when it is not.
+            </p>
+          </div>
+          <div className="theme-chip rounded-full px-4 py-2 text-xs font-medium">
+            Interactive operator channel
+          </div>
         </div>
-        <div className="metric-chip rounded-full px-4 py-2 text-xs font-medium text-[#7d604f]">
-          Interactive operator channel
-        </div>
-      </div>
+      ) : null}
 
-      <div className="mt-5 grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+      <div className={compact ? "grid gap-4" : "mt-5 grid gap-4 xl:grid-cols-[1.15fr_0.85fr]"}>
         <div className="glass-panel rounded-[28px] p-4">
-          <div className="space-y-3">
+          <div className={compact ? "max-h-[24rem] space-y-3 overflow-auto pr-1" : "space-y-3"}>
             {messages.map((message) => (
               <div
                 key={message.id}
@@ -172,7 +183,7 @@ export function AssistantConsole({ context }: { context: MyAssistDailyContext })
                 }`}
               >
                 <div className="flex items-center justify-between gap-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8a654f]">
+                  <p className="theme-accent text-xs font-semibold uppercase tracking-[0.16em]">
                     {message.role === "assistant" ? "MyAssist" : "You"}
                   </p>
                   {message.mode ? (
@@ -181,7 +192,7 @@ export function AssistantConsole({ context }: { context: MyAssistDailyContext })
                     </span>
                   ) : null}
                 </div>
-                <p className="mt-3 text-sm leading-7 text-[#20140c]">{message.text}</p>
+                <p className="theme-ink mt-3 text-sm leading-7">{message.text}</p>
                 {message.actions && message.actions.length > 0 ? (
                   <div className="mt-4 flex flex-wrap gap-2">
                     {message.actions.map((action) => (
@@ -189,7 +200,7 @@ export function AssistantConsole({ context }: { context: MyAssistDailyContext })
                         key={action}
                         type="button"
                         onClick={() => void sendMessage(`Turn this into a concrete plan: ${action}`)}
-                        className="metric-chip rounded-full px-3 py-2 text-xs font-medium text-[#6b4a36] transition hover:bg-white"
+                        className="theme-chip rounded-full px-3 py-2 text-xs font-medium transition hover:bg-white/10"
                       >
                         {action}
                       </button>
@@ -197,27 +208,27 @@ export function AssistantConsole({ context }: { context: MyAssistDailyContext })
                   </div>
                 ) : null}
                 {message.taskDraft ? (
-                  <div className="mt-4 rounded-[20px] border border-[#d8c1ad] bg-white/70 p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8a654f]">
+                  <div className="theme-subpanel mt-4 rounded-[20px] p-4">
+                    <p className="theme-accent text-xs font-semibold uppercase tracking-[0.16em]">
                       Draft task
                     </p>
-                    <p className="mt-3 text-sm font-semibold leading-6 text-[#20140c]">
+                    <p className="theme-ink mt-3 text-sm font-semibold leading-6">
                       {message.taskDraft.content}
                     </p>
-                    <div className="mt-3 flex flex-wrap gap-2 text-xs text-[#7d604f]">
+                    <div className="theme-muted mt-3 flex flex-wrap gap-2 text-xs">
                       {message.taskDraft.dueString ? (
-                        <span className="metric-chip rounded-full px-3 py-1.5">
+                        <span className="theme-chip rounded-full px-3 py-1.5">
                           Due {message.taskDraft.dueString}
                         </span>
                       ) : null}
                       {message.taskDraft.priority ? (
-                        <span className="metric-chip rounded-full px-3 py-1.5">
+                        <span className="theme-chip rounded-full px-3 py-1.5">
                           Priority P{message.taskDraft.priority}
                         </span>
                       ) : null}
                     </div>
                     {message.taskDraft.description ? (
-                      <p className="mt-3 text-sm leading-6 text-[#6f5f50]">
+                      <p className="theme-muted mt-3 text-sm leading-6">
                         {message.taskDraft.description}
                       </p>
                     ) : null}
@@ -226,7 +237,7 @@ export function AssistantConsole({ context }: { context: MyAssistDailyContext })
                         type="button"
                         disabled={creatingDraftId === message.id}
                         onClick={() => void createTaskFromDraft(message.id, message.taskDraft as TaskDraft)}
-                        className="rounded-full bg-[#1f140f] px-4 py-2 text-xs font-semibold text-[#fff7ef] transition hover:bg-[#2b1a11] disabled:opacity-50"
+                        className="theme-button-primary rounded-full px-4 py-2 text-xs font-semibold transition disabled:opacity-50"
                       >
                         {creatingDraftId === message.id ? "Creating..." : "Create task"}
                       </button>
@@ -239,7 +250,7 @@ export function AssistantConsole({ context }: { context: MyAssistDailyContext })
                             }`,
                           )
                         }
-                        className="rounded-full border border-[#d8c1ad] px-4 py-2 text-xs font-semibold text-[#6b4a36] transition hover:bg-white/70"
+                        className="theme-button-secondary rounded-full px-4 py-2 text-xs font-semibold transition"
                       >
                         Refine draft
                       </button>
@@ -253,7 +264,7 @@ export function AssistantConsole({ context }: { context: MyAssistDailyContext })
                         key={item}
                         type="button"
                         onClick={() => void sendMessage(item)}
-                        className="rounded-full border border-[#d8c1ad] px-3 py-2 text-xs font-medium text-[#7d604f] transition hover:bg-white/70"
+                        className="theme-button-secondary rounded-full px-3 py-2 text-xs font-medium transition"
                       >
                         {item}
                       </button>
@@ -267,14 +278,14 @@ export function AssistantConsole({ context }: { context: MyAssistDailyContext })
 
         <div className="space-y-4">
           <div className="glass-panel rounded-[28px] p-4">
-            <p className="section-title text-xs font-semibold text-[#8a654f]">Quick asks</p>
+            <p className="section-title text-xs font-semibold">Quick asks</p>
             <div className="mt-4 flex flex-wrap gap-2">
               {promptIdeas.map((prompt) => (
                 <button
                   key={prompt}
                   type="button"
                   onClick={() => void sendMessage(prompt)}
-                  className="rounded-full border border-[#d8c1ad] bg-white/60 px-3 py-2 text-xs font-medium text-[#6b4a36] transition hover:bg-white"
+                  className="theme-button-secondary rounded-full px-3 py-2 text-xs font-medium transition"
                 >
                   {prompt}
                 </button>
@@ -284,7 +295,7 @@ export function AssistantConsole({ context }: { context: MyAssistDailyContext })
 
           <div className="glass-panel rounded-[28px] p-4">
             <form onSubmit={handleSubmit} className="space-y-3">
-              <label htmlFor="assistant-input" className="section-title text-xs font-semibold text-[#8a654f]">
+              <label htmlFor="assistant-input" className="section-title text-xs font-semibold">
                 Ask MyAssist
               </label>
               <textarea
@@ -292,23 +303,25 @@ export function AssistantConsole({ context }: { context: MyAssistDailyContext })
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
                 placeholder="Ask what to do first, what to defer, how to handle a meeting, or turn an item into a plan."
-                className="min-h-32 w-full rounded-[22px] border border-[#d8c1ad] bg-white/70 px-4 py-3 text-sm leading-6 text-[#20140c] outline-none transition placeholder:text-[#9b836f] focus:border-[#ba4b2f]"
+                className={`theme-input w-full rounded-[22px] px-4 py-3 text-sm leading-6 outline-none transition ${
+                  compact ? "min-h-28" : "min-h-32"
+                }`}
               />
               <div className="flex items-center justify-between gap-3">
-                <p className="text-xs leading-6 text-[#7d604f]">
+                <p className="theme-muted text-xs leading-6">
                   It uses local Ollama when reachable and falls back to rule logic otherwise.
                 </p>
                 <button
                   type="submit"
                   disabled={pending || input.trim() === ""}
-                  className="rounded-full bg-[#1f140f] px-4 py-2.5 text-sm font-semibold text-[#fff7ef] transition hover:bg-[#2b1a11] disabled:opacity-50"
+                  className="theme-button-primary rounded-full px-4 py-2.5 text-sm font-semibold transition disabled:opacity-50"
                 >
                   {pending ? "Thinking..." : "Ask"}
                 </button>
               </div>
             </form>
             {error ? (
-              <p className="mt-3 rounded-[18px] border border-[#d8c1ad] px-3 py-2 text-xs text-[#7d604f]">
+              <p className="theme-subpanel theme-muted mt-3 rounded-[18px] px-3 py-2 text-xs">
                 {error}
               </p>
             ) : null}

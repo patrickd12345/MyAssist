@@ -2,6 +2,7 @@
   "name": "myassist",
   "private": true,
   "scripts": {
+    "dev": "npm --prefix apps/web run dev",
     "web:dev": "npm --prefix apps/web run dev",
     "web:build": "npm --prefix apps/web run build",
     "web:lint": "npm --prefix apps/web run lint",

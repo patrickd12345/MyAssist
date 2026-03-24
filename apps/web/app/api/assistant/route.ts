@@ -12,7 +12,7 @@ import type { MyAssistDailyContext } from "@/lib/types";
 export const dynamic = "force-dynamic";
 
 const OLLAMA_URL = (process.env.OLLAMA_BASE_URL ?? "http://127.0.0.1:11434").replace(/\/$/, "");
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL ?? "llama3.2:3b";
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL ?? "tinyllama:latest";
 
 export async function POST(req: Request) {
   try {
@@ -50,7 +50,8 @@ async function createReply(context: MyAssistDailyContext, message: string): Prom
         stream: false,
         format: "json",
         options: {
-          temperature: 0.35,
+          temperature: 0.2,
+          num_predict: 220,
         },
         messages: [
           {
@@ -59,11 +60,12 @@ async function createReply(context: MyAssistDailyContext, message: string): Prom
               "You are MyAssist, a sharp executive operator for a busy founder.",
               "Use only the supplied daily context snapshot. Do not invent facts.",
               "Be direct, useful, and a little forceful. No therapy tone. No fluff.",
+              "Keep answers short because this is a life assistant, not a strategy memo.",
               "If the user asks to create a task, return a taskDraft.",
               "Answer in JSON with keys: answer, actions, followUps, taskDraft.",
               "answer: one concise paragraph.",
-              "actions: array of up to 3 concrete action strings.",
-              "followUps: array of up to 3 short suggested questions.",
+              "actions: array of 1 to 2 concrete action strings.",
+              "followUps: array of 1 to 2 short suggested questions.",
               "taskDraft: null unless the user is clearly asking to create a task.",
               "taskDraft.content: concise Todoist task title.",
               "taskDraft.dueString: human due phrase like tomorrow at 9am if present, else null.",

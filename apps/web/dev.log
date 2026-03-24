@@ -19,9 +19,10 @@ Creating turbopack project {
  ○ Compiling / ...
  ✓ Compiled / in 4s
  GET / 500 in 175   Reload env: .env.local
-on.ico ...
- ✓ Compiled /favicon.ico in 1211ms
- GET /favicon.ico 200 in 1433ms
+   Reload env: .env.local
+   Reload env: .env.local
+   Reload env: .env.local
+s
  ✓ Compiled in 71ms
  ✓ Compiled / in 120ms
  GET / 200 in 10452ms
@@ -112,3 +113,75 @@ on.ico ...
    Reload env: .env.local
  GET / 200 in 866ms
  GET /favicon.ico?favicon.45db1c09.ico 200 in 276ms
+ ✓ Compiled in 744ms
+ ✓ Compiled in 499ms
+ ✓ Compiled in 380ms
+ ✓ Compiled in 165ms
+ ✓ Compiled in 140ms
+ ✓ Compiled in 200ms
+ ✓ Compiled in 141ms
+ ✓ Compiled in 160ms
+ ✓ Compiled in 154ms
+ ✓ Compiled in 115ms
+ ✓ Compiled in 92ms
+ ✓ Compiled in 92ms
+ ✓ Compiled in 78ms
+ ✓ Compiled in 97ms
+ ✓ Compiled in 70ms
+ ✓ Compiled in 78ms
+ ✓ Compiled in 89ms
+ ✓ Compiled in 128ms
+ ✓ Compiled in 107ms
+ ✓ Compiled in 125ms
+ ✓ Compiled in 51ms
+ ✓ Compiled in 68ms
+ ✓ Compiled in 54ms
+ ✓ Compiled in 136ms
+ ✓ Compiled in 88ms
+ ✓ Compiled in 241ms
+ ✓ Compiled in 80ms
+ ✓ Compiled in 94ms
+ ✓ Compiled in 98ms
+ ✓ Compiled in 346ms
+ ✓ Compiled in 54ms
+ ✓ Compiled in 53ms
+ ✓ Compiled in 66ms
+ ✓ Compiled in 52ms
+ ✓ Compiled in 79ms
+ ✓ Compiled in 55ms
+ ✓ Compiled in 53ms
+ ✓ Compiled in 76ms
+ ✓ Compiled in 74ms
+ ✓ Compiled in 83ms
+ ✓ Compiled in 81ms
+ ✓ Compiled in 116ms
+ ✓ Compiled in 179ms
+ POST /api/todoist/tasks/6gCCGFFJgCccx65Q/complete 200 in 1552ms
+ POST /api/assistant 200 in 253ms
+ POST /api/assistant 200 in 169ms
+ POST /api/assistant 200 in 294ms
+ POST /api/assistant 500 in 3289ms
+ POST /api/assistant 500 in 1829ms
+   Reload env: .env.local
+ GET / 200 in 725ms
+ GET /favicon.ico?favicon.45db1c09.ico 200 in 251ms
+ POST /api/assistant 200 in 39636ms
+ POST /api/assistant 200 in 39656ms
+   Reload env: .env.local
+ GET / 200 in 319ms
+ POST /api/assistant 200 in 22382ms
+   Reload env: .env.local
+ GET / 200 in 711ms
+ POST /api/assistant 200 in 119738ms
+ POST /api/assistant 500 in 213ms
+ POST /api/assistant 500 in 165ms
+ POST /api/assistant 200 in 119666ms
+ ✓ Compiled in 492ms
+ GET / 200 in 16096ms
+ POST /api/assistant 200 in 14981ms
+ GET / 200 in 13502ms
+ POST /api/todoist/tasks/6gCCGFH7h7R5CjfQ/complete 200 in 1224ms
+ ○ Compiling /_not-found/page ...
+ ✓ Compiled /_not-found/page in 5.5s
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 6031ms
+ GET / 200 in 23636ms

@@ -1,21 +1,22 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   MYASSIST_CONTEXT_SOURCE_HEADER,
   type DailyContextSource,
 } from "@/lib/fetchDailyContext";
-import type { MyAssistDailyContext } from "@/lib/types";
+import type { MyAssistDailyContext, GmailSignal, TodoistTask } from "@/lib/types";
 import { AssistantConsole } from "./AssistantConsole";
 import { TaskList } from "./TaskList";
 
-type SectionKey =
-  | "assistant"
-  | "focus"
-  | "triage"
-  | "calendar"
-  | "tasks"
-  | "email";
+type ThemeKey = "neon" | "kpop-demon-hunters";
+
+const THEME_STORAGE_KEY = "myassist-theme";
+
+const THEMES: Array<{ key: ThemeKey; label: string; note: string }> = [
+  { key: "neon", label: "Neon", note: "Dark premium default" },
+  { key: "kpop-demon-hunters", label: "K-pop Demon Hunters", note: "Stage energy" },
+];
 
 function formatWhen(iso: string | null): string {
   if (!iso) return "";
@@ -32,134 +33,9 @@ function formatWhen(iso: string | null): string {
   }).format(d);
 }
 
-function countUrgentItems(data: MyAssistDailyContext): number {
-  return data.todoist_overdue.length + data.todoist_due_today.length;
-}
-
-function nextMeetingLabel(data: MyAssistDailyContext): string {
-  const nextEvent = data.calendar_today.find((item) => item.start);
-  if (!nextEvent) return "No scheduled event in the current pull.";
-  return `${nextEvent.summary} at ${formatWhen(nextEvent.start)}`;
-}
-
-function assistantHeadline(data: MyAssistDailyContext): string {
-  const urgent = countUrgentItems(data);
-  if (urgent > 10) return "Today is heavy. Triage first, then protect execution time.";
-  if (urgent > 0) return "You have real pressure today. Focus beats browsing.";
-  if (data.gmail_signals.length > 0) return "Calendar is calm. Email is the main source of drift.";
-  return "The system is quiet. This is a good time to push meaningful work.";
-}
-
-function assistantMoves(data: MyAssistDailyContext): string[] {
-  const moves: string[] = [];
-  if (data.todoist_overdue.length > 0) {
-    const top = data.todoist_overdue[0];
-    if (typeof top.content === "string") {
-      moves.push(`Close the oldest overdue item first: ${top.content}.`);
-    }
-  }
-  if (data.todoist_due_today.length > 0) {
-    const top = data.todoist_due_today[0];
-    if (typeof top.content === "string") {
-      moves.push(`Block time for the due-today task: ${top.content}.`);
-    }
-  }
-  if (data.calendar_today.length > 0) {
-    moves.push(`Anchor your day around ${nextMeetingLabel(data)}.`);
-  }
-  if (data.gmail_signals.length > 0) {
-    moves.push("Clear the highest-signal email thread before context switching spreads.");
-  }
-  return moves.slice(0, 3);
-}
-
-function todayPosture(data: MyAssistDailyContext): string {
-  const urgent = countUrgentItems(data);
-  const events = data.calendar_today.length;
-  const signals = data.gmail_signals.length;
-
-  if (urgent >= 8) {
-    return "Recovery mode. Reduce commitments, close overdue loops, and protect one block for real work.";
-  }
-  if (events >= 5 && signals >= 5) {
-    return "High-friction day. Meetings and inbound pressure can easily scatter attention.";
-  }
-  if (urgent > 0 || signals > 0) {
-    return "Mixed pressure. You do not need a reset, but you do need a sharper order of attack.";
-  }
-  return "Clear runway. Use the quiet to move something important instead of grazing on admin.";
-}
-
-function pressureLevel(data: MyAssistDailyContext): string {
-  const score =
-    countUrgentItems(data) * 3 + Math.min(data.gmail_signals.length, 6) + Math.min(data.calendar_today.length, 6);
-  if (score >= 28) return "High";
-  if (score >= 14) return "Medium";
-  return "Low";
-}
-
-function briefingNarrative(data: MyAssistDailyContext): string {
-  const firstEvent = data.calendar_today.find((item) => item.start)?.summary;
-  const firstOverdue = data.todoist_overdue[0];
-  const topThread = data.gmail_signals[0];
-  const parts: string[] = [];
-
-  if (firstOverdue && typeof firstOverdue.content === "string") {
-    parts.push(`The first drag on the day is "${firstOverdue.content}."`);
-  }
-  if (firstEvent) {
-    parts.push(`Your schedule is anchored by ${firstEvent}.`);
-  }
-  if (topThread?.subject) {
-    parts.push(`Email pressure is led by "${topThread.subject}".`);
-  }
-  if (parts.length === 0) {
-    parts.push("The current pull is calm enough to work proactively instead of defensively.");
-  }
-
-  return parts.join(" ");
-}
-
-function focusLanes(data: MyAssistDailyContext): Array<{ label: string; title: string; detail: string }> {
-  const lanes: Array<{ label: string; title: string; detail: string }> = [];
-  const overdue = data.todoist_overdue[0];
-  const dueToday = data.todoist_due_today[0];
-  const meeting = data.calendar_today.find((item) => item.start);
-  const thread = data.gmail_signals[0];
-
-  if (overdue && typeof overdue.content === "string") {
-    lanes.push({
-      label: "Rescue",
-      title: overdue.content,
-      detail: "Oldest overdue item. Clear it before taking on fresh commitments.",
-    });
-  }
-
-  if (dueToday && typeof dueToday.content === "string") {
-    lanes.push({
-      label: "Commit",
-      title: dueToday.content,
-      detail: "Due today. Protect time for it before the day fragments.",
-    });
-  }
-
-  if (meeting?.summary) {
-    lanes.push({
-      label: "Anchor",
-      title: meeting.summary,
-      detail: `Next scheduled anchor is ${formatWhen(meeting.start)}.`,
-    });
-  }
-
-  if (thread?.subject) {
-    lanes.push({
-      label: "Signal",
-      title: thread.subject,
-      detail: `Top visible email thread from ${firstName(thread.from)}.`,
-    });
-  }
-
-  return lanes.slice(0, 4);
+function firstName(from: string): string {
+  const cleaned = from.replace(/".*?"/g, "").replace(/<.*?>/g, "").trim();
+  return cleaned || from;
 }
 
 function taskTitle(task: Record<string, unknown> | undefined): string | null {
@@ -167,62 +43,98 @@ function taskTitle(task: Record<string, unknown> | undefined): string | null {
   return typeof task.content === "string" ? task.content : null;
 }
 
-function triageBoard(data: MyAssistDailyContext): Array<{
-  label: "Do now" | "Defer" | "Watch";
-  tone: string;
-  title: string;
-  detail: string;
-}> {
-  const board: Array<{
-    label: "Do now" | "Defer" | "Watch";
-    tone: string;
-    title: string;
-    detail: string;
-  }> = [];
-
-  const overdue = taskTitle(data.todoist_overdue[0]);
-  const dueToday = taskTitle(data.todoist_due_today[0]);
-  const firstMeeting = data.calendar_today.find((item) => item.start);
-  const firstThread = data.gmail_signals[0];
-
-  board.push({
-    label: "Do now",
-    tone: "tone-hot",
-    title: overdue ?? dueToday ?? "Protect one high-value work block",
-    detail: overdue
-      ? "This is already late. Closing it buys back trust and mental bandwidth."
-      : dueToday
-        ? "This lands today. Put it on calendar before meetings and email eat the day."
-        : "No task fire is obvious right now, so create momentum intentionally.",
-  });
-
-  board.push({
-    label: "Defer",
-    tone: "tone-soft",
-    title: data.gmail_signals.length > 5 ? "Do not let the inbox set the agenda" : "Keep admin in a contained window",
-    detail:
-      data.gmail_signals.length > 5
-        ? "There is visible inbound pressure, but not every thread deserves immediate attention."
-        : "Low-grade maintenance work should stay batched instead of leaking across the day.",
-  });
-
-  board.push({
-    label: "Watch",
-    tone: "tone-calm",
-    title: firstMeeting?.summary ?? firstThread?.subject ?? "The schedule is currently stable",
-    detail: firstMeeting?.summary
-      ? `Next live constraint is ${formatWhen(firstMeeting.start)}.`
-      : firstThread?.subject
-        ? `Top visible thread is from ${firstName(firstThread.from)}.`
-        : "No obvious live constraint surfaced in this pull.",
-  });
-
-  return board;
+function countUrgentItems(data: MyAssistDailyContext): number {
+  return data.todoist_overdue.length + data.todoist_due_today.length;
 }
 
-function firstName(from: string): string {
-  const cleaned = from.replace(/".*?"/g, "").replace(/<.*?>/g, "").trim();
-  return cleaned || from;
+function pressureLevel(data: MyAssistDailyContext): "Low" | "Medium" | "High" {
+  const score =
+    countUrgentItems(data) * 3 +
+    Math.min(data.gmail_signals.length, 5) +
+    Math.min(data.calendar_today.length, 5);
+  if (score >= 24) return "High";
+  if (score >= 12) return "Medium";
+  return "Low";
+}
+
+function postureSummary(data: MyAssistDailyContext): string {
+  const urgent = countUrgentItems(data);
+  if (urgent >= 8) {
+    return "Heavy day. Clear urgent drag before taking on new work.";
+  }
+  if (urgent > 0 && data.calendar_today.length > 0) {
+    return "Mixed pressure. Tasks and schedule both need deliberate control.";
+  }
+  if (data.gmail_signals.length > 6) {
+    return "Inbox pressure is high. Protect focus before responding broadly.";
+  }
+  if (data.calendar_today.length > 4) {
+    return "Meeting-weighted day. Use the gaps well.";
+  }
+  return "Organized enough to work proactively.";
+}
+
+function buildNextAction(data: MyAssistDailyContext): {
+  title: string;
+  detail: string;
+  cue: string;
+} {
+  const overdue = taskTitle(data.todoist_overdue[0]);
+  if (overdue) {
+    return {
+      title: overdue,
+      detail: "This is already late. Closing it buys back trust and mental bandwidth immediately.",
+      cue: "Overdue task",
+    };
+  }
+
+  const dueToday = taskTitle(data.todoist_due_today[0]);
+  if (dueToday) {
+    return {
+      title: dueToday,
+      detail: "This lands today. Put it on calendar before the rest of the day expands around it.",
+      cue: "Due today",
+    };
+  }
+
+  const nextEvent = data.calendar_today.find((item) => item.start);
+  if (nextEvent?.summary) {
+    return {
+      title: `Prepare for ${nextEvent.summary}`,
+      detail: `Next anchor is ${formatWhen(nextEvent.start)}. Use the time before it with intent.`,
+      cue: "Calendar anchor",
+    };
+  }
+
+  const thread = data.gmail_signals[0];
+  if (thread?.subject) {
+    return {
+      title: thread.subject,
+      detail: `Top visible thread is from ${firstName(thread.from)}. Handle it before the inbox multiplies.`,
+      cue: "Important email",
+    };
+  }
+
+  return {
+    title: "Protect one meaningful work block",
+    detail: "No obvious fire surfaced in this pull. Use the runway for work that actually matters.",
+    cue: "Clear runway",
+  };
+}
+
+function summarizeEmails(signals: GmailSignal[]): string {
+  if (signals.length === 0) return "No important email surfaced in the current pull.";
+  const sender = firstName(signals[0].from);
+  if (signals.length === 1) return `One visible thread, led by ${sender}.`;
+  return `${signals.length} visible threads. Lead sender: ${sender}.`;
+}
+
+function formatRunDate(data: MyAssistDailyContext): string {
+  return `Run ${data.run_date} · Generated ${formatWhen(data.generated_at)}`;
+}
+
+function taskCountLabel(tasks: TodoistTask[]): string {
+  return tasks.length === 1 ? "1 task" : `${tasks.length} tasks`;
 }
 
 export function Dashboard({
@@ -241,14 +153,25 @@ export function Dashboard({
   const [copied, setCopied] = useState(false);
   const [pendingTaskIds, setPendingTaskIds] = useState<string[]>([]);
   const [taskActionError, setTaskActionError] = useState<string | null>(null);
-  const [collapsed, setCollapsed] = useState<Record<SectionKey, boolean>>({
-    assistant: false,
-    focus: false,
-    triage: false,
-    calendar: false,
-    tasks: false,
-    email: false,
-  });
+  const [theme, setTheme] = useState<ThemeKey>("neon");
+  const [themeMenuOpen, setThemeMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const storedTheme =
+      typeof window !== "undefined" ? window.localStorage.getItem(THEME_STORAGE_KEY) : null;
+    if (storedTheme === "neon" || storedTheme === "kpop-demon-hunters") {
+      setTheme(storedTheme);
+    }
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+
+    return () => {
+      delete document.documentElement.dataset.theme;
+    };
+  }, [theme]);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -337,9 +260,7 @@ export function Dashboard({
       try {
         const response = await fetch(`/api/todoist/tasks/${encodeURIComponent(taskId)}/schedule`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ dueString, dueLang: "en" }),
         });
         const body = (await response.json()) as { error?: string };
@@ -357,51 +278,73 @@ export function Dashboard({
     [data, refresh],
   );
 
-  const moves = data ? assistantMoves(data) : [];
-  const lanes = data ? focusLanes(data) : [];
-  const triage = data ? triageBoard(data) : [];
-
-  const toggleSection = useCallback((key: SectionKey) => {
-    setCollapsed((current) => ({
-      ...current,
-      [key]: !current[key],
-    }));
-  }, []);
+  const nextAction = useMemo(() => (data ? buildNextAction(data) : null), [data]);
 
   return (
-    <div className="mx-auto min-h-screen w-full max-w-[1800px] px-4 py-8 sm:px-6 xl:px-10 2xl:px-14">
-      <header className="hero-glow mb-8">
-        <div className="glass-panel-strong rounded-[34px] px-6 py-6 sm:px-8 sm:py-8">
-          <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
-            <div className="max-w-3xl">
-              <p className="section-title text-xs font-semibold text-[#8a654f]">MyAssist operator</p>
-              <h1 className="mt-3 max-w-2xl text-balance text-4xl font-semibold tracking-[-0.04em] text-[#1e120c] sm:text-5xl">
-                A sharper operator view for your day, not another dead list.
-              </h1>
-              <p className="mt-4 max-w-2xl text-base leading-7 text-[#6f5f50] sm:text-lg">
-                MyAssist should read like a human chief of staff: what matters, what is slipping, and what
-                to attack next, all grounded in the same n8n payload.
-              </p>
-              {data && (
-                <div className="mt-5 flex flex-wrap gap-3 text-sm text-[#6f5f50]">
-                  <span className="metric-chip rounded-full px-3 py-1.5 font-medium">
-                    Run {data.run_date}
-                  </span>
-                  <span className="metric-chip rounded-full px-3 py-1.5 font-medium">
-                    Generated {formatWhen(data.generated_at)}
-                  </span>
-                  <span className="metric-chip rounded-full px-3 py-1.5 font-medium">
-                    Source {contextSource === "mock" ? "Demo feed" : "Live n8n feed"}
-                  </span>
+    <div className="theme-shell mx-auto min-h-screen w-full max-w-[1900px] px-4 py-6 sm:px-6 xl:px-8 2xl:px-10">
+      <section className="glass-panel-strong mb-6 rounded-[32px] px-5 py-5 sm:px-7 sm:py-6">
+        <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
+          <div className="max-w-4xl">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="signal-pill rounded-full px-3 py-1 text-[11px] font-semibold">
+                MyAssist
+              </span>
+              {data ? (
+                <span className="theme-chip rounded-full px-3 py-1 text-xs font-medium">
+                  {contextSource === "mock" ? "Demo feed" : "Live n8n feed"}
+                </span>
+              ) : null}
+            </div>
+            <h1 className="theme-ink mt-4 text-balance text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">
+              {data
+                ? `Welcome back. ${postureSummary(data)}`
+                : "Welcome back. MyAssist is getting your day ready."}
+            </h1>
+            <p className="theme-muted mt-3 max-w-3xl text-sm leading-7 sm:text-base">
+              {data
+                ? formatRunDate(data)
+                : "Live daily context from n8n, with tasks, calendar, email, and assistant actions in one place."}
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-3 xl:min-w-[340px] xl:items-end">
+            <div className="theme-selector relative">
+              <button
+                type="button"
+                onClick={() => setThemeMenuOpen((current) => !current)}
+                className="theme-toggle rounded-full px-4 py-2 text-xs font-semibold transition"
+                aria-haspopup="menu"
+                aria-expanded={themeMenuOpen}
+              >
+                Theme: {THEMES.find((option) => option.key === theme)?.label ?? "Neon"}
+              </button>
+              {themeMenuOpen ? (
+                <div className="theme-menu absolute right-0 z-30 mt-2 w-64 rounded-[22px] p-2">
+                  {THEMES.map((option) => (
+                    <button
+                      key={option.key}
+                      type="button"
+                      onClick={() => {
+                        setTheme(option.key);
+                        setThemeMenuOpen(false);
+                      }}
+                      className={`theme-menu-item block w-full rounded-[16px] px-3 py-3 text-left transition ${
+                        theme === option.key ? "theme-toggle is-active" : ""
+                      }`}
+                    >
+                      <span className="block text-sm font-semibold">{option.label}</span>
+                      <span className="theme-muted block text-xs">{option.note}</span>
+                    </button>
+                  ))}
                 </div>
-              )}
+              ) : null}
             </div>
             <div className="flex flex-wrap gap-3 xl:justify-end">
               <button
                 type="button"
                 onClick={() => void refresh()}
                 disabled={loading}
-                className="rounded-full border border-[#c7aa92] bg-white/70 px-5 py-3 text-sm font-semibold text-[#23150d] transition hover:bg-white disabled:opacity-50"
+                className="theme-button-secondary rounded-full px-5 py-3 text-sm font-semibold transition disabled:opacity-50"
               >
                 {loading ? "Refreshing..." : "Refresh"}
               </button>
@@ -409,365 +352,227 @@ export function Dashboard({
                 type="button"
                 onClick={() => void copyJson()}
                 disabled={!data || loading}
-                className="rounded-full bg-[#1f140f] px-5 py-3 text-sm font-semibold text-[#fff7ef] transition hover:bg-[#2b1a11] disabled:opacity-50"
+                className="theme-button-primary rounded-full px-5 py-3 text-sm font-semibold transition disabled:opacity-50"
               >
-                {copied ? "Copied" : "Copy briefing payload"}
+                {copied ? "Copied" : "Copy payload"}
               </button>
             </div>
           </div>
         </div>
-      </header>
 
-      {data && !error && (
-        <section className="mb-8 grid gap-4 lg:grid-cols-[1.35fr_0.95fr]">
-          <div className="glass-panel-strong rounded-[30px] p-6">
-            <p className="section-title text-xs font-semibold text-[#8a654f]">Assistant read</p>
-            <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-[#1f130c]">
-              {assistantHeadline(data)}
-            </h2>
-            <p className="mt-4 max-w-3xl text-sm leading-7 text-[#6f5f50]">{briefingNarrative(data)}</p>
-            <div className="mt-6 grid gap-3 md:grid-cols-3">
-              <div className="metric-chip rounded-[22px] p-4">
-                <p className="text-[11px] uppercase tracking-[0.18em] text-[#8a654f]">Urgent load</p>
-                <p className="mt-2 text-3xl font-semibold text-[#20140c]">{countUrgentItems(data)}</p>
-                <p className="mt-1 text-sm text-[#6f5f50]">Overdue plus due today.</p>
-              </div>
-              <div className="metric-chip rounded-[22px] p-4">
-                <p className="text-[11px] uppercase tracking-[0.18em] text-[#8a654f]">Pressure</p>
-                <p className="mt-2 text-3xl font-semibold text-[#20140c]">{pressureLevel(data)}</p>
-                <p className="mt-1 text-sm text-[#6f5f50]">Combined email, task, and calendar drag.</p>
-              </div>
-              <div className="metric-chip rounded-[22px] p-4">
-                <p className="text-[11px] uppercase tracking-[0.18em] text-[#8a654f]">Posture</p>
-                <p className="mt-2 text-lg font-semibold leading-6 text-[#20140c]">{todayPosture(data)}</p>
-              </div>
+        {data ? (
+          <div className="mt-6 grid gap-3 sm:grid-cols-3 xl:grid-cols-4">
+            <div className="metric-chip rounded-[22px] px-4 py-4">
+              <p className="theme-accent text-[11px] uppercase tracking-[0.18em]">What needs attention</p>
+              <p className="theme-ink mt-2 text-3xl font-semibold">{countUrgentItems(data)}</p>
+              <p className="theme-muted mt-1 text-sm">Overdue plus due today.</p>
+            </div>
+            <div className="metric-chip rounded-[22px] px-4 py-4">
+              <p className="theme-accent text-[11px] uppercase tracking-[0.18em]">Pressure</p>
+              <p className="theme-ink mt-2 text-3xl font-semibold">{pressureLevel(data)}</p>
+              <p className="theme-muted mt-1 text-sm">Task, calendar, and email load.</p>
+            </div>
+            <div className="metric-chip rounded-[22px] px-4 py-4">
+              <p className="theme-accent text-[11px] uppercase tracking-[0.18em]">Calendar</p>
+              <p className="theme-ink mt-2 text-3xl font-semibold">{data.calendar_today.length}</p>
+              <p className="theme-muted mt-1 text-sm">
+                {data.calendar_today.length === 1 ? "Event today" : "Events in view"}
+              </p>
+            </div>
+            <div className="metric-chip rounded-[22px] px-4 py-4">
+              <p className="theme-accent text-[11px] uppercase tracking-[0.18em]">Important emails</p>
+              <p className="theme-ink mt-2 text-3xl font-semibold">{data.gmail_signals.length}</p>
+              <p className="theme-muted mt-1 text-sm">{summarizeEmails(data.gmail_signals)}</p>
             </div>
           </div>
-          <div className="glass-panel rounded-[30px] p-6">
-            <p className="section-title text-xs font-semibold text-[#8a654f]">Operator moves</p>
-            <div className="mt-4 space-y-3">
-              {moves.length === 0 ? (
-                <p className="rounded-[22px] border border-dashed border-[#cdb8a4] px-4 py-5 text-sm text-[#7d604f]">
-                  No urgent moves surfaced in the current snapshot.
-                </p>
-              ) : (
-                moves.map((move, index) => (
-                  <div
-                    key={move}
-                    className="list-card flex items-start gap-3 rounded-[22px] px-4 py-4"
-                  >
-                    <span className="signal-pill mt-0.5 rounded-full px-2.5 py-1 text-[11px] font-semibold">
-                      0{index + 1}
-                    </span>
-                    <p className="text-sm leading-6 text-[#22150d]">{move}</p>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {data && !error && (
-        <section className="mb-8">
-          <div className="glass-panel-strong rounded-[32px] p-3 sm:p-4">
-            <div className="flex items-center justify-between gap-3 rounded-[24px] px-3 py-2 sm:px-4">
-              <div>
-                <p className="section-title text-xs font-semibold text-[#8a654f]">Assistant channel</p>
-                <p className="mt-1 text-sm text-[#6f5f50]">Interactive planning, task drafting, and challenge flow.</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => toggleSection("assistant")}
-                className="metric-chip rounded-full px-4 py-2 text-xs font-semibold text-[#6b4a36]"
-              >
-                {collapsed.assistant ? "Expand" : "Compress"}
-              </button>
-            </div>
-            {!collapsed.assistant ? (
-              <div className="mt-2">
-                <AssistantConsole context={data} />
-              </div>
-            ) : null}
-          </div>
-        </section>
-      )}
-
-      {data && !error && lanes.length > 0 && (
-        <section className="mb-8">
-          <div className="glass-panel rounded-[30px] p-6">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="section-title text-xs font-semibold text-[#8a654f]">Focus lanes</p>
-                <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[#20140c]">
-                  The assistant&apos;s recommended attack order
-                </h2>
-              </div>
-              <span className="metric-chip rounded-full px-3 py-1.5 text-xs font-medium text-[#7d604f]">
-                {lanes.length} lanes
-              </span>
-            </div>
-            <div className="mt-4 flex justify-end">
-              <button
-                type="button"
-                onClick={() => toggleSection("focus")}
-                className="metric-chip rounded-full px-4 py-2 text-xs font-semibold text-[#6b4a36]"
-              >
-                {collapsed.focus ? "Expand" : "Compress"}
-              </button>
-            </div>
-            {!collapsed.focus ? (
-              <div className="mt-5 grid gap-3 lg:grid-cols-4">
-                {lanes.map((lane) => (
-                  <div key={`${lane.label}-${lane.title}`} className="list-card rounded-[24px] px-4 py-5">
-                    <span className="signal-pill rounded-full px-2.5 py-1 text-[11px] font-semibold">
-                      {lane.label}
-                    </span>
-                    <p className="mt-4 text-base font-semibold leading-6 text-[#20140c]">{lane.title}</p>
-                    <p className="mt-2 text-sm leading-6 text-[#6f5f50]">{lane.detail}</p>
-                  </div>
-                ))}
-              </div>
-            ) : null}
-          </div>
-        </section>
-      )}
-
-      {data && !error && (
-        <section className="mb-8">
-          <div className="glass-panel-strong rounded-[30px] p-6">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="section-title text-xs font-semibold text-[#8a654f]">Executive triage</p>
-                <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[#20140c]">
-                  Do now, defer, and watch
-                </h2>
-              </div>
-              <span className="metric-chip rounded-full px-3 py-1.5 text-xs font-medium text-[#7d604f]">
-                Auto-shaped from today&apos;s feed
-              </span>
-            </div>
-            <div className="mt-4 flex justify-end">
-              <button
-                type="button"
-                onClick={() => toggleSection("triage")}
-                className="metric-chip rounded-full px-4 py-2 text-xs font-semibold text-[#6b4a36]"
-              >
-                {collapsed.triage ? "Expand" : "Compress"}
-              </button>
-            </div>
-            {!collapsed.triage ? (
-              <div className="mt-5 grid gap-3 lg:grid-cols-3">
-                {triage.map((item) => (
-                  <div key={item.label} className={`list-card rounded-[24px] px-4 py-5 ${item.tone}`}>
-                    <span className="signal-pill rounded-full px-2.5 py-1 text-[11px] font-semibold">
-                      {item.label}
-                    </span>
-                    <p className="mt-4 text-lg font-semibold leading-6 text-[#20140c]">{item.title}</p>
-                    <p className="mt-2 text-sm leading-6 text-[#6f5f50]">{item.detail}</p>
-                  </div>
-                ))}
-              </div>
-            ) : null}
-          </div>
-        </section>
-      )}
+        ) : null}
+      </section>
 
       {contextSource === "mock" && data && !error && (
-        <div
-          className="glass-panel mb-8 rounded-[24px] border-[#9cc8d4] p-4 text-sm text-[#0e5163]"
-          role="status"
-        >
+        <div className="glass-panel mb-6 rounded-[24px] border-blue-500/30 bg-blue-500/10 p-5 text-blue-100" role="status">
           <p className="font-semibold">Demo mode is active.</p>
           <p className="mt-1 text-xs leading-6 opacity-90">
             The interface is working, but the assistant is reading mock data because{" "}
-            <code className="rounded bg-white/60 px-1.5 py-0.5">MYASSIST_N8N_WEBHOOK_URL</code> is empty.
+            <code className="rounded bg-white/5 px-1.5 py-0.5">MYASSIST_N8N_WEBHOOK_URL</code> is empty.
           </p>
         </div>
       )}
 
       {error && (
-        <div
-          role="alert"
-          className="glass-panel mb-8 rounded-[24px] border-[#d4b49c] p-5 text-sm text-[#5b2d13]"
-        >
+        <div role="alert" className="glass-panel mb-6 rounded-[24px] border-red-500/30 p-5 text-sm text-red-300">
           <p className="font-semibold">The assistant could not pull context.</p>
           <p className="mt-2 font-mono text-xs opacity-90">{error}</p>
           <p className="mt-3 text-xs leading-6">
             Check the active n8n webhook and the value of{" "}
-            <code className="rounded bg-white/60 px-1.5 py-0.5">MYASSIST_N8N_WEBHOOK_URL</code>, then refresh.
+            <code className="rounded bg-white/5 px-1.5 py-0.5">MYASSIST_N8N_WEBHOOK_URL</code>, then refresh.
           </p>
         </div>
       )}
 
       {taskActionError && !error && (
-        <div
-          role="alert"
-          className="glass-panel mb-8 rounded-[24px] border-[#d4b49c] p-5 text-sm text-[#5b2d13]"
-        >
+        <div role="alert" className="glass-panel mb-6 rounded-[24px] border-red-500/30 p-5 text-sm text-red-300">
           <p className="font-semibold">Todoist write-back failed.</p>
           <p className="mt-2 text-xs leading-6 opacity-90">{taskActionError}</p>
         </div>
       )}
 
-      {data && (
-        <div className="grid gap-6 2xl:grid-cols-[1.45fr_0.95fr]">
+      {data ? (
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.55fr)_minmax(320px,0.9fr)]">
           <div className="space-y-6">
-            <section className="glass-panel-strong rounded-[30px] p-6">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="section-title text-xs font-semibold text-[#8a654f]">Timeline anchor</p>
-                  <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[#20140c]">
-                    Calendar horizon
-                  </h2>
+            {nextAction ? (
+              <section className="glass-panel-strong rounded-[30px] p-6">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div className="max-w-3xl">
+                    <p className="section-title text-xs font-semibold">Do this next</p>
+                    <h2 className="theme-ink mt-3 text-2xl font-semibold tracking-[-0.03em] sm:text-3xl">
+                      {nextAction.title}
+                    </h2>
+                    <p className="theme-muted mt-3 text-sm leading-7 sm:text-base">{nextAction.detail}</p>
+                  </div>
+                  <span className="signal-pill rounded-full px-3 py-1.5 text-xs font-semibold">
+                    {nextAction.cue}
+                  </span>
                 </div>
-                <span className="signal-pill rounded-full px-3 py-1.5 text-[11px] font-semibold">
-                  {data.calendar_today.length} events
-                </span>
-              </div>
-              <div className="mt-4 flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => toggleSection("calendar")}
-                  className="metric-chip rounded-full px-4 py-2 text-xs font-semibold text-[#6b4a36]"
-                >
-                  {collapsed.calendar ? "Expand" : "Compress"}
-                </button>
-              </div>
-              {!collapsed.calendar ? (
-                data.calendar_today.length === 0 ? (
-                  <p className="mt-4 rounded-[22px] border border-dashed border-[#cdb8a4] px-4 py-6 text-sm text-[#7d604f]">
-                    No events in the current pull.
-                  </p>
-                ) : (
-                  <ul className="mt-5 max-h-[32rem] space-y-3 overflow-auto pr-1">
-                    {data.calendar_today.map((ev) => (
-                      <li
-                        key={ev.id ?? `${ev.summary}-${ev.start}`}
-                        className="list-card rounded-[24px] px-4 py-4"
-                      >
-                        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                          <div className="min-w-0">
-                            <p className="text-base font-semibold text-[#20140c]">{ev.summary}</p>
-                            <p className="mt-1 text-sm text-[#6f5f50]">
-                              {formatWhen(ev.start)}
-                              {ev.end ? ` to ${formatWhen(ev.end)}` : ""}
-                            </p>
-                          </div>
-                          {ev.location ? (
-                            <span className="metric-chip max-w-full rounded-full px-3 py-1.5 text-xs font-medium text-[#7d604f]">
-                              {ev.location}
-                            </span>
-                          ) : null}
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )
-              ) : null}
-            </section>
+              </section>
+            ) : null}
 
             <section className="glass-panel rounded-[30px] p-6">
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                  <p className="section-title text-xs font-semibold text-[#8a654f]">Task decks</p>
-                  <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[#20140c]">
-                    Action inventory
+                  <p className="section-title text-xs font-semibold">Tasks</p>
+                  <h2 className="theme-ink mt-2 text-2xl font-semibold tracking-[-0.03em]">
+                    What needs attention
                   </h2>
+                  <p className="theme-muted mt-2 text-sm leading-6">
+                    Clear groups, explicit actions, and the same live Todoist behavior underneath.
+                  </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => toggleSection("tasks")}
-                  className="metric-chip rounded-full px-4 py-2 text-xs font-semibold text-[#6b4a36]"
-                >
-                  {collapsed.tasks ? "Expand" : "Compress"}
-                </button>
+                <div className="flex flex-wrap gap-2">
+                  <span className="theme-chip rounded-full px-3 py-1.5 text-xs font-medium">
+                    Overdue {taskCountLabel(data.todoist_overdue)}
+                  </span>
+                  <span className="theme-chip rounded-full px-3 py-1.5 text-xs font-medium">
+                    Today {taskCountLabel(data.todoist_due_today)}
+                  </span>
+                  <span className="theme-chip rounded-full px-3 py-1.5 text-xs font-medium">
+                    Backlog {taskCountLabel(data.todoist_upcoming_high_priority)}
+                  </span>
+                </div>
               </div>
-              {!collapsed.tasks ? (
-                <div className="mt-5 grid items-start gap-6 md:grid-cols-2 xl:grid-cols-3">
-                  <TaskList
-                    title="Needs rescue"
-                    tasks={data.todoist_overdue}
-                    emptyLabel="Nothing overdue in this snapshot."
-                    pendingTaskIds={pendingTaskIds}
-                    onComplete={completeTask}
-                    onSchedule={scheduleTask}
-                  />
-                  <TaskList
-                    title="Today commitments"
-                    tasks={data.todoist_due_today}
-                    emptyLabel="Nothing due today in this snapshot."
-                    pendingTaskIds={pendingTaskIds}
-                    onComplete={completeTask}
-                    onSchedule={scheduleTask}
-                  />
-                  <TaskList
-                    title="Strategic backlog"
-                    tasks={data.todoist_upcoming_high_priority}
-                    emptyLabel="No high-priority undated tasks surfaced."
-                    pendingTaskIds={pendingTaskIds}
-                    onComplete={completeTask}
-                    onSchedule={scheduleTask}
-                  />
-                </div>
-              ) : null}
+              <div className="mt-6 grid items-start gap-5 lg:grid-cols-2 2xl:grid-cols-3">
+                <TaskList
+                  title="Overdue"
+                  tasks={data.todoist_overdue}
+                  emptyLabel="Nothing overdue in this snapshot."
+                  pendingTaskIds={pendingTaskIds}
+                  onComplete={completeTask}
+                  onSchedule={scheduleTask}
+                />
+                <TaskList
+                  title="Today"
+                  tasks={data.todoist_due_today}
+                  emptyLabel="Nothing due today in this snapshot."
+                  pendingTaskIds={pendingTaskIds}
+                  onComplete={completeTask}
+                  onSchedule={scheduleTask}
+                />
+                <TaskList
+                  title="Backlog"
+                  tasks={data.todoist_upcoming_high_priority}
+                  emptyLabel="No high-priority backlog surfaced."
+                  pendingTaskIds={pendingTaskIds}
+                  onComplete={completeTask}
+                  onSchedule={scheduleTask}
+                />
+              </div>
             </section>
           </div>
 
-          <section className="glass-panel rounded-[30px] p-6">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="section-title text-xs font-semibold text-[#8a654f]">Signal inbox</p>
-                <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[#20140c]">
-                  Email pressure
-                </h2>
+          <aside className="space-y-6">
+            <section className="glass-panel rounded-[30px] p-5">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="section-title text-xs font-semibold">Calendar</p>
+                  <h2 className="theme-ink mt-2 text-xl font-semibold tracking-[-0.03em]">
+                    Today and next
+                  </h2>
+                </div>
+                <span className="signal-pill rounded-full px-3 py-1 text-[11px] font-semibold">
+                  {data.calendar_today.length}
+                </span>
               </div>
-              <span className="signal-pill rounded-full px-3 py-1.5 text-[11px] font-semibold">
-                {data.gmail_signals.length} threads
-              </span>
-            </div>
-            <div className="mt-4 flex justify-end">
-              <button
-                type="button"
-                onClick={() => toggleSection("email")}
-                className="metric-chip rounded-full px-4 py-2 text-xs font-semibold text-[#6b4a36]"
-              >
-                {collapsed.email ? "Expand" : "Compress"}
-              </button>
-            </div>
-            {!collapsed.email ? (
-              data.gmail_signals.length === 0 ? (
-                <p className="mt-5 rounded-[22px] border border-dashed border-[#cdb8a4] px-4 py-6 text-sm text-[#7d604f]">
-                  No messages matched the current signal query.
+              {data.calendar_today.length === 0 ? (
+                <p className="theme-empty mt-4 rounded-[20px] px-4 py-5 text-sm">
+                  No events in the current pull.
                 </p>
               ) : (
-                <ul className="mt-5 max-h-[44rem] space-y-3 overflow-auto pr-1">
-                  {data.gmail_signals.map((g) => (
-                    <li
-                      key={g.id ?? g.threadId ?? g.subject}
-                      className="list-card rounded-[24px] px-4 py-4"
-                    >
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-[#20140c]">
-                          {g.subject || "(no subject)"}
-                        </p>
-                        <p className="mt-1 text-xs uppercase tracking-[0.14em] text-[#8a654f]">
-                          {firstName(g.from)}
-                        </p>
-                        {g.snippet ? (
-                          <p className="mt-3 line-clamp-3 text-sm leading-6 text-[#6f5f50]">
-                            {g.snippet}
-                          </p>
-                        ) : null}
-                      </div>
+                <ul className="mt-4 max-h-[22rem] space-y-3 overflow-auto pr-1">
+                  {data.calendar_today.map((ev) => (
+                    <li key={ev.id ?? `${ev.summary}-${ev.start}`} className="list-card rounded-[22px] px-4 py-4">
+                      <p className="theme-ink text-sm font-semibold leading-6">{ev.summary}</p>
+                      <p className="theme-muted mt-2 text-xs leading-5">
+                        {formatWhen(ev.start)}
+                        {ev.end ? ` to ${formatWhen(ev.end)}` : ""}
+                      </p>
+                      {ev.location ? (
+                        <p className="theme-accent mt-2 text-xs uppercase tracking-[0.12em]">{ev.location}</p>
+                      ) : null}
                     </li>
                   ))}
                 </ul>
-              )
-            ) : null}
-          </section>
+              )}
+            </section>
+
+            <section className="glass-panel rounded-[30px] p-5">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="section-title text-xs font-semibold">Important emails</p>
+                  <h2 className="theme-ink mt-2 text-xl font-semibold tracking-[-0.03em]">
+                    What is surfacing
+                  </h2>
+                </div>
+                <span className="signal-pill rounded-full px-3 py-1 text-[11px] font-semibold">
+                  {data.gmail_signals.length}
+                </span>
+              </div>
+              {data.gmail_signals.length === 0 ? (
+                <p className="theme-empty mt-4 rounded-[20px] px-4 py-5 text-sm">
+                  No messages matched the current signal query.
+                </p>
+              ) : (
+                <ul className="mt-4 max-h-[22rem] space-y-3 overflow-auto pr-1">
+                  {data.gmail_signals.map((g) => (
+                    <li key={g.id ?? g.threadId ?? g.subject} className="list-card rounded-[22px] px-4 py-4">
+                      <p className="theme-ink line-clamp-2 text-sm font-semibold leading-6">
+                        {g.subject || "(no subject)"}
+                      </p>
+                      <p className="theme-accent mt-2 text-[11px] uppercase tracking-[0.14em]">
+                        {firstName(g.from)}
+                      </p>
+                      {g.snippet ? (
+                        <p className="theme-muted mt-2 line-clamp-2 text-sm leading-6">{g.snippet}</p>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+
+            <section className="glass-panel rounded-[30px] p-5">
+              <p className="section-title text-xs font-semibold">Ask MyAssist</p>
+              <h2 className="theme-ink mt-2 text-xl font-semibold tracking-[-0.03em]">
+                Fast support when you need it
+              </h2>
+              <p className="theme-muted mt-2 text-sm leading-6">
+                Chat, draft tasks, and challenge the plan without taking over the page.
+              </p>
+              <div className="mt-4">
+                <AssistantConsole context={data} compact />
+              </div>
+            </section>
+          </aside>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
