@@ -33,21 +33,26 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - name: Lint
-        run: pnpm --filter web lint
+        working-directory: apps/web
+        run: pnpm lint
 
       - name: Typecheck
-        run: pnpm --filter web typecheck
+        working-directory: apps/web
+        run: pnpm typecheck
 
       - name: Unit tests
-        run: pnpm --filter web test
+        working-directory: apps/web
+        run: pnpm test
         env:
           CI: true
 
       - name: Install Playwright Chromium
-        run: pnpm --filter web exec playwright install --with-deps chromium
+        working-directory: apps/web
+        run: pnpm exec playwright install --with-deps chromium
 
       - name: E2E smoke
-        run: pnpm --filter web exec playwright test
+        working-directory: apps/web
+        run: pnpm exec playwright test
         env:
           CI: true
           MYASSIST_USE_MOCK_CONTEXT: "true"
