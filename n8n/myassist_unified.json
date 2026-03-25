@@ -109,7 +109,7 @@
         360
       ],
       "notesInFlow": true,
-        "notes": "Read both unread and read mail. Query now targets recent mail using newer_than:14d."
+      "notes": "Node name is legacy; query is newer_than:14d (not starred-only). Starred-only was returning 0 for many inboxes. Attach Google OAuth with Gmail API enabled."
     },
     {
       "parameters": {
@@ -121,8 +121,8 @@
         },
         "operation": "getAll",
         "options": {
-          "timeMin": "={{$now.startOf('day').toISO()}}",
-          "timeMax": "={{$now.endOf('day').toISO()}}",
+          "timeMin": "={{$now.setZone('America/Toronto').startOf('day').toISO()}}",
+          "timeMax": "={{$now.setZone('America/Toronto').endOf('day').toISO()}}",
           "singleEvents": true,
           "orderBy": "startTime"
         }
@@ -136,7 +136,7 @@
         520
       ],
       "notesInFlow": true,
-      "notes": "Calendar ID set by email (not primary) so re-import keeps the correct calendar. Change value if the account differs."
+      "notes": "timeMin/Max use America/Toronto so today matches Eastern time, not only UTC server midnight. Calendar ID is primary calendar for that email; change if events live elsewhere."
     },
     {
       "parameters": {
@@ -176,7 +176,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "const todoistPayload = $items('Todoist - Get Active Tasks', 0, 0)[0]?.json;\nconst todoistRaw = Array.isArray(todoistPayload)\n  ? todoistPayload\n  : (Array.isArray(todoistPayload?.results)\n    ? todoistPayload.results\n    : (Array.isArray(todoistPayload?.items) ? todoistPayload.items : []));\nconst gmailRaw = $items('Gmail - Get Starred Signals', 0, 0).map(i => i.json);\nconst calRaw = $items('Google Calendar - Today Events', 0, 0).map(i => i.json);\n\nconst today = new Date();\nconst y = today.getFullYear();\nconst m = String(today.getMonth() + 1).padStart(2, '0');\nconst d = String(today.getDate()).padStart(2, '0');\nconst todayStr = `${y}-${m}-${d}`;\n\nconst tasks = todoistRaw;\nconst overdue = [];\nconst dueToday = [];\nconst upcomingHigh = [];\n\nfor (const t of tasks) {\n  const due = t?.due?.date || null;\n  const p = Number(t?.priority || 4);\n  if (due && due < todayStr) overdue.push(t);\n  else if (due === todayStr) dueToday.push(t);\n  else if (!due && p <= 2) upcomingHigh.push(t);\n}\n\nconst gmailSignals = gmailRaw.map(g => ({\n  id: g.id || null,\n  threadId: g.threadId || null,\n  from: g.from || g.payload?.headers?.find(h => String(h.name).toLowerCase() === 'from')?.value || '',\n  subject: g.subject || g.payload?.headers?.find(h => String(h.name).toLowerCase() === 'subject')?.value || '',\n  snippet: g.snippet || '',\n  date: g.internalDate || g.date || ''\n}));\n\nconst calendarToday = calRaw.map(e => ({\n  id: e.id || null,\n  summary: e.summary || '(no title)',\n  start: e.start?.dateTime || e.start?.date || null,\n  end: e.end?.dateTime || e.end?.date || null,\n  location: e.location || null\n}));\n\nreturn [{\n  json: {\n    generated_at: new Date().toISOString(),\n    run_date: todayStr,\n    todoist_overdue: overdue,\n    todoist_due_today: dueToday,\n    todoist_upcoming_high_priority: upcomingHigh.slice(0, 10),\n    gmail_signals: gmailSignals,\n    calendar_today: calendarToday\n  }\n}];"
+        "jsCode": "function safeNodeJson(nodeName) {\n  try {\n    return $items(nodeName).map((item) => item.json);\n  } catch {\n    return [];\n  }\n}\n\nconst todoistItems = safeNodeJson('Todoist - Get Active Tasks');\nconst todoistPayload = todoistItems[0] ?? null;\nconst todoistRaw = Array.isArray(todoistPayload)\n  ? todoistPayload\n  : (Array.isArray(todoistPayload?.results)\n    ? todoistPayload.results\n    : (Array.isArray(todoistPayload?.items) ? todoistPayload.items : []));\nconst gmailRaw = safeNodeJson('Gmail - Get Starred Signals');\nconst calRaw = safeNodeJson('Google Calendar - Today Events');\n\nlet todayStr;\ntry {\n  todayStr = $now.setZone('America/Toronto').toFormat('yyyy-MM-dd');\n} catch {\n  const t = new Date();\n  todayStr = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;\n}\n\nconst tasks = todoistRaw;\nconst overdue = [];\nconst dueToday = [];\nconst upcomingHigh = [];\n\nfor (const t of tasks) {\n  const due = t?.due?.date || null;\n  const p = Number(t?.priority || 4);\n  if (due && due < todayStr) overdue.push(t);\n  else if (due === todayStr) dueToday.push(t);\n  else if (!due && p <= 2) upcomingHigh.push(t);\n}\n\nconst gmailSignals = gmailRaw.map(g => ({\n  id: g.id || null,\n  threadId: g.threadId || null,\n  from: g.from || g.payload?.headers?.find(h => String(h.name).toLowerCase() === 'from')?.value || '',\n  subject: g.subject || g.payload?.headers?.find(h => String(h.name).toLowerCase() === 'subject')?.value || '',\n  snippet: g.snippet || '',\n  date: g.internalDate || g.date || ''\n}));\n\nconst calendarToday = calRaw.map(e => ({\n  id: e.id || null,\n  summary: e.summary || '(no title)',\n  start: e.start?.dateTime || e.start?.date || null,\n  end: e.end?.dateTime || e.end?.date || null,\n  location: e.location || null\n}));\n\nreturn [{\n  json: {\n    generated_at: new Date().toISOString(),\n    run_date: todayStr,\n    source_item_counts: {\n      todoist_http_items: todoistItems.length,\n      gmail_messages: gmailRaw.length,\n      calendar_events: calRaw.length\n    },\n    todoist_overdue: overdue,\n    todoist_due_today: dueToday,\n    todoist_upcoming_high_priority: upcomingHigh.slice(0, 10),\n    gmail_signals: gmailSignals,\n    calendar_today: calendarToday\n  }\n}];"
       },
       "id": "normalize_all",
       "name": "Normalize Aggregated Data",
@@ -187,7 +187,7 @@
         360
       ],
       "notesInFlow": true,
-      "notes": "Terminal output: normalized JSON for Custom GPT (MyAssist Operator). No in-n8n LLM."
+      "notes": "Uses $items(NodeName) (not ,0,0) so all Gmail/Calendar items are read. source_item_counts helps debug upstream zeros without opening each node."
     }
   ],
   "connections": {
