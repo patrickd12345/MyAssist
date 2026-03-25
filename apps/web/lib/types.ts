@@ -26,3 +26,13 @@ export type MyAssistDailyContext = {
   gmail_signals: GmailSignal[];
   calendar_today: CalendarEvent[];
 };
+
+export type SituationBrief = {
+  pressure_summary: string;
+  top_priorities: string[];
+  conflicts_and_risks: string[];
+  defer_recommendations: string[];
+  next_actions: string[];
+  confidence_and_limits: string;
+  memory_insights: string[];
+};

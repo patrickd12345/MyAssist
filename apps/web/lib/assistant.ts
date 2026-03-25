@@ -1,4 +1,4 @@
-import type { MyAssistDailyContext, TodoistTask } from "./types";
+import type { MyAssistDailyContext, SituationBrief, TodoistTask } from "./types";
 
 export type AssistantMode = "ollama" | "fallback";
 
@@ -25,6 +25,12 @@ function taskTitle(task: TodoistTask | undefined): string | null {
 function firstName(from: string): string {
   const cleaned = from.replace(/".*?"/g, "").replace(/<.*?>/g, "").trim();
   return cleaned || from;
+}
+
+function safeDateValue(value: string | null): number {
+  if (!value) return Number.POSITIVE_INFINITY;
+  const parsed = Date.parse(value);
+  return Number.isNaN(parsed) ? Number.POSITIVE_INFINITY : parsed;
 }
 
 export function buildSuggestedPrompts(context: MyAssistDailyContext): string[] {
@@ -76,6 +82,34 @@ export function buildWelcomeReply(context: MyAssistDailyContext): AssistantReply
   };
 }
 
+export function buildHeadlineFallback(context: MyAssistDailyContext): string {
+  const urgent = context.todoist_overdue.length + context.todoist_due_today.length;
+  const meetings = context.calendar_today.length;
+  const signals = context.gmail_signals.length;
+
+  if (urgent >= 8) {
+    return "Heavy day. Clear urgent drag before taking on new work.";
+  }
+
+  if (urgent > 0 && meetings > 0) {
+    return "Mixed pressure across tasks and calendar. Protect the next block before the day fragments.";
+  }
+
+  if (signals > 6) {
+    return "Inbox pressure is rising. Stay out of reactive loops until priorities are set.";
+  }
+
+  if (meetings > 4) {
+    return "Calendar weight is high. Use the gaps deliberately.";
+  }
+
+  if (urgent > 0) {
+    return "A few live obligations are on deck. Close them early and keep the day clean.";
+  }
+
+  return "The board is relatively clear. Use the runway for meaningful work.";
+}
+
 export function buildContextDigest(context: MyAssistDailyContext): string {
   const firstEvent = context.calendar_today.find((event) => Boolean(event.start));
   const firstSignal = context.gmail_signals[0];
@@ -121,6 +155,108 @@ export function buildContextDigest(context: MyAssistDailyContext): string {
   };
 
   return JSON.stringify(digest, null, 2);
+}
+
+export function buildSituationDigest(context: MyAssistDailyContext): string {
+  const overdue = context.todoist_overdue.slice(0, 14).map((task) => ({
+    content: taskTitle(task),
+    priority: typeof task.priority === "number" ? task.priority : null,
+    due: typeof (task.due as { date?: string } | undefined)?.date === "string"
+      ? (task.due as { date?: string }).date
+      : null,
+  }));
+  const dueToday = context.todoist_due_today.slice(0, 12).map((task) => ({
+    content: taskTitle(task),
+    priority: typeof task.priority === "number" ? task.priority : null,
+  }));
+  const strategic = context.todoist_upcoming_high_priority.slice(0, 12).map((task) => ({
+    content: taskTitle(task),
+    priority: typeof task.priority === "number" ? task.priority : null,
+  }));
+  const events = [...context.calendar_today]
+    .sort((a, b) => safeDateValue(a.start) - safeDateValue(b.start))
+    .slice(0, 24)
+    .map((event) => ({
+      summary: event.summary,
+      start: event.start,
+      end: event.end,
+      location: event.location,
+      calendar: typeof (event as Record<string, unknown>).calendar === "string"
+        ? (event as Record<string, unknown>).calendar
+        : null,
+    }));
+  const emailSignals = [...context.gmail_signals]
+    .sort((a, b) => safeDateValue(a.date) - safeDateValue(b.date))
+    .slice(0, 30)
+    .map((signal) => ({
+      from: firstName(signal.from),
+      subject: signal.subject,
+      date: signal.date,
+      snippet: signal.snippet.slice(0, 180),
+    }));
+
+  const digest = {
+    run_date: context.run_date,
+    generated_at: context.generated_at,
+    counts: {
+      overdue: context.todoist_overdue.length,
+      due_today: context.todoist_due_today.length,
+      strategic_tasks: context.todoist_upcoming_high_priority.length,
+      calendar_events: context.calendar_today.length,
+      email_signals: context.gmail_signals.length,
+    },
+    tasks: {
+      overdue,
+      due_today: dueToday,
+      strategic,
+    },
+    calendar: events,
+    email_signals: emailSignals,
+  };
+
+  return JSON.stringify(digest, null, 2);
+}
+
+export function buildSituationBriefFallback(context: MyAssistDailyContext): SituationBrief {
+  const topOverdue = taskTitle(context.todoist_overdue[0]);
+  const topDue = taskTitle(context.todoist_due_today[0]);
+  const topEvent = context.calendar_today.find((event) => Boolean(event.start));
+  const topEmail = context.gmail_signals[0];
+
+  const priorities = [topOverdue, topDue, topEvent?.summary, topEmail?.subject]
+    .filter((value): value is string => Boolean(value))
+    .slice(0, 4);
+
+  return {
+    pressure_summary:
+      context.todoist_overdue.length + context.todoist_due_today.length >= 6
+        ? "Operational pressure is high across commitments. Triage before inbox drift."
+        : "Pressure is moderate. Protect priority work before reactive tasks expand.",
+    top_priorities:
+      priorities.length > 0
+        ? priorities
+        : ["Define one meaningful work block before reactive tasks."],
+    conflicts_and_risks: [
+      context.calendar_today.length > 8
+        ? "Calendar density can fragment focus if no protected work block is reserved."
+        : "Calendar appears manageable, but confirm transitions and prep time.",
+      context.gmail_signals.length > 20
+        ? "Inbox volume is high; avoid broad cleanup and isolate only high-signal threads."
+        : "Inbox pressure is present; answer only threads tied to active commitments.",
+    ],
+    defer_recommendations: [
+      "Defer non-urgent inbox cleanup into a single batch window.",
+      "Defer low-value admin until overdue and due-today items are stable.",
+    ],
+    next_actions: [
+      topOverdue ? `Close overdue: ${topOverdue}` : "Close one overdue item first.",
+      topDue ? `Protect time for: ${topDue}` : "Schedule the top due-today obligation.",
+      topEvent?.summary ? `Prepare for: ${topEvent.summary}` : "Set one 45-minute focus block.",
+    ],
+    confidence_and_limits:
+      "This brief is generated from current task, calendar, and email signals only; unseen context may change priorities.",
+    memory_insights: [],
+  };
 }
 
 export function buildFallbackReply(context: MyAssistDailyContext, question: string): AssistantReply {
@@ -255,7 +391,7 @@ function buildTaskDraftFromMessage(message: string): TaskDraft | null {
   const duePatterns = [
     { regex: /\bthis afternoon\b/i, value: "today at 3pm" },
     { regex: /\btomorrow(?: at [^,.]+)?\b/i, valueFromMatch: true },
-    { regex: /\bnext week\b/i, value: "next monday at 9am" },
+    { regex: /\bnext week\b/i, value: "in 7 days at 9am" },
     { regex: /\btonight\b/i, value: "today at 7pm" },
     { regex: /\btoday(?: at [^,.]+)?\b/i, valueFromMatch: true },
     { regex: /\bnext monday(?: at [^,.]+)?\b/i, valueFromMatch: true },

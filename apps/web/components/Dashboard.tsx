@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { buildHeadlineFallback } from "@/lib/assistant";
 import {
   MYASSIST_CONTEXT_SOURCE_HEADER,
   type DailyContextSource,
 } from "@/lib/fetchDailyContext";
-import type { MyAssistDailyContext, GmailSignal, TodoistTask } from "@/lib/types";
+import type { MyAssistDailyContext, GmailSignal, SituationBrief, TodoistTask } from "@/lib/types";
 import { AssistantConsole } from "./AssistantConsole";
 import { TaskList } from "./TaskList";
 
@@ -55,23 +56,6 @@ function pressureLevel(data: MyAssistDailyContext): "Low" | "Medium" | "High" {
   if (score >= 24) return "High";
   if (score >= 12) return "Medium";
   return "Low";
-}
-
-function postureSummary(data: MyAssistDailyContext): string {
-  const urgent = countUrgentItems(data);
-  if (urgent >= 8) {
-    return "Heavy day. Clear urgent drag before taking on new work.";
-  }
-  if (urgent > 0 && data.calendar_today.length > 0) {
-    return "Mixed pressure. Tasks and schedule both need deliberate control.";
-  }
-  if (data.gmail_signals.length > 6) {
-    return "Inbox pressure is high. Protect focus before responding broadly.";
-  }
-  if (data.calendar_today.length > 4) {
-    return "Meeting-weighted day. Use the gaps well.";
-  }
-  return "Organized enough to work proactively.";
 }
 
 function buildNextAction(data: MyAssistDailyContext): {
@@ -137,6 +121,29 @@ function taskCountLabel(tasks: TodoistTask[]): string {
   return tasks.length === 1 ? "1 task" : `${tasks.length} tasks`;
 }
 
+function MetricValue({
+  value,
+  href,
+  label,
+}: {
+  value: number | string;
+  href?: string;
+  label: string;
+}) {
+  const className =
+    "theme-ink mt-2 text-3xl font-semibold transition hover:opacity-80 focus-visible:opacity-80 focus-visible:outline-none";
+
+  if (!href) {
+    return <p className={className}>{value}</p>;
+  }
+
+  return (
+    <a href={href} className={`${className} inline-block`} aria-label={label}>
+      {value}
+    </a>
+  );
+}
+
 export function Dashboard({
   initialData,
   initialError,
@@ -155,6 +162,14 @@ export function Dashboard({
   const [taskActionError, setTaskActionError] = useState<string | null>(null);
   const [theme, setTheme] = useState<ThemeKey>("neon");
   const [themeMenuOpen, setThemeMenuOpen] = useState(false);
+  const [headline, setHeadline] = useState<string>(
+    initialData ? buildHeadlineFallback(initialData) : "MyAssist is getting your day ready.",
+  );
+  const [situationBrief, setSituationBrief] = useState<SituationBrief | null>(null);
+  const [briefLoading, setBriefLoading] = useState(false);
+  const [briefError, setBriefError] = useState<string | null>(null);
+  const [briefFeedbackState, setBriefFeedbackState] = useState<"idle" | "sending" | "saved">("idle");
+  const lastHeadlineKeyRef = useRef<string | null>(initialData?.generated_at ?? null);
 
   useEffect(() => {
     const storedTheme =
@@ -172,6 +187,132 @@ export function Dashboard({
       delete document.documentElement.dataset.theme;
     };
   }, [theme]);
+
+  useEffect(() => {
+    if (!data) {
+      setHeadline("MyAssist is getting your day ready.");
+      setSituationBrief(null);
+      setBriefError(null);
+      lastHeadlineKeyRef.current = null;
+      return;
+    }
+
+    const headlineKey = `${data.run_date}:${data.generated_at}`;
+    if (lastHeadlineKeyRef.current === headlineKey) {
+      return;
+    }
+
+    lastHeadlineKeyRef.current = headlineKey;
+    let cancelled = false;
+    setHeadline(buildHeadlineFallback(data));
+
+    const loadHeadline = async () => {
+      try {
+        const response = await fetch("/api/assistant", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            kind: "headline",
+            context: data,
+          }),
+        });
+
+        const body = (await response.json()) as { answer?: string; error?: string };
+        if (!response.ok) {
+          throw new Error(body.error ?? `HTTP ${response.status}`);
+        }
+
+        if (!cancelled && typeof body.answer === "string" && body.answer.trim()) {
+          setHeadline(body.answer.trim());
+        }
+      } catch {
+        if (!cancelled) {
+          setHeadline(buildHeadlineFallback(data));
+        }
+      }
+    };
+
+    void loadHeadline();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [data]);
+
+  useEffect(() => {
+    if (!data) {
+      setSituationBrief(null);
+      return;
+    }
+    let cancelled = false;
+    setBriefLoading(true);
+    setBriefError(null);
+    setBriefFeedbackState("idle");
+    const loadBrief = async () => {
+      try {
+        const response = await fetch("/api/assistant", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            kind: "situation_brief",
+            context: data,
+          }),
+        });
+        const body = (await response.json()) as { brief?: SituationBrief; error?: string };
+        if (!response.ok || !body.brief) {
+          throw new Error(body.error ?? `HTTP ${response.status}`);
+        }
+        if (!cancelled) {
+          setSituationBrief(body.brief);
+        }
+      } catch (cause) {
+        if (!cancelled) {
+          setSituationBrief(null);
+          setBriefError(cause instanceof Error ? cause.message : "Could not load the situation brief.");
+        }
+      } finally {
+        if (!cancelled) {
+          setBriefLoading(false);
+        }
+      }
+    };
+    void loadBrief();
+    return () => {
+      cancelled = true;
+    };
+  }, [data]);
+
+  const sendBriefFeedback = useCallback(
+    async (rating: "useful" | "needs_work") => {
+      if (!data) return;
+      setBriefFeedbackState("sending");
+      try {
+        const response = await fetch("/api/assistant", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            kind: "situation_feedback",
+            run_date: data.run_date,
+            rating,
+          }),
+        });
+        const body = (await response.json()) as { error?: string };
+        if (!response.ok) {
+          throw new Error(body.error ?? `HTTP ${response.status}`);
+        }
+        setBriefFeedbackState("saved");
+      } catch {
+        setBriefFeedbackState("idle");
+      }
+    },
+    [data],
+  );
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -296,9 +437,16 @@ export function Dashboard({
               ) : null}
             </div>
             <h1 className="theme-ink mt-4 text-balance text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">
-              {data
-                ? `Welcome back. ${postureSummary(data)}`
-                : "Welcome back. MyAssist is getting your day ready."}
+              {data ? (
+                <>
+                  <span className="theme-muted block text-lg font-medium leading-snug sm:text-xl">
+                    Welcome back.
+                  </span>
+                  <span className="mt-2 block">{headline}</span>
+                </>
+              ) : (
+                "Welcome back. MyAssist is getting your day ready."
+              )}
             </h1>
             <p className="theme-muted mt-3 max-w-3xl text-sm leading-7 sm:text-base">
               {data
@@ -364,24 +512,36 @@ export function Dashboard({
           <div className="mt-6 grid gap-3 sm:grid-cols-3 xl:grid-cols-4">
             <div className="metric-chip rounded-[22px] px-4 py-4">
               <p className="theme-accent text-[11px] uppercase tracking-[0.18em]">What needs attention</p>
-              <p className="theme-ink mt-2 text-3xl font-semibold">{countUrgentItems(data)}</p>
+              <MetricValue
+                value={countUrgentItems(data)}
+                href="#tasks"
+                label="Jump to tasks that need attention"
+              />
               <p className="theme-muted mt-1 text-sm">Overdue plus due today.</p>
             </div>
             <div className="metric-chip rounded-[22px] px-4 py-4">
               <p className="theme-accent text-[11px] uppercase tracking-[0.18em]">Pressure</p>
-              <p className="theme-ink mt-2 text-3xl font-semibold">{pressureLevel(data)}</p>
+              <MetricValue value={pressureLevel(data)} label="Current pressure level" />
               <p className="theme-muted mt-1 text-sm">Task, calendar, and email load.</p>
             </div>
             <div className="metric-chip rounded-[22px] px-4 py-4">
               <p className="theme-accent text-[11px] uppercase tracking-[0.18em]">Calendar</p>
-              <p className="theme-ink mt-2 text-3xl font-semibold">{data.calendar_today.length}</p>
+              <MetricValue
+                value={data.calendar_today.length}
+                href="#calendar"
+                label="Jump to calendar events"
+              />
               <p className="theme-muted mt-1 text-sm">
                 {data.calendar_today.length === 1 ? "Event today" : "Events in view"}
               </p>
             </div>
             <div className="metric-chip rounded-[22px] px-4 py-4">
               <p className="theme-accent text-[11px] uppercase tracking-[0.18em]">Important emails</p>
-              <p className="theme-ink mt-2 text-3xl font-semibold">{data.gmail_signals.length}</p>
+              <MetricValue
+                value={data.gmail_signals.length}
+                href="#important-emails"
+                label="Jump to important emails"
+              />
               <p className="theme-muted mt-1 text-sm">{summarizeEmails(data.gmail_signals)}</p>
             </div>
           </div>
@@ -437,6 +597,102 @@ export function Dashboard({
             ) : null}
 
             <section className="glass-panel rounded-[30px] p-6">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="max-w-3xl">
+                  <p className="section-title text-xs font-semibold">Situation brief</p>
+                  <h2 className="theme-ink mt-2 text-2xl font-semibold tracking-[-0.03em]">
+                    AI synthesis across tasks, calendar, and email
+                  </h2>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void sendBriefFeedback("useful")}
+                    disabled={briefFeedbackState === "sending" || !situationBrief}
+                    className="theme-button-secondary rounded-full px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
+                  >
+                    Useful
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void sendBriefFeedback("needs_work")}
+                    disabled={briefFeedbackState === "sending" || !situationBrief}
+                    className="theme-button-secondary rounded-full px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
+                  >
+                    Needs work
+                  </button>
+                </div>
+              </div>
+              {briefLoading ? (
+                <p className="theme-muted mt-4 text-sm">Building situation brief...</p>
+              ) : briefError ? (
+                <p className="theme-empty mt-4 rounded-[20px] px-4 py-5 text-sm">{briefError}</p>
+              ) : situationBrief ? (
+                <div className="mt-5 space-y-4 text-sm">
+                  <div className="list-card rounded-[22px] px-4 py-4">
+                    <p className="theme-accent text-[11px] uppercase tracking-[0.14em]">Pressure</p>
+                    <p className="theme-ink mt-2 leading-6">{situationBrief.pressure_summary}</p>
+                  </div>
+                  <div className="grid gap-3 lg:grid-cols-2">
+                    <div className="list-card rounded-[22px] px-4 py-4">
+                      <p className="theme-accent text-[11px] uppercase tracking-[0.14em]">Top priorities</p>
+                      <ul className="theme-ink mt-2 space-y-2">
+                        {situationBrief.top_priorities.map((item, idx) => (
+                          <li key={`priority-${idx}`} className="leading-6">{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div className="list-card rounded-[22px] px-4 py-4">
+                      <p className="theme-accent text-[11px] uppercase tracking-[0.14em]">Risks</p>
+                      <ul className="theme-ink mt-2 space-y-2">
+                        {situationBrief.conflicts_and_risks.map((item, idx) => (
+                          <li key={`risk-${idx}`} className="leading-6">{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                  <div className="grid gap-3 lg:grid-cols-2">
+                    <div className="list-card rounded-[22px] px-4 py-4">
+                      <p className="theme-accent text-[11px] uppercase tracking-[0.14em]">Defer</p>
+                      <ul className="theme-ink mt-2 space-y-2">
+                        {situationBrief.defer_recommendations.map((item, idx) => (
+                          <li key={`defer-${idx}`} className="leading-6">{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div className="list-card rounded-[22px] px-4 py-4">
+                      <p className="theme-accent text-[11px] uppercase tracking-[0.14em]">Next actions</p>
+                      <ul className="theme-ink mt-2 space-y-2">
+                        {situationBrief.next_actions.map((item, idx) => (
+                          <li key={`action-${idx}`} className="leading-6">{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                  <div className="list-card rounded-[22px] px-4 py-4">
+                    <p className="theme-accent text-[11px] uppercase tracking-[0.14em]">Confidence and limits</p>
+                    <p className="theme-muted mt-2 leading-6">{situationBrief.confidence_and_limits}</p>
+                    {situationBrief.memory_insights.length > 0 ? (
+                      <div className="mt-3">
+                        <p className="theme-accent text-[11px] uppercase tracking-[0.14em]">Memory insights</p>
+                        <ul className="theme-ink mt-2 space-y-2">
+                          {situationBrief.memory_insights.map((item, idx) => (
+                            <li key={`memory-${idx}`} className="leading-6">{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+                  </div>
+                  {briefFeedbackState === "saved" ? (
+                    <p className="theme-muted text-xs">Feedback saved for future brief tuning.</p>
+                  ) : null}
+                </div>
+              ) : (
+                <p className="theme-muted mt-4 text-sm">No brief yet.</p>
+              )}
+            </section>
+
+            <section id="tasks" className="glass-panel scroll-mt-6 rounded-[30px] p-6">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
                   <p className="section-title text-xs font-semibold">Tasks</p>
@@ -489,7 +745,7 @@ export function Dashboard({
           </div>
 
           <aside className="space-y-6">
-            <section className="glass-panel rounded-[30px] p-5">
+            <section id="calendar" className="glass-panel scroll-mt-6 rounded-[30px] p-5">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="section-title text-xs font-semibold">Calendar</p>
@@ -523,7 +779,7 @@ export function Dashboard({
               )}
             </section>
 
-            <section className="glass-panel rounded-[30px] p-5">
+            <section id="important-emails" className="glass-panel scroll-mt-6 rounded-[30px] p-5">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="section-title text-xs font-semibold">Important emails</p>

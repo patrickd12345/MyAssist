@@ -36,7 +36,9 @@ function deferOptions(now: Date): Array<{ label: string; value: string }> {
     options.push({ label: "Defer this afternoon", value: "today at 3pm" });
   }
   options.push({ label: "Defer tomorrow", value: "tomorrow at 9am" });
-  options.push({ label: "Defer next week", value: "next monday at 9am" });
+  // Todoist's parser treats "next Monday" ambiguously (often feels like ~2 weeks on Mondays).
+  // "in 7 days" is unambiguous for a one-week slip.
+  options.push({ label: "Defer next week", value: "in 7 days at 9am" });
   return options;
 }
 
