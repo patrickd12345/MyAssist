@@ -3,7 +3,7 @@
 ## Current implementation posture
 
 - The active target is a local, single-user product.
-- Commercial use is a future possibility, so boundaries should stay clean, but the repo should not absorb multi-tenant or billing complexity yet.
+- Commercial use is a future possibility, so boundaries should stay clean without absorbing multi-tenant or billing complexity yet.
 - The standard for current decisions is:
   - good local UX now
   - stable interfaces later
@@ -11,14 +11,10 @@
 ## Operating modes
 
 - Local mode:
-  - local app -> local n8n
-- Travel/demo mode:
-  - hosted app -> tunnel -> local n8n
-  - permitted for personal testing while away from the machine
-  - only the webhook surface should be exposed
+  - local app with direct provider integrations
 - Hosted mode:
-  - hosted app -> hosted n8n
-  - target for pilot/commercial reliability
+  - hosted app with the same app-owned OAuth flows
+  - target for pilot and commercial reliability
 
 ## System boundaries
 
@@ -31,44 +27,47 @@
 - Gmail:
   - Inbound obligation source.
   - Raw signal, not the planning system.
-- n8n:
-  - Orchestration and automation runtime.
-  - Executes deterministic transformations and integrations.
+- Google Calendar:
+  - Scheduling context source.
+  - Read model, not the planning authority.
+- App integration layer:
+  - OAuth token management and provider fetches.
+  - Executes deterministic transformations and connector reads inside the app.
 - Assistant layer:
   - Reasoning and interaction layer in `apps/web`.
-  - Reads normalized context from n8n.
+  - Reads normalized app context.
   - Uses local Ollama when reachable and deterministic fallback when not.
   - Produces suggestions and conversational guidance; Todoist remains system of record for committed tasks.
 
 ## Why Todoist is the source of truth
 
 - Single source avoids drift across tools.
-- Deterministic project/priority schema keeps automation predictable.
-- n8n and AI can fail independently without corrupting canonical task state.
+- Deterministic project and priority schema keeps automation predictable.
+- Connector and AI failures do not corrupt canonical task state.
 
 ## Why Siri is capture only
 
 - Voice capture is high-friction for metadata-heavy task modeling.
 - Capture-first, clarify-later preserves speed while avoiding premature structure.
 
-## Why n8n is orchestration only
+## Why the app owns OAuth and integrations
 
-- n8n coordinates events and APIs.
-- It should not become a long-term task database.
-- Persistent dedupe memory is used only as automation guardrail, not business data storage.
+- OAuth is now handled directly in the app.
+- Connector state stays close to the user-facing experience.
+- The current product no longer depends on a separate orchestration runtime to fetch core context.
 
 ## Why the assistant layer is reasoning only
 
-- AI output can be malformed or uncertain; n8n does not write arbitrary tasks to Todoist.
-- **Intended v1 loop:** n8n delivers normalized JSON; `apps/web` turns that into an operator-style briefing and interactive assistant experience; the human confirms and adds tasks in Todoist if needed.
+- AI output can be malformed or uncertain.
+- The intended v1 loop is: app integrations fetch context, `apps/web` renders the briefing, and the human confirms and adds tasks in Todoist if needed.
 - Auto-create from Gmail to Todoist is out of scope for the shipped repo.
 
 ## Trust boundaries
 
 - Trusted:
   - Todoist API token and project mapping.
-  - n8n deterministic validation code.
-  - Google OAuth credentials for source reads.
+  - App-managed OAuth credentials for source reads.
+  - Deterministic normalization and validation code in the app.
 - Semi-trusted:
   - AI classification content and digest prose.
 - Untrusted until validated:
@@ -77,43 +76,41 @@
 
 ## Workflow boundaries
 
-### Primary: Daily context (Cron)
+### Primary: Daily context
 
-- Input: Todoist tasks + Gmail signals + today calendar events.
-- n8n output: **normalized JSON** only.
-- Triggers: **Cron** (scheduled) and **Webhook** (on-demand GET for the web app).
+- Input: Todoist tasks, Gmail signals, and today calendar events.
+- Output: normalized application context only.
 - Reasoning and prose: generated in the assistant layer in `apps/web`, optionally using local Ollama.
-- **Web app (`apps/web`):** interactive assistant surface over the normalized context; no task writes in v1.
-- **No** automatic Todoist task creation from this path.
+- Web app (`apps/web`): interactive assistant surface over normalized context; no automatic task writes in v1.
 - Non-goal: no autonomous reprioritization writes back to Todoist.
 
-### Optional Gmail -> Todoist (not in repo)
+### Dormant automation archive
 
-- Not part of default v1; tasks are created **in chat** or manually in Todoist.
-- A future automation could be rebuilt from `prompts/email_triage_prompt.txt` if needed.
+- Workflow exports under `n8n/` are retained for possible future reuse.
+- Docker config and related notes remain archived, not active.
 
 ## Failure modes
 
-- Normalize output empty or wrong shape:
-  - effect: Custom GPT lacks usable context
-  - mitigation: re-run workflow; check Todoist/Gmail/Calendar nodes and **Normalize Aggregated Data** inputs
-- Missing project IDs (only if a custom Gmail->Todoist automation is added later):
-  - effect: failed Todoist write on that path
-  - mitigation: Variables and README setup checklist
+- Normalized context empty or wrong shape:
+  - effect: the assistant lacks usable context
+  - mitigation: re-run app fetches and inspect provider integration status
+- Missing project IDs:
+  - effect: failed Todoist write on explicit action paths
+  - mitigation: env and integration setup checklist
 - OAuth credential expiry:
-  - effect: source pull failure in digest workflow
-  - mitigation: re-auth and credential monitoring
+  - effect: source pull failure
+  - mitigation: reconnect the affected integration
 - Calendar timezone mismatch:
-  - effect: missing/shifted today events
-  - mitigation: verify n8n instance timezone and node time window
+  - effect: missing or shifted today events
+  - mitigation: verify app timezone settings and provider query window
 
 ## Simplifications in v1
 
 - No bidirectional sync across systems.
 - No autonomous global reprioritization.
 - No persistent analytics store.
-- Gmail signal defaults to starred/recent query for maintainability.
-- n8n emits read-only structured context; the assistant layer interprets it through local heuristics or Ollama.
+- The assistant interprets read-only structured context through local heuristics or Ollama.
+- n8n is dormant and not part of the active runtime.
 
 ## Assistant execution modes
 

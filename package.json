@@ -12,28 +12,15 @@
     "web:start": "npm --prefix apps/web run start",
     "web:clean": "npm --prefix apps/web run clean",
     "web:dev:fresh": "npm run web:clean && npm run web:dev",
-    "n8n:dev": "cross-env N8N_PORT=5678 n8n start",
-    "n8n:docker:up": "docker compose up -d n8n",
-    "n8n:docker:down": "docker compose down",
-    "n8n:docker:logs": "docker compose logs -f n8n",
-    "n8n:docker:restart": "docker compose restart n8n",
-    "tunnel:proxy": "node tools/webhook-proxy.mjs",
-    "tunnel:ngrok": "ngrok http http://127.0.0.1:8787",
     "reminders:export:mac": "bash tools/export-reminders.sh",
     "reminders:import": "node tools/import-apple-reminders-to-todoist.mjs",
     "job-hunt:dev": "npm --prefix apps/job-hunt-manager run dev",
     "job-hunt:digest:dev": "npm --prefix apps/job-hunt-manager run digest:dev",
     "job-hunt:test": "npm --prefix apps/job-hunt-manager run test",
-    "job-hunt:typecheck": "npm --prefix apps/job-hunt-manager run typecheck",
-    "pren8n:all": "kill-port 3000 5678 3847",
-    "n8n:all": "concurrently -n web,n8n,digest -c \"bgBlue.bold,bgMagenta.bold,bgGreen.bold\" \"npm run web:dev\" \"npm run n8n:dev\" \"npm run job-hunt:digest:dev\""
+    "job-hunt:typecheck": "npm --prefix apps/job-hunt-manager run typecheck"
   },
   "devDependencies": {
-    "concurrently": "^9.2.1",
-    "cross-env": "^10.1.0",
     "form-data": "^4.0.5",
-    "kill-port": "^2.0.1",
-    "n8n": "2.2.0",
     "sqlite3": "^5.1.7",
     "zod": "3.25.76"
   }
