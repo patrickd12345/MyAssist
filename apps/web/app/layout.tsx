@@ -29,7 +29,7 @@ export default function RootLayout({
       <body className={`${displaySans.variable} ${plexMono.variable} antialiased`}>
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem("myassist-theme");if(t==="kpop-demon-hunters"||t==="zara-larsson")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(e){}})();`,
+            __html: `(function(){try{var t=localStorage.getItem("myassist-theme");if(t==="neon"||t==="kpop-demon-hunters"||t==="zara-larsson")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(e){}})();`,
           }}
         />
         <AuthSessionProvider>{children}</AuthSessionProvider>

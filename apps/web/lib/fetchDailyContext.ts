@@ -3,7 +3,9 @@ import "server-only";
 import { MYASSIST_CONTEXT_SOURCE_HEADER, type DailyContextSource } from "./dailyContextShared";
 import { getMockDailyContext } from "./mockDailyContext";
 import { assertSafeN8nWebhookUrl, type N8nIntegrationOverrides } from "./n8nWebhookUrl";
+import { syncContactsFromJobHuntEmailMatches } from "./jobHuntEmailAssignment";
 import { postJobHuntEmailSignals } from "./jobHuntEmailSignals";
+import { integrationService } from "./integrations/service";
 import { getEmailTriageHints } from "./memoryStore";
 import { isMyAssistDailyContext } from "./validateContext";
 import type { MyAssistDailyContext } from "./types";
@@ -90,14 +92,68 @@ export async function fetchDailyContextFromN8n(
 
   const flattened = flattenGmailSignals(parsed);
   const prioritized = await prioritizeContextEmails(flattened, userIdForEmailRanking ?? undefined);
-  const job_hunt_email_matches = await postJobHuntEmailSignals(prioritized.gmail_signals);
+  const oauthEnriched = await enrichWithOAuthReads(prioritized, userIdForEmailRanking ?? null);
+  const job_hunt_email_matches = await postJobHuntEmailSignals(oauthEnriched.gmail_signals);
+  if (userIdForEmailRanking && job_hunt_email_matches.length > 0) {
+    await syncContactsFromJobHuntEmailMatches(userIdForEmailRanking, job_hunt_email_matches);
+  }
 
   return {
     context: {
-      ...prioritized,
+      ...oauthEnriched,
       ...(job_hunt_email_matches.length > 0 ? { job_hunt_email_matches } : {}),
     },
     source: "n8n",
+  };
+}
+
+async function enrichWithOAuthReads(
+  context: MyAssistDailyContext,
+  userId: string | null,
+): Promise<MyAssistDailyContext> {
+  if (!userId) return context;
+  const [gmailSignals, calendarEvents] = await Promise.all([
+    integrationService.fetchGmailSignals(userId),
+    integrationService.fetchCalendarEvents(userId),
+  ]);
+  const mappedCalendarEvents = Array.isArray(calendarEvents)
+    ? calendarEvents.map((e) => {
+        const startObj = (e.start as Record<string, unknown> | undefined) || {};
+        const endObj = (e.end as Record<string, unknown> | undefined) || {};
+        return {
+          id: typeof e.id === "string" ? e.id : null,
+          summary: typeof e.summary === "string" ? e.summary : "(untitled event)",
+          start:
+            (typeof startObj.dateTime === "string" && startObj.dateTime) ||
+            (typeof startObj.date === "string" && startObj.date) ||
+            null,
+          end:
+            (typeof endObj.dateTime === "string" && endObj.dateTime) ||
+            (typeof endObj.date === "string" && endObj.date) ||
+            null,
+          location: typeof e.location === "string" ? e.location : null,
+        };
+      })
+    : null;
+  return {
+    ...context,
+    ...(gmailSignals
+      ? {
+          gmail_signals: gmailSignals.map((g) => ({
+            id: (typeof g.id === "string" ? g.id : null) ?? null,
+            threadId: (typeof g.threadId === "string" ? g.threadId : null) ?? null,
+            from: typeof g.from === "string" ? g.from : "",
+            subject: typeof g.subject === "string" ? g.subject : "",
+            snippet: typeof g.snippet === "string" ? g.snippet : "",
+            date: typeof g.date === "string" ? g.date : "",
+          })),
+        }
+      : {}),
+    ...(mappedCalendarEvents && (mappedCalendarEvents.length > 0 || context.calendar_today.length === 0)
+      ? {
+          calendar_today: mappedCalendarEvents,
+        }
+      : {}),
   };
 }
 

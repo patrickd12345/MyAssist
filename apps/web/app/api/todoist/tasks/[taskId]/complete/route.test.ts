@@ -21,12 +21,12 @@ describe("POST /api/todoist/tasks/[taskId]/complete", () => {
     }
   });
 
-  it("returns 500 when token is missing", async () => {
+  it("returns 409 when token is missing", async () => {
     delete process.env.TODOIST_API_TOKEN;
     const res = await POST(new Request("http://localhost"), {
       params: Promise.resolve({ taskId: "t1" }),
     });
-    expect(res.status).toBe(500);
+    expect(res.status).toBe(409);
   });
 
   it("returns 400 when taskId is empty", async () => {

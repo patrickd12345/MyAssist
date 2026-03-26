@@ -5,11 +5,33 @@ import {
   MYASSIST_CONTEXT_SOURCE_HEADER,
   type N8nIntegrationOverrides,
 } from "@/lib/fetchDailyContext";
+import { integrationService } from "@/lib/integrations/service";
 import { getTaskNudges } from "@/lib/memoryStore";
 import { getSessionUserId } from "@/lib/session";
 import { getUserById } from "@/lib/userStore";
+import type { MyAssistDailyContext } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
+
+function mapOAuthCalendarEvents(raw: Array<Record<string, unknown>>): MyAssistDailyContext["calendar_today"] {
+  return raw.map((e) => {
+    const startObj = (e.start as Record<string, unknown> | undefined) || {};
+    const endObj = (e.end as Record<string, unknown> | undefined) || {};
+    return {
+      id: typeof e.id === "string" ? e.id : null,
+      summary: typeof e.summary === "string" ? e.summary : "(untitled event)",
+      start:
+        (typeof startObj.dateTime === "string" && startObj.dateTime) ||
+        (typeof startObj.date === "string" && startObj.date) ||
+        null,
+      end:
+        (typeof endObj.dateTime === "string" && endObj.dateTime) ||
+        (typeof endObj.date === "string" && endObj.date) ||
+        null,
+      location: typeof e.location === "string" ? e.location : null,
+    };
+  });
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -26,7 +48,18 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: "no_cached_snapshot" }, { status: 404 });
       }
       const nudges = await getTaskNudges(userId);
-      const context = { ...cached, user_task_nudges: nudges };
+      let context = { ...cached, user_task_nudges: nudges };
+      try {
+        const oauthCalendar = await integrationService.fetchCalendarEvents(userId);
+        if (Array.isArray(oauthCalendar)) {
+          const mapped = mapOAuthCalendarEvents(oauthCalendar);
+          if (mapped.length > 0 || context.calendar_today.length === 0) {
+            context = { ...context, calendar_today: mapped };
+          }
+        }
+      } catch {
+        // Keep cached context if OAuth refresh fails.
+      }
       const res = NextResponse.json(context);
       res.headers.set(MYASSIST_CONTEXT_SOURCE_HEADER, "cache");
       return res;

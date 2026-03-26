@@ -8,10 +8,21 @@ Interactive assistant UI over normalized daily context from n8n.
 - Calls n8n server-side through `/api/daily-context`.
 - Exposes an interactive assistant through `/api/assistant`.
 - Uses local Ollama when reachable and deterministic fallback when not.
+- Uses a light-first visual theme by default, with optional dark/art themes.
 - Supports explicit Todoist task completion from the dashboard.
 - Supports press-and-hold defer actions from the task button.
 - Supports AI-drafted task creation with explicit confirmation in the assistant console.
 - Still avoids autonomous Todoist writes in v1.
+
+## Today UI layout
+
+The Today dashboard is organized into focused tabs to reduce visual overload:
+
+- `Overview`: headline, metrics, first move, and situation brief
+- `Tasks`: overdue/today lists and brief picks
+- `Inbox`: important emails and job-hunt email assignment controls
+- `Calendar`: today's events
+- `Assistant`: compact assistant console
 
 ## Sign-in
 
@@ -63,11 +74,19 @@ Set in `apps/web/.env.local`:
 - `AUTH_SECRET` (or `NEXTAUTH_SECRET`): secret for Auth.js session cookies (required for `next build` / production; dev-only fallback when unset in development)
 - `MYASSIST_REGISTRATION_INVITE_CODE`: optional; when set, registration must send the same value as `inviteCode` in the JSON body
 - `AUTH_URL`: public site URL (recommended; e.g. `http://localhost:3000`)
+- `NEXTAUTH_URL`: optional alias for app public URL (used as OAuth redirect base when `AUTH_URL` is unset)
+- `MYASSIST_PUBLIC_APP_URL`: optional explicit OAuth redirect base URL fallback
 - `MYASSIST_AUTH_DISABLED`: set to `true` only for tests or special local setups (disables auth gates)
 - `MYASSIST_DEV_USER_ID`: user id to use when auth is disabled
 - `MYASSIST_USER_STORE_FILE`: optional path to the JSON user registry (default: `.myassist-memory/users.json`)
 - `MYASSIST_N8N_WEBHOOK_URL`: n8n production webhook URL
 - `MYASSIST_N8N_WEBHOOK_TOKEN`: optional Bearer token
+- `MYASSIST_GMAIL_MARK_READ_WEBHOOK_URL`: n8n webhook URL for Gmail mark-as-read actions from the `Handled` inbox button
+- `MYASSIST_INTEGRATIONS_ENCRYPTION_KEY`: base64 32-byte key (recommended) used to encrypt OAuth integration tokens at rest
+- `GOOGLE_CLIENT_ID`: Google OAuth client id for Gmail + Calendar connect flow
+- `GOOGLE_CLIENT_SECRET`: Google OAuth client secret for Gmail + Calendar connect flow
+- `TODOIST_CLIENT_ID`: Todoist OAuth client id for write-back and task sync
+- `TODOIST_CLIENT_SECRET`: Todoist OAuth client secret
 - `MYASSIST_USE_MOCK_CONTEXT`: optional `true` for demo data in production
 - `OLLAMA_BASE_URL`: optional local Ollama base URL, default `http://127.0.0.1:11434`
 - `OLLAMA_MODEL`: optional Ollama model name, default `llama3.2:3b`
@@ -78,6 +97,12 @@ Notes:
 - In local development, mock data is used automatically when `MYASSIST_N8N_WEBHOOK_URL` is empty.
 - The app always calls n8n server-side.
 - The assistant route falls back gracefully if Ollama is unavailable.
+- `Handled` in the Inbox tab first attempts direct Gmail OAuth mark-read; if disconnected, it falls back to `MYASSIST_GMAIL_MARK_READ_WEBHOOK_URL` when present.
+- Integration statuses and connect links are available in the dashboard header (Gmail, Todoist, Calendar).
+- OAuth redirect URIs are built from `AUTH_URL` (then `NEXTAUTH_URL`, then `MYASSIST_PUBLIC_APP_URL`, then request origin). Register the exact callback URL in provider consoles, for example:
+  - `http://localhost:3000/api/integrations/gmail/callback`
+  - `http://localhost:3000/api/integrations/google_calendar/callback`
+  - `http://localhost:3000/api/integrations/todoist/callback`
 
 ## Validation commands
 

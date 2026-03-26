@@ -4,6 +4,7 @@ import {
   prioritizeGmailSignalsWithAi,
   resolveGmailSubject,
 } from "./fetchDailyContext";
+import { integrationService } from "./integrations/service";
 
 const validPayload = {
   generated_at: "2026-03-25T00:00:00.000Z",
@@ -93,6 +94,41 @@ describe("fetchDailyContextFromN8n", () => {
 
     const { context } = await fetchDailyContextFromN8n();
     expect(context.gmail_signals[0].subject).toBe("Hello Patrick, our fantastic team is growing again!");
+  });
+
+  it("keeps n8n calendar events when OAuth calendar pull returns an empty array", async () => {
+    process.env.MYASSIST_N8N_WEBHOOK_URL = "https://example.com/webhook";
+    setNodeEnv("production");
+
+    const payloadWithCalendar = {
+      ...validPayload,
+      calendar_today: [
+        {
+          id: "evt_1",
+          summary: "Calendar event from n8n",
+          start: "2026-03-26T12:00:00.000Z",
+          end: "2026-03-26T12:30:00.000Z",
+          location: "Virtual",
+        },
+      ],
+    };
+
+    const gmailSpy = vi.spyOn(integrationService, "fetchGmailSignals").mockResolvedValue(null);
+    const calendarSpy = vi.spyOn(integrationService, "fetchCalendarEvents").mockResolvedValue([]);
+
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify(payloadWithCalendar), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+
+    const { context } = await fetchDailyContextFromN8n(undefined, "test-user-1");
+    expect(context.calendar_today).toHaveLength(1);
+    expect(context.calendar_today[0]?.summary).toBe("Calendar event from n8n");
+
+    gmailSpy.mockRestore();
+    calendarSpy.mockRestore();
   });
 
   it("throws when webhook URL is missing in production without mock override", async () => {

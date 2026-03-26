@@ -6,6 +6,8 @@ Personal operations system centered on Todoist, Gmail, n8n, and a local-first as
 
 - `n8n/myassist_unified.json`: only workflow export. Pulls Todoist, Gmail, and Calendar, then `Normalize Aggregated Data` outputs one JSON payload for the web app and assistant layer. Includes both `Cron` and `Webhook - Fetch Daily Context`. No LLM inside n8n.
 - `apps/web/`: Next.js assistant surface. Fetches the normalized JSON from n8n, renders an operator-style briefing, and exposes an interactive assistant console backed by local Ollama when available with deterministic fallback when not.
+- `apps/web/` dashboard UX is light-first by default and now split into focused tabs (Overview, Tasks, Inbox, Calendar, Assistant) for lower cognitive load.
+- OAuth-first integration layer now supports encrypted token storage and per-provider connect flows (Gmail, Todoist, Google Calendar) through `/api/integrations/*`.
 - `prompts/email_triage_prompt.txt`: optional reference if a future Gmail-to-Todoist automation is built.
 - `prompts/daily_digest_prompt.txt`: legacy reference from an earlier digest path.
 - `.env.example`: required variables and safe defaults.
@@ -121,6 +123,7 @@ Assistant behavior:
 - Todoist tasks can be completed explicitly from the dashboard when `TODOIST_API_TOKEN` is configured.
 - Todoist tasks can also be deferred from the same button by press-and-hold, using explicit schedule options.
 - The assistant can draft new Todoist tasks, but the write still requires explicit user confirmation.
+- In the Inbox tab, `Handled` now attempts direct Gmail OAuth write-back first and falls back to n8n webhook mark-read when configured.
 - Assistant responses include:
   - `answer`
   - `actions`

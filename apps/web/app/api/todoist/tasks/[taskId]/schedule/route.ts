@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { integrationService } from "@/lib/integrations/service";
 import { storeResolvedItem } from "@/lib/memoryStore";
 import { getSessionUserId } from "@/lib/session";
 import { resolveTodoistApiToken } from "@/lib/todoistToken";
@@ -13,15 +14,6 @@ export async function POST(
   const userId = await getSessionUserId();
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const token = await resolveTodoistApiToken(userId);
-
-  if (!token) {
-    return NextResponse.json(
-      { error: "TODOIST_API_TOKEN is not configured for dashboard task actions." },
-      { status: 500 },
-    );
   }
 
   const body = (await req.json()) as {
@@ -50,30 +42,45 @@ export async function POST(
   }
 
   try {
-    const response = await fetch(`https://api.todoist.com/api/v1/tasks/${encodeURIComponent(taskId)}`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        due_string: dueString,
-        due_lang: dueLang,
-      }),
-      cache: "no-store",
+    const integrated = await integrationService.rescheduleTodoistTask(userId, {
+      taskId,
+      dueString,
+      dueLang,
     });
-
-    if (!response.ok) {
-      const text = await response.text();
-      return NextResponse.json(
-        {
-          error: `Todoist reschedule failed with ${response.status}: ${text.slice(0, 300)}`,
+    let payload: unknown;
+    if (integrated.ok) {
+      payload = integrated.payload;
+    } else {
+      const token = await resolveTodoistApiToken(userId);
+      if (!token) {
+        return NextResponse.json(
+          { error: "Todoist is disconnected. Connect Todoist in Integrations first." },
+          { status: 409 },
+        );
+      }
+      const response = await fetch(`https://api.todoist.com/api/v1/tasks/${encodeURIComponent(taskId)}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
-        { status: response.status },
-      );
+        body: JSON.stringify({
+          due_string: dueString,
+          due_lang: dueLang,
+        }),
+        cache: "no-store",
+      });
+      if (!response.ok) {
+        const text = await response.text();
+        return NextResponse.json(
+          {
+            error: `Todoist reschedule failed with ${response.status}: ${text.slice(0, 300)}`,
+          },
+          { status: response.status },
+        );
+      }
+      payload = await response.json();
     }
-
-    const payload = await response.json();
 
     if (intent) {
       const label = taskContent || "(untitled task)";

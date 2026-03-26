@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import { lifecycleStageSchema } from "job-hunt-manager/types/lifecycle";
 import { updateJobStage } from "@/lib/jobHuntLifecycle";
+import { maybeCreateTodoistTaskForJobStage } from "@/lib/jobHuntStageTodoistSync";
 import { getSessionUserId } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request, ctx: { params: Promise<{ jobId: string }> }) {
-  if (!(await getSessionUserId())) {
+  const userId = await getSessionUserId();
+  if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -35,7 +37,22 @@ export async function POST(req: Request, ctx: { params: Promise<{ jobId: string 
 
   try {
     const lifecycle = await updateJobStage(jobId, parsed.data, notes ? { notes } : undefined);
-    return NextResponse.json({ ok: true, lifecycle });
+    if (parsed.data === "interview_scheduled") {
+      const prepWebhook = process.env.MYASSIST_JOB_HUNT_PREP_WEBHOOK?.trim();
+      if (prepWebhook) {
+        void fetch(prepWebhook, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ job_id: jobId, stage: parsed.data }),
+        }).catch(() => {});
+      }
+    }
+    const todoistSync = await maybeCreateTodoistTaskForJobStage(userId, {
+      jobId,
+      stage: parsed.data,
+      note: notes,
+    });
+    return NextResponse.json({ ok: true, lifecycle, todoist_sync: todoistSync });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     const notFound = msg.includes("No lifecycle") || msg.includes("save_job");

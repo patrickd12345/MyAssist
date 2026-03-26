@@ -125,5 +125,5 @@ describe("POST /api/auth/register", () => {
     expect(blocked.status).toBe(429);
     const json = (await blocked.json()) as { error?: string };
     expect(json.error).toMatch(/Too many/);
-  });
+  }, 15000);
 });

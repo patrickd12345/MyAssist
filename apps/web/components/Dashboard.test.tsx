@@ -58,6 +58,9 @@ function mockAssistantFetch() {
         return new Response(JSON.stringify({ ok: true, memory_entries: 2 }), { status: 200 });
       }
     }
+    if (url.includes("/api/gmail/mark-read")) {
+      return new Response(JSON.stringify({ ok: true }), { status: 200 });
+    }
 
     return new Response("not found", { status: 404 });
   });
@@ -83,6 +86,7 @@ describe("Dashboard", () => {
   });
 
   it("loads headline and situation brief from the assistant API", async () => {
+    const user = userEvent.setup();
     render(
       <Dashboard initialData={sampleContext} initialError={null} initialSource="n8n" />,
     );
@@ -95,6 +99,7 @@ describe("Dashboard", () => {
       expect(screen.getAllByText("Test pressure").length).toBeGreaterThanOrEqual(1);
     });
 
+    await user.click(screen.getAllByRole("button", { name: "Tasks" })[0]);
     expect(screen.getAllByText("Brief picks").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("One priority").length).toBeGreaterThanOrEqual(1);
   });
@@ -134,6 +139,7 @@ describe("Dashboard", () => {
     render(
       <Dashboard initialData={sampleContext} initialError={null} initialSource="n8n" />,
     );
+    await user.click(screen.getAllByRole("button", { name: "Inbox" })[0]);
 
     const subject = "Your trial is ending soon, you will be automatically charged";
     const emailHeading = screen.getAllByRole("heading", { name: "In this pull" }).at(-1);
@@ -155,9 +161,34 @@ describe("Dashboard", () => {
         }),
       );
     });
+    await waitFor(() => {
+      expect(mockFetch).toHaveBeenCalledWith(
+        "/api/gmail/mark-read",
+        expect.objectContaining({
+          method: "POST",
+          body: expect.stringContaining("messageId"),
+        }),
+      );
+    });
 
     await waitFor(() => {
       expect(within(emailSection as HTMLElement).queryByText(subject)).not.toBeInTheDocument();
     });
+  });
+
+  it("switches dashboard tabs and shows focused content", async () => {
+    const user = userEvent.setup();
+    render(
+      <Dashboard initialData={sampleContext} initialError={null} initialSource="n8n" />,
+    );
+
+    await user.click(screen.getAllByRole("button", { name: "Tasks" })[0]);
+    expect(screen.getByRole("heading", { name: "Todoist lists" })).toBeInTheDocument();
+
+    await user.click(screen.getAllByRole("button", { name: "Calendar" })[0]);
+    expect(screen.getByRole("heading", { name: "Today and next" })).toBeInTheDocument();
+
+    await user.click(screen.getAllByRole("button", { name: "Assistant" })[0]);
+    expect(screen.getByRole("heading", { name: "Fast support when you need it" })).toBeInTheDocument();
   });
 });

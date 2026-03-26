@@ -15,6 +15,9 @@ const { readLastDailyContext, writeLastDailyContext } = vi.hoisted(() => ({
   readLastDailyContext: vi.fn(),
   writeLastDailyContext: vi.fn(),
 }));
+const { fetchCalendarEvents } = vi.hoisted(() => ({
+  fetchCalendarEvents: vi.fn(),
+}));
 
 vi.mock("@/lib/dailyContextSnapshot", () => ({
   readLastDailyContext,
@@ -37,6 +40,12 @@ vi.mock("@/lib/memoryStore", async (importOriginal) => {
   };
 });
 
+vi.mock("@/lib/integrations/service", () => ({
+  integrationService: {
+    fetchCalendarEvents,
+  },
+}));
+
 describe("GET /api/daily-context", () => {
   let GET: (req: NextRequest) => Promise<Response>;
 
@@ -49,6 +58,7 @@ describe("GET /api/daily-context", () => {
     vi.clearAllMocks();
     readLastDailyContext.mockResolvedValue(null);
     writeLastDailyContext.mockResolvedValue(undefined);
+    fetchCalendarEvents.mockResolvedValue(null);
   });
 
   it("returns JSON body and sets source header on live fetch", async () => {
@@ -81,5 +91,26 @@ describe("GET /api/daily-context", () => {
     const json = (await res.json()) as { run_date: string };
     expect(json.run_date).toBe("2026-03-25");
     expect(writeLastDailyContext).not.toHaveBeenCalled();
+  });
+
+  it("hydrates cache response with live OAuth calendar events", async () => {
+    readLastDailyContext.mockResolvedValueOnce(mockContext);
+    fetchCalendarEvents.mockResolvedValueOnce([
+      {
+        id: "evt-1",
+        summary: "Live calendar event",
+        start: { dateTime: "2026-03-25T13:00:00.000Z" },
+        end: { dateTime: "2026-03-25T13:30:00.000Z" },
+        location: "Zoom",
+      },
+    ]);
+
+    const req = new NextRequest("http://localhost/api/daily-context?source=cache");
+    const res = await GET(req);
+    expect(res.status).toBe(200);
+    const json = (await res.json()) as { calendar_today: Array<{ summary: string; location: string | null }> };
+    expect(json.calendar_today).toHaveLength(1);
+    expect(json.calendar_today[0]?.summary).toBe("Live calendar event");
+    expect(json.calendar_today[0]?.location).toBe("Zoom");
   });
 });

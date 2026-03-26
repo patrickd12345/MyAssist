@@ -15,16 +15,23 @@ import type {
   SituationBrief,
   TodoistTask,
 } from "@/lib/types";
+import type { SavedJobRow } from "@/lib/jobHuntUiTypes";
 import { AssistantConsole } from "./AssistantConsole";
 import { TaskList } from "./TaskList";
 
-type ThemeKey = "neon" | "kpop-demon-hunters";
+type ThemeKey = "light" | "neon" | "kpop-demon-hunters" | "zara-larsson";
+type DashboardTab = "overview" | "tasks" | "inbox" | "calendar" | "assistant";
+type IntegrationStatus = "connected" | "revoked" | "disconnected";
+type IntegrationProvider = "gmail" | "todoist" | "google_calendar" | "n8n";
+type IntegrationStatusRow = { provider: IntegrationProvider; status: IntegrationStatus };
 
 const THEME_STORAGE_KEY = "myassist-theme";
 
 const THEMES: Array<{ key: ThemeKey; label: string; note: string }> = [
-  { key: "neon", label: "Neon", note: "Dark premium default" },
+  { key: "light", label: "Light", note: "Calm default" },
+  { key: "neon", label: "Neon", note: "Dark premium" },
   { key: "kpop-demon-hunters", label: "K-pop Demon Hunters", note: "Stage energy" },
+  { key: "zara-larsson", label: "Zara Larsson", note: "Soft glam dark" },
 ];
 
 type ResolvedMemoryItem = {
@@ -365,7 +372,7 @@ export function Dashboard({
   const [copied, setCopied] = useState(false);
   const [pendingTaskIds, setPendingTaskIds] = useState<string[]>([]);
   const [taskActionError, setTaskActionError] = useState<string | null>(null);
-  const [theme, setTheme] = useState<ThemeKey>("neon");
+  const [theme, setTheme] = useState<ThemeKey>("light");
   const [themeMenuOpen, setThemeMenuOpen] = useState(false);
   const [headline, setHeadline] = useState<string>(
     initialData ? buildHeadlineFallback(initialData) : "Analyzing your day...",
@@ -377,18 +384,48 @@ export function Dashboard({
   const [resolvedItems, setResolvedItems] = useState<ResolvedMemoryItem[]>([]);
   const [pendingResolvedTexts, setPendingResolvedTexts] = useState<string[]>([]);
   const [energyLevel, setEnergyLevel] = useState<"high" | "normal" | "low">("normal");
+  const [activeTab, setActiveTab] = useState<DashboardTab>("overview");
+  const [savedJobsForAssign, setSavedJobsForAssign] = useState<SavedJobRow[]>([]);
+  const [assignBusyKey, setAssignBusyKey] = useState<string | null>(null);
+  const [assignError, setAssignError] = useState<string | null>(null);
+  const [integrationStatuses, setIntegrationStatuses] = useState<IntegrationStatusRow[]>([]);
   const lastHeadlineKeyRef = useRef<string | null>(initialData?.generated_at ?? null);
 
   useEffect(() => {
     const storedTheme =
       typeof window !== "undefined" ? window.localStorage.getItem(THEME_STORAGE_KEY) : null;
-    if (storedTheme === "neon" || storedTheme === "kpop-demon-hunters") {
+    if (
+      storedTheme === "light" ||
+      storedTheme === "neon" ||
+      storedTheme === "kpop-demon-hunters" ||
+      storedTheme === "zara-larsson"
+    ) {
       setTheme(storedTheme);
     }
   }, []);
 
   useEffect(() => {
-    if (theme === "neon") {
+    let cancelled = false;
+    const loadIntegrationStatuses = async () => {
+      try {
+        const res = await fetch("/api/integrations/status", { cache: "no-store" });
+        if (!res.ok) return;
+        const body = (await res.json()) as { providers?: IntegrationStatusRow[] };
+        if (!cancelled && Array.isArray(body.providers)) {
+          setIntegrationStatuses(body.providers);
+        }
+      } catch {
+        if (!cancelled) setIntegrationStatuses([]);
+      }
+    };
+    void loadIntegrationStatuses();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (theme === "light") {
       document.documentElement.removeAttribute("data-theme");
     } else {
       document.documentElement.dataset.theme = theme;
@@ -625,12 +662,60 @@ export function Dashboard({
     void loadCachedSnapshot();
   }, [initialData, initialError, loadCachedSnapshot]);
 
+  useEffect(() => {
+    let cancelled = false;
+    const loadSavedJobs = async () => {
+      try {
+        const res = await fetch("/api/job-hunt/saved", { cache: "no-store" });
+        if (!res.ok) return;
+        const data = (await res.json()) as { ok?: boolean; jobs?: SavedJobRow[] };
+        if (!cancelled && data.ok && Array.isArray(data.jobs)) {
+          setSavedJobsForAssign(data.jobs);
+        }
+      } catch {
+        if (!cancelled) setSavedJobsForAssign([]);
+      }
+    };
+    void loadSavedJobs();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const copyJson = useCallback(async () => {
     if (!data) return;
     await navigator.clipboard.writeText(JSON.stringify(data, null, 2));
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }, [data]);
+
+  const assignEmailToJob = useCallback(async (signal: GmailSignal, jobId: string) => {
+    const key = `${signal.id ?? signal.threadId ?? signal.subject}|${jobId}`;
+    setAssignBusyKey(key);
+    setAssignError(null);
+    try {
+      const response = await fetch("/api/job-hunt/email/assign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          job_id: jobId,
+          signal,
+          auto_extract_contact: true,
+        }),
+      });
+      const body = (await response.json()) as { error?: string };
+      if (!response.ok) {
+        throw new Error(body.error ?? `HTTP ${response.status}`);
+      }
+      await refresh();
+    } catch (cause) {
+      setAssignError(
+        cause instanceof Error ? cause.message : "Could not assign this email to a saved job.",
+      );
+    } finally {
+      setAssignBusyKey(null);
+    }
+  }, [refresh]);
 
   const completeTask = useCallback(
     async (taskId: string) => {
@@ -753,6 +838,7 @@ export function Dashboard({
       text: string,
       source: ResolvedMemoryItem["source"],
       emailResolution?: "junk" | "useful_action",
+      emailSignal?: Pick<GmailSignal, "id" | "threadId">,
     ) => {
       if (!data) return;
       const trimmed = text.trim();
@@ -791,6 +877,25 @@ export function Dashboard({
           },
           ...current.filter((item) => !(item.source === source && item.normalized === normalized)),
         ]);
+        if (source === "email" && (emailSignal?.id || emailSignal?.threadId)) {
+          const markReadResponse = await fetch("/api/gmail/mark-read", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              ...(emailSignal?.id ? { messageId: emailSignal.id } : {}),
+              ...(emailSignal?.threadId ? { threadId: emailSignal.threadId } : {}),
+            }),
+          });
+          if (!markReadResponse.ok) {
+            const markBody = (await markReadResponse.json()) as { error?: string };
+            setTaskActionError(
+              markBody.error ??
+                "Marked as handled locally, but Gmail mark-as-read did not complete.",
+            );
+          }
+        }
       } catch (cause) {
         setTaskActionError(cause instanceof Error ? cause.message : "Could not save handled item.");
       } finally {
@@ -832,10 +937,19 @@ export function Dashboard({
     },
     [data]
   );
+  const dashboardTabs: Array<{ id: DashboardTab; label: string }> = [
+    { id: "overview", label: "Overview" },
+    { id: "tasks", label: "Tasks" },
+    { id: "inbox", label: "Inbox" },
+    { id: "calendar", label: "Calendar" },
+    { id: "assistant", label: "Assistant" },
+  ];
+  const showMainColumn = activeTab === "overview" || activeTab === "tasks" || activeTab === "inbox";
+  const showSideColumn = activeTab === "calendar" || activeTab === "assistant";
 
   return (
     <div
-      className="theme-shell mx-auto min-h-screen w-full max-w-[1900px] px-4 py-6 sm:px-6 xl:px-8 2xl:px-10"
+      className="theme-shell mx-auto min-h-screen w-full max-w-[1380px] px-4 py-6 sm:px-6 xl:px-8"
       aria-busy={showSkeleton}
     >
       <section className="glass-panel-strong mb-6 rounded-[32px] px-5 py-5 sm:px-7 sm:py-6">
@@ -938,7 +1052,7 @@ export function Dashboard({
                 aria-haspopup="menu"
                 aria-expanded={themeMenuOpen}
               >
-                Theme: {THEMES.find((option) => option.key === theme)?.label ?? "Neon"}
+                Theme: {THEMES.find((option) => option.key === theme)?.label ?? "Light"}
               </button>
               {themeMenuOpen ? (
                 <div className="theme-menu absolute right-0 z-30 mt-2 w-64 rounded-[22px] p-2">
@@ -1032,6 +1146,75 @@ export function Dashboard({
         ) : null}
       </section>
 
+      <section className="glass-panel mb-6 rounded-[24px] p-2">
+        <nav aria-label="Today sections" className="flex flex-wrap gap-2">
+          {dashboardTabs.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                activeTab === tab.id ? "theme-button-primary" : "theme-button-secondary"
+              }`}
+              onClick={() => setActiveTab(tab.id)}
+              aria-current={activeTab === tab.id ? "page" : undefined}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </nav>
+      </section>
+
+      <section className="glass-panel mb-6 rounded-[24px] p-4" aria-label="Integration status">
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <span className="theme-muted mr-2 font-semibold uppercase tracking-[0.14em]">Integrations</span>
+          {(["gmail", "todoist", "google_calendar"] as IntegrationProvider[]).map((provider) => {
+            const row = integrationStatuses.find((x) => x.provider === provider);
+            const connected = row?.status === "connected";
+            return (
+              <div
+                key={provider}
+                className={`rounded-full border px-3 py-1 ${
+                  connected
+                    ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-800"
+                    : "border-amber-500/40 bg-amber-500/10 text-amber-800"
+                }`}
+              >
+                <span className="font-semibold">
+                  {provider === "google_calendar" ? "Calendar" : provider === "gmail" ? "Gmail" : "Todoist"}
+                </span>
+                {connected ? " connected" : " disconnected"}
+              </div>
+            );
+          })}
+          <div className="ml-auto flex flex-wrap gap-2">
+            {integrationStatuses.find((x) => x.provider === "gmail")?.status !== "connected" && (
+              <Link
+                href="/api/integrations/gmail/connect"
+                className="theme-button-secondary rounded-full px-3 py-1 text-xs font-semibold"
+              >
+                Connect Gmail
+              </Link>
+            )}
+            {integrationStatuses.find((x) => x.provider === "todoist")?.status !== "connected" && (
+              <Link
+                href="/api/integrations/todoist/connect"
+                className="theme-button-secondary rounded-full px-3 py-1 text-xs font-semibold"
+              >
+                Connect Todoist
+              </Link>
+            )}
+            {integrationStatuses.find((x) => x.provider === "google_calendar")?.status !== "connected" && (
+              <Link
+                href="/api/integrations/google_calendar/connect"
+                className="theme-button-secondary rounded-full px-3 py-1 text-xs font-semibold"
+              >
+                Connect Calendar
+              </Link>
+            )}
+          </div>
+        </div>
+      </section>
+
       {contextSource === "mock" && data && !error && (
         <div className="glass-panel mb-6 rounded-[24px] border-blue-500/30 bg-blue-500/10 p-5 text-blue-100" role="status">
           <p className="font-semibold">Demo mode is active.</p>
@@ -1044,11 +1227,11 @@ export function Dashboard({
 
       {contextSource === "cache" && data && !error && (
         <div
-          className="glass-panel mb-6 rounded-[24px] border-emerald-500/30 bg-emerald-500/10 p-5 text-emerald-100"
+          className="glass-panel mb-6 rounded-[24px] border-emerald-500/30 bg-emerald-50/90 p-5 text-emerald-900"
           role="status"
         >
           <p className="font-semibold">Showing your last saved snapshot</p>
-          <p className="mt-1 text-xs leading-6 opacity-90">
+          <p className="mt-1 text-sm leading-6 text-emerald-900/90">
             Workflow last captured {formatWhen(data.generated_at)}. Use Refresh to run n8n again, re-rank email, and
             replace this snapshot.
           </p>
@@ -1092,12 +1275,24 @@ export function Dashboard({
         </div>
       )}
 
+      {assignError && !error && (
+        <div role="alert" className="glass-panel mb-6 rounded-[24px] border-red-500/30 p-5 text-sm text-red-300">
+          <p className="font-semibold">Email assignment failed.</p>
+          <p className="mt-2 text-xs leading-6 opacity-90">{assignError}</p>
+        </div>
+      )}
+
       {showSkeleton ? (
         <DashboardMainSkeleton />
       ) : displayData ? (
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.55fr)_minmax(320px,0.9fr)]">
-          <div className="space-y-6">
-            {nextAction ? (
+        <div
+          className={`grid gap-6 ${
+            showMainColumn && showSideColumn ? "xl:grid-cols-[minmax(0,1.55fr)_minmax(320px,0.9fr)]" : ""
+          }`}
+        >
+          {showMainColumn ? (
+            <div className="space-y-6">
+              {activeTab === "overview" && nextAction ? (
               <section className="glass-panel-strong rounded-[30px] p-6">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div className="max-w-3xl">
@@ -1106,15 +1301,40 @@ export function Dashboard({
                       {nextAction.title}
                     </h2>
                     <p className="theme-muted mt-3 text-sm leading-7 sm:text-base">{nextAction.detail}</p>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab("tasks")}
+                        className="theme-button-primary rounded-full px-4 py-2 text-xs font-semibold"
+                      >
+                        Open Tasks
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab("inbox")}
+                        className="theme-button-secondary rounded-full px-4 py-2 text-xs font-semibold"
+                      >
+                        Open Inbox
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab("calendar")}
+                        className="theme-button-secondary rounded-full px-4 py-2 text-xs font-semibold"
+                      >
+                        Open Calendar
+                      </button>
+                    </div>
                   </div>
                   <span className="signal-pill rounded-full px-3 py-1.5 text-xs font-semibold">
                     {nextAction.cue}
                   </span>
                 </div>
               </section>
-            ) : null}
+              ) : null}
 
-            {displayData.job_hunt_email_matches && displayData.job_hunt_email_matches.length > 0 ? (
+              {activeTab === "inbox" &&
+              displayData.job_hunt_email_matches &&
+              displayData.job_hunt_email_matches.length > 0 ? (
               <section
                 id="job-hunt-email-matches"
                 className="glass-panel rounded-[30px] p-6"
@@ -1153,9 +1373,10 @@ export function Dashboard({
                   ))}
                 </ul>
               </section>
-            ) : null}
+              ) : null}
 
-            <section className="glass-panel rounded-[30px] p-6">
+              {activeTab === "overview" ? (
+                <section className="glass-panel rounded-[30px] p-6">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="max-w-3xl">
                   <p className="section-title text-xs font-semibold">Situation brief</p>
@@ -1249,9 +1470,11 @@ export function Dashboard({
               ) : (
                 <p className="theme-muted mt-4 text-sm">No brief yet.</p>
               )}
-            </section>
+                </section>
+              ) : null}
 
-            <section id="tasks" className="glass-panel scroll-mt-6 rounded-[30px] p-6">
+              {activeTab === "tasks" ? (
+                <section id="tasks" className="glass-panel scroll-mt-6 rounded-[30px] p-6">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
                   <p className="section-title text-xs font-semibold">Tasks</p>
@@ -1305,11 +1528,151 @@ export function Dashboard({
                   pendingItems={pendingResolvedTexts}
                 />
               </div>
-            </section>
-          </div>
+                </section>
+              ) : null}
 
-          <aside className="space-y-6">
-            <section id="calendar" className="glass-panel scroll-mt-6 rounded-[30px] p-5">
+              {activeTab === "inbox" ? (
+                <section id="important-emails" className="glass-panel scroll-mt-6 rounded-[30px] p-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="section-title text-xs font-semibold">Important emails</p>
+                      <h2 className="theme-ink mt-2 text-xl font-semibold tracking-[-0.03em]">
+                        In this pull
+                      </h2>
+                    </div>
+                    <span className="signal-pill rounded-full px-3 py-1 text-[11px] font-semibold">
+                      {displayData.gmail_signals.length}
+                    </span>
+                  </div>
+                  {displayData.gmail_signals.length === 0 ? (
+                    <p className="theme-empty mt-4 rounded-[20px] px-4 py-5 text-sm">
+                      No messages matched the current signal query.
+                    </p>
+                  ) : (
+                    <ul className="mt-4 max-h-[22rem] space-y-3 overflow-auto pr-1">
+                      {displayData.gmail_signals.map((g) => {
+                        const subject = g.subject || "(no subject)";
+                        const itemTooltip = [subject, g.snippet].filter(Boolean).join("\n\n");
+                        const hasDetailsTooltip = itemTooltip.trim().length > 0;
+                        const importanceReason = typeof g.importance_reason === "string" ? g.importance_reason.trim() : "";
+                        const importanceScore =
+                          typeof g.importance_score === "number" ? Math.round(g.importance_score) : null;
+                        return (
+                        <li key={g.id ?? g.threadId ?? g.subject} className="list-card rounded-[22px] px-4 py-4">
+                          <div className="flex items-start justify-between gap-3">
+                            <p
+                              className="theme-ink line-clamp-2 text-sm font-semibold leading-6"
+                              title={itemTooltip}
+                            >
+                              {subject}
+                            </p>
+                            {hasDetailsTooltip ? (
+                              <span
+                                className="signal-pill shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                                title="Hover on title to get more context"
+                                aria-label="Has details tooltip"
+                              >
+                                i
+                              </span>
+                            ) : null}
+                          </div>
+                          <p className="theme-accent mt-2 text-[11px] uppercase tracking-[0.14em]">
+                            {firstName(g.from)}
+                          </p>
+                          {importanceReason ? (
+                            <p className="theme-muted mt-2 text-[11px] leading-5">
+                              Triage intent: {importanceReason}
+                              {importanceScore !== null ? ` (${importanceScore}/100)` : ""}
+                            </p>
+                          ) : (
+                            <p className="theme-muted mt-2 text-[11px] leading-5 opacity-60">
+                              Triage intent: Ranking timed out or omitted by model
+                            </p>
+                          )}
+                          {g.snippet ? (
+                            <p
+                              className="theme-muted mt-2 line-clamp-2 text-sm leading-6"
+                              title={g.snippet}
+                            >
+                              {g.snippet}
+                            </p>
+                          ) : null}
+                          <div className="mt-3">
+                            <label className="theme-muted text-[11px]">Assign to saved job</label>
+                            <select
+                              className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-zinc-100"
+                              defaultValue=""
+                              disabled={assignBusyKey !== null || savedJobsForAssign.length === 0}
+                              onChange={(e) => {
+                                const v = e.target.value;
+                                e.target.value = "";
+                                if (v) void assignEmailToJob(g, v);
+                              }}
+                            >
+                              <option value="">
+                                {savedJobsForAssign.length === 0
+                                  ? "No saved jobs found"
+                                  : assignBusyKey
+                                    ? "Assigning..."
+                                    : "Select a saved job..."}
+                              </option>
+                              {savedJobsForAssign.map((row) => {
+                                const jid = row.saved.job_id;
+                                const label = row.job?.company
+                                  ? `${row.job.company} · ${row.job.title} (${row.lifecycle.stage})`
+                                  : `${jid} (${row.lifecycle.stage})`;
+                                return (
+                                  <option key={jid} value={jid}>
+                                    {label}
+                                  </option>
+                                );
+                              })}
+                            </select>
+                          </div>
+                          <div className="mt-4 flex flex-wrap justify-end gap-2">
+                            <button
+                              type="button"
+                              disabled={pendingResolvedTexts.includes(subject)}
+                              onClick={() =>
+                                void resolveMemoryItem(subject, "email", "useful_action", {
+                                  id: g.id,
+                                  threadId: g.threadId,
+                                })
+                              }
+                              className="theme-button-secondary rounded-full px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50"
+                              title="Real work — teach the AI this kind of mail matters"
+                            >
+                              {pendingResolvedTexts.includes(subject) ? "Saving..." : "Handled"}
+                            </button>
+                            <button
+                              type="button"
+                              disabled={pendingResolvedTexts.includes(subject)}
+                              onClick={() =>
+                                void resolveMemoryItem(subject, "email", "junk", {
+                                  id: g.id,
+                                  threadId: g.threadId,
+                                })
+                              }
+                              className="theme-button-secondary rounded-full px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50"
+                              title="Not important — teach the AI to deprioritize similar mail"
+                            >
+                              {pendingResolvedTexts.includes(subject) ? "Saving..." : "Junk"}
+                            </button>
+                          </div>
+                        </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </section>
+              ) : null}
+            </div>
+          ) : null}
+
+          {showSideColumn ? (
+            <aside className="space-y-6">
+              {activeTab === "calendar" ? (
+                <section id="calendar" className="glass-panel scroll-mt-6 rounded-[30px] p-5">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="section-title text-xs font-semibold">Calendar</p>
@@ -1351,102 +1714,11 @@ export function Dashboard({
                   ))}
                 </ul>
               )}
-            </section>
+                </section>
+              ) : null}
 
-            <section id="important-emails" className="glass-panel scroll-mt-6 rounded-[30px] p-5">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="section-title text-xs font-semibold">Important emails</p>
-                  <h2 className="theme-ink mt-2 text-xl font-semibold tracking-[-0.03em]">
-                    In this pull
-                  </h2>
-                </div>
-                <span className="signal-pill rounded-full px-3 py-1 text-[11px] font-semibold">
-                  {displayData.gmail_signals.length}
-                </span>
-              </div>
-              {displayData.gmail_signals.length === 0 ? (
-                <p className="theme-empty mt-4 rounded-[20px] px-4 py-5 text-sm">
-                  No messages matched the current signal query.
-                </p>
-              ) : (
-                <ul className="mt-4 max-h-[22rem] space-y-3 overflow-auto pr-1">
-                  {displayData.gmail_signals.map((g) => {
-                    const subject = g.subject || "(no subject)";
-                    const itemTooltip = [subject, g.snippet].filter(Boolean).join("\n\n");
-                    const hasDetailsTooltip = itemTooltip.trim().length > 0;
-                    const importanceReason = typeof g.importance_reason === "string" ? g.importance_reason.trim() : "";
-                    const importanceScore =
-                      typeof g.importance_score === "number" ? Math.round(g.importance_score) : null;
-                    return (
-                    <li key={g.id ?? g.threadId ?? g.subject} className="list-card rounded-[22px] px-4 py-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <p
-                          className="theme-ink line-clamp-2 text-sm font-semibold leading-6"
-                          title={itemTooltip}
-                        >
-                          {subject}
-                        </p>
-                        {hasDetailsTooltip ? (
-                          <span
-                            className="signal-pill shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold"
-                            title="Hover on title to get more context"
-                            aria-label="Has details tooltip"
-                          >
-                            i
-                          </span>
-                        ) : null}
-                      </div>
-                      <p className="theme-accent mt-2 text-[11px] uppercase tracking-[0.14em]">
-                        {firstName(g.from)}
-                      </p>
-                      {/* AI MODEL REMINDER: If the user requests to hide or remove the "Triage intent" text, ONLY remove this UI rendering block below. DO NOT remove the underlying "reason" prompt/generation in fetchDailyContext.ts. The AI must still generate the reason text behind the scenes (Chain of Thought) to accurately calculate the numerical importance score! */}
-                      {importanceReason ? (
-                        <p className="theme-muted mt-2 text-[11px] leading-5">
-                          Triage intent: {importanceReason}
-                          {importanceScore !== null ? ` (${importanceScore}/100)` : ""}
-                        </p>
-                      ) : (
-                        <p className="theme-muted mt-2 text-[11px] leading-5 opacity-60">
-                          Triage intent: Ranking timed out or omitted by model
-                        </p>
-                      )}
-                      {g.snippet ? (
-                        <p
-                          className="theme-muted mt-2 line-clamp-2 text-sm leading-6"
-                          title={g.snippet}
-                        >
-                          {g.snippet}
-                        </p>
-                      ) : null}
-                      <div className="mt-4 flex flex-wrap justify-end gap-2">
-                        <button
-                          type="button"
-                          disabled={pendingResolvedTexts.includes(subject)}
-                          onClick={() => void resolveMemoryItem(subject, "email", "useful_action")}
-                          className="theme-button-secondary rounded-full px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50"
-                          title="Real work — teach the AI this kind of mail matters"
-                        >
-                          {pendingResolvedTexts.includes(subject) ? "Saving..." : "Handled"}
-                        </button>
-                        <button
-                          type="button"
-                          disabled={pendingResolvedTexts.includes(subject)}
-                          onClick={() => void resolveMemoryItem(subject, "email", "junk")}
-                          className="theme-button-secondary rounded-full px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50"
-                          title="Not important — teach the AI to deprioritize similar mail"
-                        >
-                          {pendingResolvedTexts.includes(subject) ? "Saving..." : "Junk"}
-                        </button>
-                      </div>
-                    </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </section>
-
-            <section className="glass-panel rounded-[30px] p-5">
+              {activeTab === "assistant" ? (
+                <section className="glass-panel rounded-[30px] p-5">
               <p className="section-title text-xs font-semibold">Ask MyAssist</p>
               <h2 className="theme-ink mt-2 text-xl font-semibold tracking-[-0.03em]">
                 Fast support when you need it
@@ -1457,8 +1729,10 @@ export function Dashboard({
               <div className="mt-4">
                 <AssistantConsole context={displayData} compact />
               </div>
-            </section>
-          </aside>
+                </section>
+              ) : null}
+            </aside>
+          ) : null}
         </div>
       ) : null}
     </div>

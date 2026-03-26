@@ -3,6 +3,37 @@
 @tailwind utilities;
 
 :root {
+  --canvas: #f5f7fb;
+  --canvas-alt: #eef2f9;
+  --surface: rgba(255, 255, 255, 0.84);
+  --surface-strong: rgba(255, 255, 255, 0.94);
+  --surface-soft: rgba(15, 23, 42, 0.03);
+  --line: rgba(15, 23, 42, 0.1);
+  --line-strong: rgba(15, 23, 42, 0.18);
+  --ink: #0f172a;
+  --muted: #475569;
+  --accent: #4f46e5;
+  --accent-2: #2563eb;
+  --accent-soft: rgba(79, 70, 229, 0.14);
+  --accent-strong: rgba(79, 70, 229, 0.24);
+  --glow: rgba(99, 102, 241, 0.08);
+  --button-primary-text: #f8fafc;
+  --button-secondary-text: #1f2937;
+  --menu-bg: rgba(255, 255, 255, 0.98);
+  --menu-hover: rgba(15, 23, 42, 0.06);
+  --tone-hot-top: rgba(239, 68, 68, 0.08);
+  --tone-hot-bottom: rgba(255, 255, 255, 0.95);
+  --tone-hot-border: rgba(239, 68, 68, 0.2);
+  --tone-soft-top: rgba(59, 130, 246, 0.08);
+  --tone-soft-bottom: rgba(255, 255, 255, 0.95);
+  --tone-calm-top: rgba(34, 197, 94, 0.1);
+  --tone-calm-bottom: rgba(255, 255, 255, 0.95);
+  --tone-calm-border: rgba(34, 197, 94, 0.2);
+  --selection: rgba(79, 70, 229, 0.2);
+  --grid-line: rgba(15, 23, 42, 0.04);
+}
+
+:root[data-theme="neon"] {
   --canvas: #030014;
   --canvas-alt: #120724;
   --surface: rgba(15, 15, 20, 0.6);
@@ -122,7 +153,7 @@ body::before {
     linear-gradient(var(--grid-line) 1px, transparent 1px),
     linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
   background-size: 40px 40px;
-  mask-image: radial-gradient(circle at center, black 40%, transparent 80%);
+  mask-image: radial-gradient(circle at center, black 46%, transparent 88%);
 }
 
 body::after {

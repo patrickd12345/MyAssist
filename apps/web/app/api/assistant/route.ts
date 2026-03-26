@@ -19,6 +19,7 @@ import {
   storeResolvedItem,
   storeSituationBrief,
 } from "@/lib/memoryStore";
+import { maybeHandleJobHuntAssistantCommand } from "@/lib/jobHuntAssistantTools";
 import { getSessionUserId } from "@/lib/session";
 import { getUserById } from "@/lib/userStore";
 import { isMyAssistDailyContext } from "@/lib/validateContext";
@@ -218,6 +219,10 @@ async function createChiefOfStaffChatReply(
 }
 
 async function createReply(context: MyAssistDailyContext, message: string, userId: string): Promise<AssistantReply> {
+  const jobHuntToolReply = await maybeHandleJobHuntAssistantCommand(userId, message);
+  if (jobHuntToolReply) {
+    return jobHuntToolReply;
+  }
   try {
     const memoryPrompt = await getRollingMemoryPrompt(userId, context);
     
