@@ -133,6 +133,8 @@ export function TaskList({
   onComplete,
   onSchedule,
   onNudge,
+  onBlockCalendar,
+  blockCalendarPendingKeys = [],
 }: {
   title: string;
   tasks: TodoistTask[];
@@ -142,6 +144,8 @@ export function TaskList({
   onComplete?: (taskId: string) => Promise<void>;
   onSchedule?: (taskId: string, dueString: string, intent?: string) => Promise<void>;
   onNudge?: (taskId: string, direction: "up" | "down", taskText: string) => Promise<void>;
+  onBlockCalendar?: (taskId: string) => Promise<void>;
+  blockCalendarPendingKeys?: string[];
 }) {
   const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [menuTaskId, setMenuTaskId] = useState<string | null>(null);
@@ -222,6 +226,8 @@ export function TaskList({
                 : `idx-${index}`;
             const canComplete = Boolean(onComplete) && !id.startsWith("idx-");
             const isPending = pendingTaskIds.includes(id);
+            const blockKey = `task_to_calendar_block:${id}`;
+            const blockBusy = blockCalendarPendingKeys.includes(blockKey);
             const isMenuOpen = menuTaskId === id;
             return (
               <li key={id} className="list-card rounded-[22px] px-4 py-4">
@@ -293,6 +299,17 @@ export function TaskList({
                           aria-label="Open defer options"
                         >
                           Defer
+                        </button>
+                      ) : null}
+                      {onBlockCalendar ? (
+                        <button
+                          type="button"
+                          disabled={isPending || blockBusy}
+                          onClick={() => void onBlockCalendar(id)}
+                          className="theme-button-secondary rounded-full px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50"
+                          title="Create a focus block on Google Calendar when the task has a due time"
+                        >
+                          {blockBusy ? "Calendar…" : "Block"}
                         </button>
                       ) : null}
                     </div>

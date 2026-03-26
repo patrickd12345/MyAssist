@@ -372,6 +372,7 @@ export function Dashboard({
   );
   const [copied, setCopied] = useState(false);
   const [pendingTaskIds, setPendingTaskIds] = useState<string[]>([]);
+  const [pendingCrossActionKeys, setPendingCrossActionKeys] = useState<string[]>([]);
   const [taskActionError, setTaskActionError] = useState<string | null>(null);
   const [theme, setTheme] = useState<ThemeKey>("light");
   const [themeMenuOpen, setThemeMenuOpen] = useState(false);
@@ -712,6 +713,50 @@ export function Dashboard({
       }
     },
     [],
+  );
+
+  const runCrossSystemAction = useCallback(
+    async (action: "email_to_task" | "email_to_event" | "task_to_calendar_block", sourceId: string) => {
+      const trimmed = sourceId.trim();
+      if (!trimmed) return;
+      const key = `${action}:${trimmed}`;
+      setTaskActionError(null);
+      setPendingCrossActionKeys((current) => [...new Set([...current, key])]);
+      try {
+        const response = await fetch("/api/actions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action, sourceId: trimmed }),
+        });
+        const body = (await response.json()) as {
+          ok?: boolean;
+          error?: string;
+          refreshHints?: { providers?: unknown };
+        };
+        if (!response.ok) {
+          throw new Error(body.error ?? `HTTP ${response.status}`);
+        }
+        if (body.ok === false) {
+          throw new Error(typeof body.error === "string" ? body.error : "Action failed.");
+        }
+        const rawProviders = body.refreshHints?.providers;
+        const providers = (
+          Array.isArray(rawProviders)
+            ? rawProviders.filter(
+                (p): p is ProviderSlice =>
+                  p === "gmail" || p === "google_calendar" || p === "todoist",
+              )
+            : []
+        ) as ProviderSlice[];
+        const unique = [...new Set(providers)];
+        await Promise.all(unique.map((provider) => refreshProviderSlice(provider)));
+      } catch (cause) {
+        setTaskActionError(cause instanceof Error ? cause.message : "Action failed.");
+      } finally {
+        setPendingCrossActionKeys((current) => current.filter((entry) => entry !== key));
+      }
+    },
+    [refreshProviderSlice],
   );
 
   useEffect(() => {
@@ -1330,7 +1375,7 @@ export function Dashboard({
 
       {taskActionError && !error && (
         <div role="alert" className="glass-panel mb-6 rounded-[24px] border-red-500/30 p-5 text-sm text-red-300">
-          <p className="font-semibold">Todoist write-back failed.</p>
+          <p className="font-semibold">Integration action failed.</p>
           <p className="mt-2 text-xs leading-6 opacity-90">{taskActionError}</p>
         </div>
       )}
@@ -1567,6 +1612,8 @@ export function Dashboard({
                   onComplete={completeTask}
                   onSchedule={scheduleTask}
                   onNudge={handleTaskNudge}
+                  onBlockCalendar={(taskId) => runCrossSystemAction("task_to_calendar_block", taskId)}
+                  blockCalendarPendingKeys={pendingCrossActionKeys}
                 />
                 <TaskList
                   title="Today"
@@ -1577,6 +1624,8 @@ export function Dashboard({
                   onComplete={completeTask}
                   onSchedule={scheduleTask}
                   onNudge={handleTaskNudge}
+                  onBlockCalendar={(taskId) => runCrossSystemAction("task_to_calendar_block", taskId)}
+                  blockCalendarPendingKeys={pendingCrossActionKeys}
                 />
                 <OpinionList
                   title="Brief picks"
@@ -1617,6 +1666,16 @@ export function Dashboard({
                         const importanceReason = typeof g.importance_reason === "string" ? g.importance_reason.trim() : "";
                         const importanceScore =
                           typeof g.importance_score === "number" ? Math.round(g.importance_score) : null;
+                        const messageId =
+                          g.id !== undefined && g.id !== null && String(g.id).trim() !== ""
+                            ? String(g.id).trim()
+                            : "";
+                        const emailToTaskKey = `email_to_task:${messageId}`;
+                        const emailToEventKey = `email_to_event:${messageId}`;
+                        const crossEmailBusy =
+                          pendingCrossActionKeys.includes(emailToTaskKey) ||
+                          pendingCrossActionKeys.includes(emailToEventKey);
+                        const memoryBusy = pendingResolvedTexts.includes(subject);
                         return (
                         <li key={g.id ?? g.threadId ?? g.subject} className="list-card rounded-[22px] px-4 py-4">
                           <div className="flex items-start justify-between gap-3">
@@ -1690,6 +1749,24 @@ export function Dashboard({
                             </select>
                           </div>
                           <div className="mt-4 flex flex-wrap justify-end gap-2">
+                            <button
+                              type="button"
+                              disabled={!messageId || crossEmailBusy || memoryBusy}
+                              onClick={() => void runCrossSystemAction("email_to_task", messageId)}
+                              className="theme-button-secondary rounded-full px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50"
+                              title="Create a Todoist task from this message (live Gmail read)"
+                            >
+                              {pendingCrossActionKeys.includes(emailToTaskKey) ? "Task…" : "To Todoist"}
+                            </button>
+                            <button
+                              type="button"
+                              disabled={!messageId || crossEmailBusy || memoryBusy}
+                              onClick={() => void runCrossSystemAction("email_to_event", messageId)}
+                              className="theme-button-secondary rounded-full px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50"
+                              title="Add a calendar block when a reliable time is available"
+                            >
+                              {pendingCrossActionKeys.includes(emailToEventKey) ? "Event…" : "To Calendar"}
+                            </button>
                             <button
                               type="button"
                               disabled={pendingResolvedTexts.includes(subject)}
