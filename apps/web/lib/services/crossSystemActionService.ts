@@ -12,8 +12,25 @@ export type ActionName =
   | "email_to_task"
   | "email_to_event"
   | "task_to_calendar_block"
+  | "calendar_create_manual"
   | "complete_task"
   | "archive_email";
+
+export type SuggestionReason =
+  | "insufficient_datetime"
+  | "calendar_slot_busy"
+  | "insufficient_scheduling";
+
+export type ManualCalendarOrigin = "email_to_event" | "task_to_calendar_block";
+
+export type ManualCalendarCreateInput = {
+  summary: string;
+  description: string;
+  startIso: string;
+  endIso: string;
+  correlationSourceId: string;
+  origin: ManualCalendarOrigin;
+};
 
 type ActionStatus = "success" | "failed";
 type ActionProvider = "gmail" | "google_calendar" | "todoist";
@@ -54,7 +71,7 @@ export type CalendarSuggestionDraft = {
   description: string;
   proposedStart?: string;
   proposedEnd?: string;
-  reason: string;
+  reason: SuggestionReason;
 };
 
 export type CrossSystemActionResult =
@@ -105,6 +122,12 @@ export type CrossSystemActionResult =
   | {
       ok: true;
       action: "archive_email";
+      refreshHints: RefreshHints;
+    }
+  | {
+      ok: true;
+      action: "calendar_create_manual";
+      eventSummary: EventSummary;
       refreshHints: RefreshHints;
     }
   | {
@@ -520,6 +543,89 @@ export class CrossSystemActionService {
         action,
         error: message,
         refreshHints: { ...refreshOnWrite },
+      };
+    }
+  }
+
+  async createCalendarEventManual(input: ManualCalendarCreateInput): Promise<CrossSystemActionResult> {
+    const action: ActionName = "calendar_create_manual";
+    const correlationSourceId = input.correlationSourceId.trim();
+    const summary = input.summary.trim();
+    const description = input.description.trim();
+    const startIso = toIso(input.startIso);
+    const endIso = toIso(input.endIso);
+    const refreshBase: RefreshHints = {
+      providers: ["google_calendar"],
+      sourceIds: correlationSourceId ? [correlationSourceId] : [],
+      targetIds: [],
+    };
+    try {
+      if (!summary) {
+        throw new Error("summary_required");
+      }
+      if (!startIso || !endIso) {
+        throw new Error("invalid_datetime");
+      }
+      const startMs = new Date(startIso).getTime();
+      const endMs = new Date(endIso).getTime();
+      if (Number.isNaN(startMs) || Number.isNaN(endMs) || endMs <= startMs) {
+        throw new Error("invalid_time_range");
+      }
+      const overlaps = await proposedBlockOverlapsExisting(this.calendar, startIso, endIso);
+      if (overlaps) {
+        await logAction(this.userId, {
+          action,
+          status: "failed",
+          timestamp: new Date().toISOString(),
+          sourceIds: correlationSourceId ? [correlationSourceId] : [],
+          targetIds: [],
+          providers: ["google_calendar"],
+          error: "calendar_slot_busy",
+        });
+        return {
+          ok: false,
+          action,
+          error: "calendar_slot_busy",
+          refreshHints: { ...refreshBase },
+        };
+      }
+      const event = await this.calendar.create({
+        summary,
+        description,
+        start: { dateTime: startIso },
+        end: { dateTime: endIso },
+      });
+      const targetIds = [event.id];
+      await logAction(this.userId, {
+        action,
+        status: "success",
+        timestamp: new Date().toISOString(),
+        sourceIds: correlationSourceId ? [correlationSourceId] : [],
+        targetIds,
+        providers: ["google_calendar"],
+      });
+      return {
+        ok: true,
+        action,
+        eventSummary: eventSummaryFromCalendarEvent(event),
+        refreshHints: { ...refreshBase, targetIds },
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "calendar_create_manual_failed";
+      await logAction(this.userId, {
+        action,
+        status: "failed",
+        timestamp: new Date().toISOString(),
+        sourceIds: correlationSourceId ? [correlationSourceId] : [],
+        targetIds: [],
+        providers: ["google_calendar"],
+        error: message,
+      });
+      return {
+        ok: false,
+        action,
+        error: message,
+        refreshHints: { ...refreshBase },
       };
     }
   }
