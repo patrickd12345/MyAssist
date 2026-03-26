@@ -5,6 +5,7 @@ import { getMockDailyContext } from "./mockDailyContext";
 import { assertSafeN8nWebhookUrl, type N8nIntegrationOverrides } from "./n8nWebhookUrl";
 import { syncContactsFromJobHuntEmailMatches } from "./jobHuntEmailAssignment";
 import { postJobHuntEmailSignals } from "./jobHuntEmailSignals";
+import { enrichGmailSignalsWithJobHuntAnalysis } from "./services/jobHuntIntelligenceService";
 import { integrationService } from "./integrations/service";
 import { getEmailTriageHints } from "./memoryStore";
 import { isMyAssistDailyContext } from "./validateContext";
@@ -46,7 +47,7 @@ export async function fetchDailyContextFromN8n(
 }> {
   const url = mergeWebhookUrl(overrides);
   if (shouldUseMock(url)) {
-    return { context: getMockDailyContext(), source: "mock" };
+    return { context: enrichGmailSignalsWithJobHuntAnalysis(getMockDailyContext()), source: "mock" };
   }
 
   const resolved = (url ?? "").trim();
@@ -99,10 +100,10 @@ export async function fetchDailyContextFromN8n(
   }
 
   return {
-    context: {
+    context: enrichGmailSignalsWithJobHuntAnalysis({
       ...oauthEnriched,
       ...(job_hunt_email_matches.length > 0 ? { job_hunt_email_matches } : {}),
-    },
+    }),
     source: "n8n",
   };
 }

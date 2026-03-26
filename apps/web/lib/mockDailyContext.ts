@@ -1,9 +1,19 @@
 import type { MyAssistDailyContext } from "./types";
+import { analyzeEmail } from "./services/jobHuntIntelligenceService";
 
 /** Minimal valid payload for UI dev when n8n webhook URL is not configured. */
 export function getMockDailyContext(): MyAssistDailyContext {
   const now = new Date();
   const runDate = now.toISOString().slice(0, 10);
+  const interviewSignal = {
+    id: "mock-g2",
+    threadId: "t2",
+    from: "talent@example.com",
+    subject: "Next step: schedule your technical interview",
+    snippet:
+      "We would like to schedule an interview for the software engineer role. Please book a time that works for you.",
+    date: now.toISOString(),
+  };
   return {
     generated_at: now.toISOString(),
     run_date: runDate,
@@ -24,6 +34,10 @@ export function getMockDailyContext(): MyAssistDailyContext {
         subject: "Example signal (mock)",
         snippet: "Set MYASSIST_N8N_WEBHOOK_URL for live Gmail signals.",
         date: now.toISOString(),
+      },
+      {
+        ...interviewSignal,
+        job_hunt_analysis: analyzeEmail(interviewSignal),
       },
     ],
     calendar_today: [

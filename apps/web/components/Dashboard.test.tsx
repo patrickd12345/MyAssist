@@ -1,9 +1,10 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { JobHuntAction, MyAssistDailyContext } from "@/lib/types";
 import { Dashboard } from "./Dashboard";
 
-const sampleContext = {
+const sampleContext: MyAssistDailyContext = {
   generated_at: "2026-03-25T12:00:00.000Z",
   run_date: "2026-03-25",
   todoist_overdue: [{ id: "t1", content: "Overdue thing", priority: 2 }],
@@ -17,6 +18,23 @@ const sampleContext = {
       subject: "Your trial is ending soon, you will be automatically charged",
       snippet: "Renewal coming up.",
       date: "2026-03-25T10:00:00.000Z",
+    },
+    {
+      id: "g2",
+      threadId: "th2",
+      from: "Talent <jobs@company.com>",
+      subject: "Schedule your interview for the engineer role",
+      snippet: "We would like to schedule an interview. Please book a time that works.",
+      date: "2026-03-25T11:00:00.000Z",
+      job_hunt_analysis: {
+        signals: ["interview_request"],
+        confidence: 0.82,
+        suggestedActions: [
+          "create_prep_task",
+          "suggest_calendar_block",
+          "create_interview_event",
+        ] satisfies JobHuntAction[],
+      },
     },
   ],
   calendar_today: [],
@@ -60,6 +78,32 @@ function mockAssistantFetch() {
     }
     if (url.includes("/api/gmail/mark-read")) {
       return new Response(JSON.stringify({ ok: true }), { status: 200 });
+    }
+
+    if (url.includes("/api/actions")) {
+      return new Response(
+        JSON.stringify({
+          ok: true,
+          action: "job_hunt_prep_tasks",
+          sourceEmailId: "g2",
+          taskSummaries: [],
+          refreshHints: { providers: ["gmail", "todoist"], sourceIds: ["g2"], targetIds: [] },
+        }),
+        { status: 200 },
+      );
+    }
+
+    if (url.includes("/api/daily-context") && url.includes("provider=")) {
+      return new Response(
+        JSON.stringify({
+          gmail_signals: sampleContext.gmail_signals,
+          calendar_today: sampleContext.calendar_today,
+          todoist_overdue: sampleContext.todoist_overdue,
+          todoist_due_today: sampleContext.todoist_due_today,
+          todoist_upcoming_high_priority: sampleContext.todoist_upcoming_high_priority,
+        }),
+        { status: 200 },
+      );
     }
 
     return new Response("not found", { status: 404 });
@@ -173,6 +217,45 @@ describe("Dashboard", () => {
 
     await waitFor(() => {
       expect(within(emailSection as HTMLElement).queryByText(subject)).not.toBeInTheDocument();
+    });
+  });
+
+  it("shows job hunt suggestion panel and can run prep tasks action", async () => {
+    const user = userEvent.setup();
+    render(<Dashboard initialData={sampleContext} initialError={null} initialSource="n8n" />);
+
+    await user.click(screen.getAllByRole("button", { name: "Inbox" })[0]);
+
+    await waitFor(() => {
+      expect(screen.getByRole("region", { name: "Job hunt suggestions" })).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: "Create prep tasks" }));
+
+    await waitFor(() => {
+      expect(mockFetch).toHaveBeenCalledWith(
+        "/api/actions",
+        expect.objectContaining({
+          method: "POST",
+          body: expect.stringContaining("job_hunt_prep_tasks"),
+        }),
+      );
+    });
+  });
+
+  it("hides job hunt panel when Ignore is clicked", async () => {
+    const user = userEvent.setup();
+    render(<Dashboard initialData={sampleContext} initialError={null} initialSource="n8n" />);
+
+    await user.click(screen.getAllByRole("button", { name: "Inbox" })[0]);
+
+    const region = await screen.findByRole("region", { name: "Job hunt suggestions" });
+    expect(region).toBeInTheDocument();
+
+    await user.click(within(region).getByRole("button", { name: "Ignore" }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole("region", { name: "Job hunt suggestions" })).not.toBeInTheDocument();
     });
   });
 

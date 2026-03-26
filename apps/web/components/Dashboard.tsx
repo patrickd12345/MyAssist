@@ -12,6 +12,7 @@ import type {
   MyAssistDailyContext,
   GmailSignal,
   JobHuntEmailMatch,
+  JobHuntSignal,
   SituationBrief,
   TodoistTask,
 } from "@/lib/types";
@@ -158,6 +159,40 @@ function taskCountLabel(tasks: TodoistTask[]): string {
 
 function itemCountLabel(items: string[]): string {
   return items.length === 1 ? "1 item" : `${items.length} items`;
+}
+
+const JOB_HUNT_PANEL_MIN_CONFIDENCE = 0.4;
+
+function formatJobHuntSignals(signals: JobHuntSignal[]): string {
+  if (signals.length === 0) return "";
+  const labels: Record<JobHuntSignal, string> = {
+    interview_request: "Interview request",
+    technical_interview: "Technical interview",
+    follow_up: "Follow-up",
+    offer: "Offer",
+    rejection: "Rejection",
+    application_confirmation: "Application confirmation",
+  };
+  return signals.map((s) => labels[s] ?? s).join(" · ");
+}
+
+function jobHuntReasonCopy(signal: JobHuntSignal): string {
+  switch (signal) {
+    case "interview_request":
+      return "Scheduling language detected — add prep and protect time.";
+    case "technical_interview":
+      return "Technical interview language detected — prep matters.";
+    case "follow_up":
+      return "Follow-up language detected — capture a next step.";
+    case "offer":
+      return "Offer language detected — track negotiation and decisions.";
+    case "rejection":
+      return "Closure language detected — update pipeline when ready.";
+    case "application_confirmation":
+      return "Application acknowledgment detected — track the pipeline.";
+    default:
+      return "";
+  }
 }
 
 function MetricValue({
@@ -373,6 +408,7 @@ export function Dashboard({
   const [copied, setCopied] = useState(false);
   const [pendingTaskIds, setPendingTaskIds] = useState<string[]>([]);
   const [pendingCrossActionKeys, setPendingCrossActionKeys] = useState<string[]>([]);
+  const [ignoredJobHuntMessageIds, setIgnoredJobHuntMessageIds] = useState<string[]>([]);
   const [taskActionError, setTaskActionError] = useState<string | null>(null);
   const [theme, setTheme] = useState<ThemeKey>("light");
   const [themeMenuOpen, setThemeMenuOpen] = useState(false);
@@ -716,7 +752,10 @@ export function Dashboard({
   );
 
   const runCrossSystemAction = useCallback(
-    async (action: "email_to_task" | "email_to_event" | "task_to_calendar_block", sourceId: string) => {
+    async (
+      action: "email_to_task" | "email_to_event" | "task_to_calendar_block" | "job_hunt_prep_tasks",
+      sourceId: string,
+    ) => {
       const trimmed = sourceId.trim();
       if (!trimmed) return;
       const key = `${action}:${trimmed}`;
@@ -1715,6 +1754,85 @@ export function Dashboard({
                             >
                               {g.snippet}
                             </p>
+                          ) : null}
+                          {messageId &&
+                          g.job_hunt_analysis &&
+                          g.job_hunt_analysis.confidence >= JOB_HUNT_PANEL_MIN_CONFIDENCE &&
+                          g.job_hunt_analysis.signals.length > 0 &&
+                          !ignoredJobHuntMessageIds.includes(messageId) ? (
+                            <div
+                              className="mt-3 rounded-[20px] border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-left"
+                              role="region"
+                              aria-label="Job hunt suggestions"
+                            >
+                              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-amber-200/90">
+                                Job hunt
+                              </p>
+                              <p className="theme-ink mt-1 text-sm font-medium leading-6">
+                                {formatJobHuntSignals(g.job_hunt_analysis.signals)}
+                              </p>
+                              <p className="theme-muted mt-1 text-xs leading-5">
+                                {jobHuntReasonCopy(g.job_hunt_analysis.signals[0] ?? "interview_request")}
+                              </p>
+                              <div className="mt-3 flex flex-wrap gap-2">
+                                {g.job_hunt_analysis.suggestedActions.includes("create_prep_task") ? (
+                                  <button
+                                    type="button"
+                                    disabled={
+                                      crossEmailBusy ||
+                                      memoryBusy ||
+                                      pendingCrossActionKeys.includes(`job_hunt_prep_tasks:${messageId}`)
+                                    }
+                                    onClick={() => void runCrossSystemAction("job_hunt_prep_tasks", messageId)}
+                                    className="theme-button-primary rounded-full px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50"
+                                  >
+                                    {pendingCrossActionKeys.includes(`job_hunt_prep_tasks:${messageId}`)
+                                      ? "Prep tasks…"
+                                      : "Create prep tasks"}
+                                  </button>
+                                ) : null}
+                                {g.job_hunt_analysis.suggestedActions.includes("suggest_calendar_block") ||
+                                g.job_hunt_analysis.suggestedActions.includes("create_interview_event") ? (
+                                  <button
+                                    type="button"
+                                    disabled={!messageId || crossEmailBusy || memoryBusy}
+                                    onClick={() => void runCrossSystemAction("email_to_event", messageId)}
+                                    className="theme-button-secondary rounded-full px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50"
+                                  >
+                                    {pendingCrossActionKeys.includes(emailToEventKey) ? "Calendar…" : "Add to calendar"}
+                                  </button>
+                                ) : null}
+                                {g.job_hunt_analysis.suggestedActions.includes("create_followup_task") ? (
+                                  <button
+                                    type="button"
+                                    disabled={!messageId || crossEmailBusy || memoryBusy}
+                                    onClick={() => void runCrossSystemAction("email_to_task", messageId)}
+                                    className="theme-button-secondary rounded-full px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50"
+                                  >
+                                    {pendingCrossActionKeys.includes(emailToTaskKey) ? "Task…" : "Follow-up task"}
+                                  </button>
+                                ) : null}
+                                {g.job_hunt_analysis.suggestedActions.includes("update_pipeline") ? (
+                                  <Link
+                                    href="/job-hunt"
+                                    className="theme-button-secondary inline-flex items-center rounded-full px-3 py-2 text-xs font-semibold transition"
+                                  >
+                                    Update pipeline
+                                  </Link>
+                                ) : null}
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setIgnoredJobHuntMessageIds((current) =>
+                                      current.includes(messageId) ? current : [...current, messageId],
+                                    )
+                                  }
+                                  className="theme-button-secondary rounded-full px-3 py-2 text-xs font-semibold transition"
+                                >
+                                  Ignore
+                                </button>
+                              </div>
+                            </div>
                           ) : null}
                           <div className="mt-3">
                             <label className="theme-muted text-[11px]">Assign to saved job</label>

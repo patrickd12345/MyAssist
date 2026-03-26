@@ -1,5 +1,26 @@
 export type TodoistTask = Record<string, unknown>;
 
+export type JobHuntSignal =
+  | "interview_request"
+  | "technical_interview"
+  | "follow_up"
+  | "offer"
+  | "rejection"
+  | "application_confirmation";
+
+export type JobHuntAction =
+  | "create_prep_task"
+  | "create_followup_task"
+  | "suggest_calendar_block"
+  | "create_interview_event"
+  | "update_pipeline";
+
+export type JobHuntAnalysis = {
+  signals: JobHuntSignal[];
+  confidence: number;
+  suggestedActions: JobHuntAction[];
+};
+
 export type GmailSignal = {
   id: string | null;
   threadId: string | null;
@@ -10,6 +31,8 @@ export type GmailSignal = {
   importance_score?: number;
   importance_reason?: string;
   importance_model?: string;
+  /** Heuristic job-hunt classification; omitted when no confident match. */
+  job_hunt_analysis?: JobHuntAnalysis;
 };
 
 export type CalendarEvent = {

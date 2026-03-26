@@ -178,6 +178,30 @@ describe("CrossSystemActionService", () => {
     expect(result.refreshHints.providers).toEqual([]);
   });
 
+  it("creates job hunt prep tasks from email with multiple Todoist writes", async () => {
+    let seq = 0;
+    todoistAdapterMock.create.mockImplementation(async (payload: { content: string }) => {
+      seq += 1;
+      return {
+        id: `tp${seq}`,
+        content: payload.content,
+        description: "",
+        priority: 3,
+        due: null,
+        url: `https://todoist.com/showTask?id=prep-${seq}`,
+      };
+    });
+    const service = createCrossSystemActionService("user-1");
+    const result = await service.jobHuntPrepTasks("m1");
+
+    expect(result.ok).toBe(true);
+    if (!result.ok || result.action !== "job_hunt_prep_tasks") return;
+    expect(todoistAdapterMock.create).toHaveBeenCalledTimes(5);
+    expect(result.taskSummaries).toHaveLength(5);
+    expect(result.refreshHints.providers).toEqual(["gmail", "todoist"]);
+    expect(appendFileMock).toHaveBeenCalled();
+  });
+
   it("archives email with direct provider write", async () => {
     const service = createCrossSystemActionService("user-1");
     const result = await service.archiveEmail("m1");

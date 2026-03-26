@@ -3,6 +3,8 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 const emailToTask = vi.fn();
 const emailToEvent = vi.fn();
 const taskToCalendarBlock = vi.fn();
+const createCalendarEventManual = vi.fn();
+const jobHuntPrepTasks = vi.fn();
 const completeTask = vi.fn();
 const archiveEmail = vi.fn();
 
@@ -15,6 +17,8 @@ vi.mock("@/lib/services/crossSystemActionService", () => ({
     emailToTask,
     emailToEvent,
     taskToCalendarBlock,
+    createCalendarEventManual,
+    jobHuntPrepTasks,
     completeTask,
     archiveEmail,
   })),
@@ -59,6 +63,44 @@ describe("POST /api/actions", () => {
       }),
     );
     expect(res.status).toBe(400);
+  });
+
+  it("dispatches job_hunt_prep_tasks and returns service payload", async () => {
+    jobHuntPrepTasks.mockResolvedValue({
+      ok: true,
+      action: "job_hunt_prep_tasks",
+      sourceEmailId: "m1",
+      taskSummaries: [{ id: "a", content: "x", url: null }],
+      refreshHints: { providers: ["gmail", "todoist"], sourceIds: ["m1"], targetIds: ["a"] },
+    });
+    const res = await POST(
+      new Request("http://localhost/api/actions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "job_hunt_prep_tasks", sourceId: "m1" }),
+      }),
+    );
+    expect(res.status).toBe(200);
+    expect(jobHuntPrepTasks).toHaveBeenCalledWith("m1");
+    const json = (await res.json()) as { ok: boolean; action?: string };
+    expect(json.ok).toBe(true);
+    expect(json.action).toBe("job_hunt_prep_tasks");
+  });
+
+  it("returns 400 for calendar_create_manual with invalid payload", async () => {
+    const res = await POST(
+      new Request("http://localhost/api/actions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "calendar_create_manual",
+          sourceId: "",
+          payload: { summary: "", start: "", end: "" },
+        }),
+      }),
+    );
+    expect(res.status).toBe(400);
+    expect(createCalendarEventManual).not.toHaveBeenCalled();
   });
 
   it("dispatches email_to_task and returns service payload", async () => {

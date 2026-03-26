@@ -13,8 +13,17 @@ export type ActionName =
   | "email_to_event"
   | "task_to_calendar_block"
   | "calendar_create_manual"
+  | "job_hunt_prep_tasks"
   | "complete_task"
   | "archive_email";
+
+const JOB_PREP_TASK_CONTENTS = [
+  "Research company",
+  "Review role description",
+  "Prepare interview questions",
+  "Test microphone and camera",
+  "Review resume for this role",
+] as const;
 
 export type SuggestionReason =
   | "insufficient_datetime"
@@ -128,6 +137,13 @@ export type CrossSystemActionResult =
       ok: true;
       action: "calendar_create_manual";
       eventSummary: EventSummary;
+      refreshHints: RefreshHints;
+    }
+  | {
+      ok: true;
+      action: "job_hunt_prep_tasks";
+      sourceEmailId: string;
+      taskSummaries: TaskSummary[];
       refreshHints: RefreshHints;
     }
   | {
@@ -301,6 +317,61 @@ export class CrossSystemActionService {
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : "email_to_task_failed";
+      await logAction(this.userId, {
+        action,
+        status: "failed",
+        timestamp: new Date().toISOString(),
+        sourceIds: [sourceId],
+        targetIds: [],
+        providers: ["gmail", "todoist"],
+        error: message,
+      });
+      return {
+        ok: false,
+        action,
+        error: message,
+        refreshHints: { ...refreshFull, targetIds: [] },
+      };
+    }
+  }
+
+  async jobHuntPrepTasks(emailId: string): Promise<CrossSystemActionResult> {
+    const action: ActionName = "job_hunt_prep_tasks";
+    const sourceId = emailId.trim();
+    const refreshFull: RefreshHints = { providers: ["gmail", "todoist"], sourceIds: [sourceId], targetIds: [] };
+    try {
+      const email = await this.gmail.getById(sourceId);
+      if (!email) throw new Error("email_not_found");
+      const description = emailBodyForDescription(email);
+      const taskSummaries: TaskSummary[] = [];
+      for (const content of JOB_PREP_TASK_CONTENTS) {
+        const task = await this.todoist.create({
+          content: `[Job prep] ${content}`,
+          description,
+          dueString: "today",
+          dueLang: "en",
+          priority: 3,
+        });
+        taskSummaries.push({ id: task.id, content: task.content, url: task.url });
+      }
+      const targetIds = taskSummaries.map((t) => t.id);
+      await logAction(this.userId, {
+        action,
+        status: "success",
+        timestamp: new Date().toISOString(),
+        sourceIds: [sourceId],
+        targetIds,
+        providers: ["gmail", "todoist"],
+      });
+      return {
+        ok: true,
+        action,
+        sourceEmailId: sourceId,
+        taskSummaries,
+        refreshHints: { ...refreshFull, targetIds },
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "job_hunt_prep_tasks_failed";
       await logAction(this.userId, {
         action,
         status: "failed",
