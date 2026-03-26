@@ -24,6 +24,7 @@ type DashboardTab = "overview" | "tasks" | "inbox" | "calendar" | "assistant";
 type IntegrationStatus = "connected" | "revoked" | "disconnected";
 type IntegrationProvider = "gmail" | "todoist" | "google_calendar" | "n8n";
 type IntegrationStatusRow = { provider: IntegrationProvider; status: IntegrationStatus };
+type ProviderSlice = "gmail" | "google_calendar" | "todoist";
 
 const THEME_STORAGE_KEY = "myassist-theme";
 
@@ -656,6 +657,63 @@ export function Dashboard({
     }
   }, []);
 
+  const refreshProviderSlice = useCallback(
+    async (provider: ProviderSlice) => {
+      try {
+        const res = await fetch(`/api/daily-context?provider=${encodeURIComponent(provider)}`, {
+          cache: "no-store",
+        });
+        const body = (await res.json()) as
+          | {
+              gmail_signals?: MyAssistDailyContext["gmail_signals"];
+              calendar_today?: MyAssistDailyContext["calendar_today"];
+              todoist_overdue?: MyAssistDailyContext["todoist_overdue"];
+              todoist_due_today?: MyAssistDailyContext["todoist_due_today"];
+              todoist_upcoming_high_priority?: MyAssistDailyContext["todoist_upcoming_high_priority"];
+            }
+          | { error?: string };
+        if (!res.ok || ("error" in body && body.error)) {
+          throw new Error(("error" in body && body.error) || `HTTP ${res.status}`);
+        }
+        setData((previous) => {
+          if (!previous) return previous;
+          if (provider === "gmail" && "gmail_signals" in body && Array.isArray(body.gmail_signals)) {
+            return { ...previous, gmail_signals: body.gmail_signals };
+          }
+          if (
+            provider === "google_calendar" &&
+            "calendar_today" in body &&
+            Array.isArray(body.calendar_today)
+          ) {
+            return { ...previous, calendar_today: body.calendar_today };
+          }
+          if (
+            provider === "todoist" &&
+            "todoist_overdue" in body &&
+            "todoist_due_today" in body &&
+            "todoist_upcoming_high_priority" in body &&
+            Array.isArray(body.todoist_overdue) &&
+            Array.isArray(body.todoist_due_today) &&
+            Array.isArray(body.todoist_upcoming_high_priority)
+          ) {
+            return {
+              ...previous,
+              todoist_overdue: body.todoist_overdue,
+              todoist_due_today: body.todoist_due_today,
+              todoist_upcoming_high_priority: body.todoist_upcoming_high_priority,
+            };
+          }
+          return previous;
+        });
+      } catch (cause) {
+        setTaskActionError(
+          cause instanceof Error ? cause.message : `Could not refresh ${provider} data.`,
+        );
+      }
+    },
+    [],
+  );
+
   useEffect(() => {
     if (initialData !== null) return;
     if (initialError !== null) return;
@@ -707,7 +765,6 @@ export function Dashboard({
       if (!response.ok) {
         throw new Error(body.error ?? `HTTP ${response.status}`);
       }
-      await refresh();
     } catch (cause) {
       setAssignError(
         cause instanceof Error ? cause.message : "Could not assign this email to a saved job.",
@@ -715,7 +772,7 @@ export function Dashboard({
     } finally {
       setAssignBusyKey(null);
     }
-  }, [refresh]);
+  }, []);
 
   const completeTask = useCallback(
     async (taskId: string) => {
@@ -741,6 +798,7 @@ export function Dashboard({
         if (!response.ok) {
           throw new Error(body.error ?? `HTTP ${response.status}`);
         }
+        await refreshProviderSlice("todoist");
       } catch (cause) {
         setData(previous);
         setTaskActionError(cause instanceof Error ? cause.message : "Could not complete the task.");
@@ -748,7 +806,7 @@ export function Dashboard({
         setPendingTaskIds((current) => current.filter((value) => value !== taskId));
       }
     },
-    [data],
+    [data, refreshProviderSlice],
   );
 
   const scheduleTask = useCallback(
@@ -796,7 +854,7 @@ export function Dashboard({
         if (!response.ok) {
           throw new Error(body.error ?? `HTTP ${response.status}`);
         }
-        await refresh();
+        await refreshProviderSlice("todoist");
       } catch (cause) {
         setData(previous);
         setTaskActionError(cause instanceof Error ? cause.message : "Could not reschedule the task.");
@@ -804,7 +862,7 @@ export function Dashboard({
         setPendingTaskIds((current) => current.filter((value) => value !== taskId));
       }
     },
-    [data, refresh],
+    [data, refreshProviderSlice],
   );
 
   const resolvedKeySet = useMemo(
@@ -894,6 +952,8 @@ export function Dashboard({
               markBody.error ??
                 "Marked as handled locally, but Gmail mark-as-read did not complete.",
             );
+          } else {
+            await refreshProviderSlice("gmail");
           }
         }
       } catch (cause) {
@@ -902,7 +962,7 @@ export function Dashboard({
         setPendingResolvedTexts((current) => current.filter((item) => item !== trimmed));
       }
     },
-    [data],
+    [data, refreshProviderSlice],
   );
 
   const handleTaskNudge = useCallback(

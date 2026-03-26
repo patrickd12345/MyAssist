@@ -15,8 +15,9 @@ const { readLastDailyContext, writeLastDailyContext } = vi.hoisted(() => ({
   readLastDailyContext: vi.fn(),
   writeLastDailyContext: vi.fn(),
 }));
-const { fetchCalendarEvents } = vi.hoisted(() => ({
+const { fetchCalendarEvents, fetchGmailSignals } = vi.hoisted(() => ({
   fetchCalendarEvents: vi.fn(),
+  fetchGmailSignals: vi.fn(),
 }));
 
 vi.mock("@/lib/dailyContextSnapshot", () => ({
@@ -43,6 +44,7 @@ vi.mock("@/lib/memoryStore", async (importOriginal) => {
 vi.mock("@/lib/integrations/service", () => ({
   integrationService: {
     fetchCalendarEvents,
+    fetchGmailSignals,
   },
 }));
 
@@ -59,6 +61,7 @@ describe("GET /api/daily-context", () => {
     readLastDailyContext.mockResolvedValue(null);
     writeLastDailyContext.mockResolvedValue(undefined);
     fetchCalendarEvents.mockResolvedValue(null);
+    fetchGmailSignals.mockResolvedValue(null);
   });
 
   it("returns JSON body and sets source header on live fetch", async () => {
@@ -112,5 +115,31 @@ describe("GET /api/daily-context", () => {
     expect(json.calendar_today).toHaveLength(1);
     expect(json.calendar_today[0]?.summary).toBe("Live calendar event");
     expect(json.calendar_today[0]?.location).toBe("Zoom");
+  });
+
+  it("returns a provider-scoped gmail slice when requested", async () => {
+    fetchGmailSignals.mockResolvedValueOnce([
+      {
+        id: "msg-1",
+        threadId: "thread-1",
+        from: "Jane",
+        subject: "Follow up",
+        snippet: "Quick check-in",
+        date: "2026-03-25",
+      },
+    ]);
+    const req = new NextRequest("http://localhost/api/daily-context?provider=gmail");
+    const res = await GET(req);
+    expect(res.status).toBe(200);
+    const json = (await res.json()) as {
+      provider: string;
+      source: string;
+      gmail_signals: Array<{ subject: string }>;
+    };
+    expect(json.provider).toBe("gmail");
+    expect(json.source).toBe("live");
+    expect(json.gmail_signals).toHaveLength(1);
+    expect(json.gmail_signals[0]?.subject).toBe("Follow up");
+    expect(writeLastDailyContext).not.toHaveBeenCalled();
   });
 });

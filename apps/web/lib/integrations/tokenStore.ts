@@ -96,7 +96,7 @@ export async function getIntegrationToken(
   if (!row) return null;
   try {
     return decryptJson<IntegrationTokenPayload>(row.encrypted_payload);
-  } catch (e) {
+  } catch {
     console.warn(`[Integrations] Could not decrypt token for ${provider} (key changed?). Treating as disconnected.`);
     return null;
   }

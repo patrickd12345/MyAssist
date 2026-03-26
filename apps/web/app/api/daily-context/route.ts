@@ -8,6 +8,7 @@ import {
 import { integrationService } from "@/lib/integrations/service";
 import { getTaskNudges } from "@/lib/memoryStore";
 import { getSessionUserId } from "@/lib/session";
+import { resolveTodoistApiToken } from "@/lib/todoistToken";
 import { getUserById } from "@/lib/userStore";
 import type { MyAssistDailyContext } from "@/lib/types";
 
@@ -33,6 +34,147 @@ function mapOAuthCalendarEvents(raw: Array<Record<string, unknown>>): MyAssistDa
   });
 }
 
+type DailyContextProviderSlice = "gmail" | "google_calendar" | "todoist";
+
+function isDailyContextProviderSlice(value: string | null): value is DailyContextProviderSlice {
+  return value === "gmail" || value === "google_calendar" || value === "todoist";
+}
+
+function mapOAuthGmailSignals(raw: Array<Record<string, unknown>>): MyAssistDailyContext["gmail_signals"] {
+  return raw.map((g) => ({
+    id: (typeof g.id === "string" ? g.id : null) ?? null,
+    threadId: (typeof g.threadId === "string" ? g.threadId : null) ?? null,
+    from: typeof g.from === "string" ? g.from : "",
+    subject: typeof g.subject === "string" ? g.subject : "",
+    snippet: typeof g.snippet === "string" ? g.snippet : "",
+    date: typeof g.date === "string" ? g.date : "",
+  }));
+}
+
+function dateOnly(value: Date): string {
+  return value.toISOString().slice(0, 10);
+}
+
+function getTaskDueDate(task: Record<string, unknown>): string | null {
+  const due = task.due as Record<string, unknown> | undefined;
+  if (!due || typeof due !== "object") return null;
+  if (typeof due.date === "string" && due.date.trim()) return due.date.trim();
+  if (typeof due.datetime === "string" && due.datetime.trim()) {
+    const parsed = new Date(due.datetime);
+    if (!Number.isNaN(parsed.getTime())) return dateOnly(parsed);
+  }
+  return null;
+}
+
+function getTaskPriority(task: Record<string, unknown>): number {
+  return typeof task.priority === "number" ? task.priority : 1;
+}
+
+function compareTasks(a: Record<string, unknown>, b: Record<string, unknown>): number {
+  const dueA = getTaskDueDate(a) ?? "9999-12-31";
+  const dueB = getTaskDueDate(b) ?? "9999-12-31";
+  if (dueA !== dueB) return dueA.localeCompare(dueB);
+  const priorityA = getTaskPriority(a);
+  const priorityB = getTaskPriority(b);
+  if (priorityA !== priorityB) return priorityB - priorityA;
+  return String(a.id ?? "").localeCompare(String(b.id ?? ""));
+}
+
+async function fetchTodoistSlices(userId: string): Promise<Pick<
+  MyAssistDailyContext,
+  "todoist_overdue" | "todoist_due_today" | "todoist_upcoming_high_priority"
+> | null> {
+  const token = await resolveTodoistApiToken(userId);
+  if (!token) return null;
+  const res = await fetch("https://api.todoist.com/api/v1/tasks?limit=200", {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store",
+  });
+  if (!res.ok) return null;
+  const json = (await res.json()) as unknown;
+  if (!Array.isArray(json)) return null;
+  const tasks = json.filter(
+    (item): item is Record<string, unknown> => Boolean(item && typeof item === "object"),
+  );
+
+  const today = dateOnly(new Date());
+  const todoist_overdue: Record<string, unknown>[] = [];
+  const todoist_due_today: Record<string, unknown>[] = [];
+  const todoist_upcoming_high_priority: Record<string, unknown>[] = [];
+
+  for (const task of tasks) {
+    const dueDate = getTaskDueDate(task);
+    if (dueDate && dueDate < today) {
+      todoist_overdue.push(task);
+      continue;
+    }
+    if (dueDate && dueDate === today) {
+      todoist_due_today.push(task);
+      continue;
+    }
+    if (getTaskPriority(task) >= 3) {
+      todoist_upcoming_high_priority.push(task);
+    }
+  }
+
+  todoist_overdue.sort(compareTasks);
+  todoist_due_today.sort(compareTasks);
+  todoist_upcoming_high_priority.sort(compareTasks);
+
+  return {
+    todoist_overdue: todoist_overdue.slice(0, 50),
+    todoist_due_today: todoist_due_today.slice(0, 50),
+    todoist_upcoming_high_priority: todoist_upcoming_high_priority.slice(0, 50),
+  };
+}
+
+async function buildProviderSliceResponse(
+  provider: DailyContextProviderSlice,
+  userId: string,
+): Promise<Response> {
+  const cached = await readLastDailyContext(userId);
+  const fallbackRunDate = cached?.run_date ?? dateOnly(new Date());
+  const fallbackGeneratedAt = cached?.generated_at ?? new Date().toISOString();
+
+  if (provider === "gmail") {
+    const live = await integrationService.fetchGmailSignals(userId);
+    return NextResponse.json({
+      provider,
+      source: live ? "live" : "cache-fallback",
+      run_date: fallbackRunDate,
+      generated_at: fallbackGeneratedAt,
+      gmail_signals: live
+        ? mapOAuthGmailSignals(live)
+        : (cached?.gmail_signals ?? []),
+    });
+  }
+
+  if (provider === "google_calendar") {
+    const live = await integrationService.fetchCalendarEvents(userId);
+    return NextResponse.json({
+      provider,
+      source: live ? "live" : "cache-fallback",
+      run_date: fallbackRunDate,
+      generated_at: fallbackGeneratedAt,
+      calendar_today: Array.isArray(live)
+        ? mapOAuthCalendarEvents(live)
+        : (cached?.calendar_today ?? []),
+    });
+  }
+
+  const liveTodoist = await fetchTodoistSlices(userId);
+  return NextResponse.json({
+    provider,
+    source: liveTodoist ? "live" : "cache-fallback",
+    run_date: fallbackRunDate,
+    generated_at: fallbackGeneratedAt,
+    todoist_overdue: liveTodoist?.todoist_overdue ?? (cached?.todoist_overdue ?? []),
+    todoist_due_today: liveTodoist?.todoist_due_today ?? (cached?.todoist_due_today ?? []),
+    todoist_upcoming_high_priority:
+      liveTodoist?.todoist_upcoming_high_priority ?? (cached?.todoist_upcoming_high_priority ?? []),
+  });
+}
+
 export async function GET(request: NextRequest) {
   try {
     const userId = await getSessionUserId();
@@ -41,6 +183,10 @@ export async function GET(request: NextRequest) {
     }
 
     const fromCache = request.nextUrl.searchParams.get("source") === "cache";
+    const provider = request.nextUrl.searchParams.get("provider");
+    if (isDailyContextProviderSlice(provider)) {
+      return buildProviderSliceResponse(provider, userId);
+    }
 
     if (fromCache) {
       const cached = await readLastDailyContext(userId);

@@ -1,18 +1,14 @@
 # MyAssist v1
 
-Personal operations system centered on Todoist, Gmail, Google Calendar, and a local-first assistant UI.
+Personal operations system as a unified live operational window over Gmail, Google Calendar, and Todoist.
 
 ## What this includes
 
-- `apps/web/`: Next.js assistant surface. Renders an operator-style briefing and exposes an interactive assistant console with local Ollama when available and deterministic fallback when not.
-- OAuth-first integration layer now handles encrypted token storage and per-provider connect flows in-app for Gmail, Todoist, and Google Calendar through `/api/integrations/*`.
-- `n8n/`: preserved workflow exports and related assets. These files remain in the repo but the runtime is currently dormant.
-- `prompts/email_triage_prompt.txt`: optional reference if a future automation path is rebuilt.
-- `prompts/daily_digest_prompt.txt`: legacy reference from an earlier digest path.
-- `.env.example`: required variables and safe defaults.
-- `docs/architecture.md`: current system boundaries and failure modes.
-- `docs/n8n-dormant.md`: dormant status and re-enable instructions for n8n.
-- `PROJECT_TRACKER.md`: live execution tracker for the local-first build.
+- `apps/web/`: Next.js assistant surface with a unified live Today view and direct provider actions.
+- OAuth integration layer for Gmail, Google Calendar, and Todoist through `/api/integrations/*`.
+- local app memory and lightweight metadata in `.myassist-memory`.
+- `docs/architecture.md`: provider-canonical boundaries and module layout.
+- `PROJECT_TRACKER.md`: execution tracker aligned to the live-window model.
 
 ## Tooling preference
 
@@ -20,33 +16,21 @@ Personal operations system centered on Todoist, Gmail, Google Calendar, and a lo
 - Preferred local runtime:
   - `apps/web` on `npm`
 
-## Build strategy
+## Operating model
 
-- Primary goal now:
-  - finish a strong local single-user version
-- Architecture goal now:
-  - keep boundaries stable so a future commercial version does not require a rewrite
-- Explicit non-goals for the current phase:
-  - no multi-tenant auth
-  - no billing system
-  - no BYOK implementation flow
-  - no orchestration platform migration before the local version is working well
-
-## Hosting strategy
-
-- Development:
-  - local PC execution is acceptable while connectors and payload contracts are still changing
-- Travel/demo:
-  - the Vercel app can run against app-owned OAuth integrations rather than a local automation runtime
-- Pilot and commercial:
-  - run `apps/web` on Vercel
-  - keep orchestration optional until it is needed again
-
-## Migration-safe rule
-
-- Keep workflow exports under `n8n/` unchanged while dormant.
-- Keep secrets in env vars or app-managed OAuth storage.
-- Treat n8n as an optional future runtime, not an active dependency.
+- Providers remain canonical:
+  - Gmail owns emails
+  - Google Calendar owns events
+  - Todoist owns tasks
+- MyAssist stores only:
+  - OAuth/account connection state
+  - user preferences
+  - app memory
+  - lightweight internal metadata
+  - action logs
+  - cross-system linkage metadata when needed
+- No provider-data mirror tables.
+- No bidirectional reconciliation pipelines.
 
 ## Operating modes
 
@@ -57,18 +41,20 @@ Personal operations system centered on Todoist, Gmail, Google Calendar, and a lo
 
 ## v1 operating rules
 
-- Todoist is the single source of truth.
 - Siri is capture only.
 - The assistant layer is reasoning only.
-- No bidirectional sync in v1.
+- No sync engine behavior in v1.
 - No autonomous global reprioritization in v1.
-- Default v1: no automated Todoist writes from Gmail.
+- Live fetch on demand for provider reads.
+- Direct provider API writes for actions.
+- UI state auto-refresh after writes.
+- Manual refresh is debug fallback, not core UX.
 
 ## Web app (interactive assistant)
 
 Purpose:
 
-- Render an operator-style daily brief over live integrated context.
+- Render a unified live control panel over connected systems.
 - Let you ask questions against the current snapshot.
 - Return answers, suggested actions, and follow-up prompts.
 
@@ -82,7 +68,7 @@ Setup:
 Assistant behavior:
 
 - The homepage includes a live assistant console.
-- Questions are answered against the current app-fetched context snapshot.
+- Questions are answered against the current live-fetched context.
 - If Ollama is reachable, replies come from the local model.
 - If Ollama is not reachable, the assistant falls back to deterministic reasoning so the app still works.
 - Todoist tasks can be completed explicitly from the dashboard when configured.
@@ -101,10 +87,6 @@ Verification:
 - `POST /api/assistant` should return JSON with `mode`, `answer`, `actions`, and `followUps`.
 - `mode=ollama` means the local model is active.
 - `mode=fallback` means the assistant is running on built-in heuristics.
-
-## Dormant automation
-
-n8n is currently dormant because OAuth is now handled in the app. Workflow JSON exports, credentials examples, docker config, and backups remain in the repo for possible future reactivation. See `docs/n8n-dormant.md`.
 
 ## Required accounts and credentials
 

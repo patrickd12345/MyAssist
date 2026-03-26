@@ -35,7 +35,8 @@ export function googleScopesFor(provider: "gmail" | "google_calendar"): string {
     "openid",
     "email",
     "profile",
-    "https://www.googleapis.com/auth/calendar.readonly",
+    // Write-capable scope for event create/update actions. Read remains covered.
+    "https://www.googleapis.com/auth/calendar.events",
   ].join(" ");
 }
 
