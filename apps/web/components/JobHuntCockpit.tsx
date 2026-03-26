@@ -87,6 +87,12 @@ type TabId = "discovery" | "pipeline" | "contacts";
 
 export function JobHuntCockpit() {
   const searchParams = useSearchParams();
+  const handoffCompany = searchParams.get("company")?.trim() ?? "";
+  const handoffRole = searchParams.get("role")?.trim() ?? "";
+  const handoffStage = searchParams.get("stage")?.trim() ?? "";
+  const handoffThreadId = searchParams.get("threadId")?.trim() ?? "";
+  const handoffMessageId = searchParams.get("messageId")?.trim() ?? "";
+  const handoffRecruiter = searchParams.get("recruiter")?.trim() ?? "";
   const [activeTab, setActiveTab] = useState<TabId>("discovery");
   const [loading, setLoading] = useState(true);
   const [digestUrl, setDigestUrl] = useState<string | null>(null);
@@ -502,6 +508,8 @@ export function JobHuntCockpit() {
   useEffect(() => {
     const c = searchParams.get("contact")?.trim();
     if (c) setActiveTab("contacts");
+    const tab = searchParams.get("tab")?.trim();
+    if (tab === "pipeline") setActiveTab("pipeline");
   }, [searchParams]);
 
   useEffect(() => {
@@ -690,6 +698,22 @@ export function JobHuntCockpit() {
                 </li>
               ))}
             </ul>
+          </div>
+        ) : null}
+        {(handoffCompany || handoffRole || handoffStage || handoffThreadId || handoffMessageId) ? (
+          <div
+            className="mt-4 rounded-[22px] border border-sky-500/35 bg-sky-500/10 px-4 py-3 text-xs leading-6 text-sky-100"
+            role="status"
+          >
+            <p className="font-semibold text-sky-50">Handoff context from Inbox</p>
+            <p className="mt-1">
+              {[handoffCompany, handoffRole, handoffStage].filter(Boolean).join(" · ") || "Job context attached"}
+            </p>
+            <p className="opacity-90">
+              {[handoffRecruiter ? `Recruiter: ${handoffRecruiter}` : "", handoffThreadId ? `Thread: ${handoffThreadId}` : "", handoffMessageId ? `Message: ${handoffMessageId}` : ""]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
           </div>
         ) : null}
 

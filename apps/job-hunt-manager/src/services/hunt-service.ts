@@ -604,6 +604,15 @@ export class HuntService {
           subject: signal.subject,
           body_summary: signal.snippet.length > 500 ? `${signal.snippet.slice(0, 497)}...` : signal.snippet,
           signal_ref: ref,
+          signal_meta: {
+            company: signal.normalizedIdentity?.company,
+            role: signal.normalizedIdentity?.role,
+            recruiterName: signal.normalizedIdentity?.recruiterName,
+            stageAlias: signal.stageAlias,
+            stageHintManager: signal.stageHintManager,
+            threadId: signal.threadId ?? signal.normalizedIdentity?.threadId,
+            messageId: signal.id ?? signal.normalizedIdentity?.messageId,
+          },
         };
         tps.push(tp);
         state.touchpoints[jobId] = tps;
@@ -619,7 +628,7 @@ export class HuntService {
       }
 
       let stage_updated: LifecycleStage | undefined;
-      const inferred = inferStageFromEmailText(signal.subject, signal.snippet);
+      const inferred = signal.stageHintManager ?? inferStageFromEmailText(signal.subject, signal.snippet);
       const lc = state.lifecycle[jobId];
       if (inferred && lc && shouldAdvanceStage(lc.stage, inferred)) {
         lc.stage = inferred;

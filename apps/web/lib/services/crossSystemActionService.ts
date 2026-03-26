@@ -1,6 +1,6 @@
 import "server-only";
 
-import { appendFile, mkdir } from "node:fs/promises";
+import { appendFile, mkdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import type { CalendarEvent } from "@/lib/adapters/calendarAdapter";
 import { createCalendarAdapter } from "@/lib/adapters/calendarAdapter";
@@ -58,9 +58,15 @@ type ActionLogEntry = {
   targetIds: string[];
   providers: ActionProvider[];
   error?: string;
+  dedupeKey?: string;
+  sourceMessageId?: string;
+  sourceThreadId?: string;
+  deduped?: boolean;
 };
 
 const DEFAULT_FOCUS_BLOCK_MINUTES = 30;
+const ACTION_DEDUPE_WINDOW_MS = 15 * 60 * 1000;
+const ACTION_LOG_TAIL_LINES = 300;
 
 export type TaskSummary = {
   id: string;
@@ -167,6 +173,67 @@ async function logAction(userId: string, entry: ActionLogEntry): Promise<void> {
   const target = actionLogPath(userId);
   await mkdir(path.dirname(target), { recursive: true });
   await appendFile(target, `${JSON.stringify(entry)}\n`, "utf8");
+}
+
+async function readRecentActionEntries(userId: string, maxLines = ACTION_LOG_TAIL_LINES): Promise<ActionLogEntry[]> {
+  const target = actionLogPath(userId);
+  try {
+    const raw = await readFile(target, "utf8");
+    const lines = raw.split(/\r?\n/).filter(Boolean);
+    const tail = lines.slice(Math.max(0, lines.length - maxLines));
+    const out: ActionLogEntry[] = [];
+    for (const line of tail) {
+      try {
+        const parsed = JSON.parse(line) as ActionLogEntry;
+        if (
+          parsed &&
+          typeof parsed.action === "string" &&
+          typeof parsed.status === "string" &&
+          typeof parsed.timestamp === "string" &&
+          Array.isArray(parsed.sourceIds) &&
+          Array.isArray(parsed.targetIds) &&
+          Array.isArray(parsed.providers)
+        ) {
+          out.push(parsed);
+        }
+      } catch {
+        // Ignore malformed lines to keep dedupe best-effort.
+      }
+    }
+    return out;
+  } catch {
+    return [];
+  }
+}
+
+function dedupeWindowStart(nowMs = Date.now()): number {
+  return nowMs - ACTION_DEDUPE_WINDOW_MS;
+}
+
+function buildDedupeKey(parts: Array<string | null | undefined>): string {
+  return parts
+    .map((p) => (p ?? "").trim().toLowerCase())
+    .filter(Boolean)
+    .join("|");
+}
+
+function latestSuccessfulEntryInWindow(
+  entries: ActionLogEntry[],
+  action: ActionName,
+  dedupeKey: string,
+  nowMs = Date.now(),
+): ActionLogEntry | null {
+  if (!dedupeKey) return null;
+  const minTs = dedupeWindowStart(nowMs);
+  for (let i = entries.length - 1; i >= 0; i -= 1) {
+    const entry = entries[i];
+    if (!entry) continue;
+    if (entry.action !== action || entry.status !== "success") continue;
+    if ((entry.dedupeKey ?? "") !== dedupeKey) continue;
+    const ts = Date.parse(entry.timestamp);
+    if (!Number.isNaN(ts) && ts >= minTs) return entry;
+  }
+  return null;
 }
 
 function toIsoFromMs(ms: number): string | null {
@@ -293,6 +360,38 @@ export class CrossSystemActionService {
       if (!email) throw new Error("email_not_found");
       const content = titleFromEmailSubject(email.subject);
       const description = emailBodyForDescription(email);
+      const dedupeKey = buildDedupeKey([
+        action,
+        email.threadId ?? sourceId,
+        content,
+      ]);
+      const recent = latestSuccessfulEntryInWindow(
+        await readRecentActionEntries(this.userId),
+        action,
+        dedupeKey,
+      );
+      if (recent && recent.targetIds.length > 0) {
+        const taskId = recent.targetIds[0] ?? "";
+        await logAction(this.userId, {
+          action,
+          status: "success",
+          timestamp: new Date().toISOString(),
+          sourceIds: [sourceId],
+          targetIds: recent.targetIds,
+          providers: ["gmail", "todoist"],
+          dedupeKey,
+          sourceMessageId: sourceId,
+          sourceThreadId: email.threadId ?? undefined,
+          deduped: true,
+        });
+        return {
+          ok: true,
+          action,
+          sourceEmailId: sourceId,
+          taskSummary: { id: taskId, content, url: null },
+          refreshHints: { ...refreshFull, targetIds: recent.targetIds },
+        };
+      }
       const task = await this.todoist.create({
         content,
         description,
@@ -307,6 +406,9 @@ export class CrossSystemActionService {
         sourceIds: [sourceId],
         targetIds,
         providers: ["gmail", "todoist"],
+        dedupeKey,
+        sourceMessageId: sourceId,
+        sourceThreadId: email.threadId ?? undefined,
       });
       return {
         ok: true,
@@ -343,6 +445,41 @@ export class CrossSystemActionService {
       const email = await this.gmail.getById(sourceId);
       if (!email) throw new Error("email_not_found");
       const description = emailBodyForDescription(email);
+      const dedupeKey = buildDedupeKey([
+        action,
+        email.threadId ?? sourceId,
+        "prep_bundle_v1",
+      ]);
+      const recent = latestSuccessfulEntryInWindow(
+        await readRecentActionEntries(this.userId),
+        action,
+        dedupeKey,
+      );
+      if (recent && recent.targetIds.length > 0) {
+        await logAction(this.userId, {
+          action,
+          status: "success",
+          timestamp: new Date().toISOString(),
+          sourceIds: [sourceId],
+          targetIds: recent.targetIds,
+          providers: ["gmail", "todoist"],
+          dedupeKey,
+          sourceMessageId: sourceId,
+          sourceThreadId: email.threadId ?? undefined,
+          deduped: true,
+        });
+        return {
+          ok: true,
+          action,
+          sourceEmailId: sourceId,
+          taskSummaries: recent.targetIds.map((id, idx) => ({
+            id,
+            content: `[Job prep] ${JOB_PREP_TASK_CONTENTS[idx] ?? "Task"}`,
+            url: null,
+          })),
+          refreshHints: { ...refreshFull, targetIds: recent.targetIds },
+        };
+      }
       const taskSummaries: TaskSummary[] = [];
       for (const content of JOB_PREP_TASK_CONTENTS) {
         const task = await this.todoist.create({
@@ -362,6 +499,9 @@ export class CrossSystemActionService {
         sourceIds: [sourceId],
         targetIds,
         providers: ["gmail", "todoist"],
+        dedupeKey,
+        sourceMessageId: sourceId,
+        sourceThreadId: email.threadId ?? undefined,
       });
       return {
         ok: true,
@@ -456,6 +596,41 @@ export class CrossSystemActionService {
           refreshHints: { providers: ["google_calendar"], sourceIds: [sourceId], targetIds: [] },
         };
       }
+      const dedupeKey = buildDedupeKey([
+        action,
+        email.threadId ?? sourceId,
+        summary,
+        startIso,
+        endIso,
+      ]);
+      const recent = latestSuccessfulEntryInWindow(
+        await readRecentActionEntries(this.userId),
+        action,
+        dedupeKey,
+      );
+      if (recent && recent.targetIds.length > 0) {
+        const existingId = recent.targetIds[0] ?? "";
+        await logAction(this.userId, {
+          action,
+          status: "success",
+          timestamp: new Date().toISOString(),
+          sourceIds: [sourceId],
+          targetIds: recent.targetIds,
+          providers: ["gmail", "google_calendar"],
+          dedupeKey,
+          sourceMessageId: sourceId,
+          sourceThreadId: email.threadId ?? undefined,
+          deduped: true,
+        });
+        return {
+          ok: true,
+          action,
+          sourceEmailId: sourceId,
+          outcome: "created",
+          eventSummary: { id: existingId, summary, start: startIso, end: endIso },
+          refreshHints: { ...refreshOnWrite, targetIds: recent.targetIds },
+        };
+      }
 
       const event = await this.calendar.create({
         summary,
@@ -471,6 +646,9 @@ export class CrossSystemActionService {
         sourceIds: [sourceId],
         targetIds,
         providers: ["gmail", "google_calendar"],
+        dedupeKey,
+        sourceMessageId: sourceId,
+        sourceThreadId: email.threadId ?? undefined,
       });
       return {
         ok: true,

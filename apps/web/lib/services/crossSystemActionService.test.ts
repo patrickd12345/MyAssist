@@ -6,6 +6,7 @@ const {
   todoistAdapterMock,
   mkdirMock,
   appendFileMock,
+  readFileMock,
 } = vi.hoisted(() => ({
   gmailAdapterMock: {
     getById: vi.fn(),
@@ -22,6 +23,7 @@ const {
   },
   mkdirMock: vi.fn(),
   appendFileMock: vi.fn(),
+  readFileMock: vi.fn(),
 }));
 
 vi.mock("@/lib/adapters/gmailAdapter", () => ({
@@ -39,9 +41,11 @@ vi.mock("@/lib/adapters/todoistAdapter", () => ({
 vi.mock("node:fs/promises", () => ({
   mkdir: mkdirMock,
   appendFile: appendFileMock,
+  readFile: readFileMock,
   default: {
     mkdir: mkdirMock,
     appendFile: appendFileMock,
+    readFile: readFileMock,
   },
 }));
 
@@ -89,6 +93,7 @@ describe("CrossSystemActionService", () => {
     todoistAdapterMock.complete.mockResolvedValue(undefined);
     mkdirMock.mockResolvedValue(undefined);
     appendFileMock.mockResolvedValue(undefined);
+    readFileMock.mockRejectedValue(new Error("no_file"));
   });
 
   it("converts email to task via live providers and returns task summary and refresh hints", async () => {
@@ -200,6 +205,66 @@ describe("CrossSystemActionService", () => {
     expect(result.taskSummaries).toHaveLength(5);
     expect(result.refreshHints.providers).toEqual(["gmail", "todoist"]);
     expect(appendFileMock).toHaveBeenCalled();
+  });
+
+  it("dedupes job_hunt_prep_tasks within 15 minutes", async () => {
+    readFileMock.mockResolvedValueOnce(
+      `${JSON.stringify({
+        action: "job_hunt_prep_tasks",
+        status: "success",
+        timestamp: new Date().toISOString(),
+        sourceIds: ["m1"],
+        targetIds: ["tp1", "tp2", "tp3", "tp4", "tp5"],
+        providers: ["gmail", "todoist"],
+        dedupeKey: "job_hunt_prep_tasks|thread-1|prep_bundle_v1",
+      })}\n`,
+    );
+    const service = createCrossSystemActionService("user-1");
+    const result = await service.jobHuntPrepTasks("m1");
+    expect(result.ok).toBe(true);
+    if (!result.ok || result.action !== "job_hunt_prep_tasks") return;
+    expect(todoistAdapterMock.create).not.toHaveBeenCalled();
+    expect(result.taskSummaries).toHaveLength(5);
+  });
+
+  it("dedupes email_to_task within 15 minutes", async () => {
+    readFileMock.mockResolvedValueOnce(
+      `${JSON.stringify({
+        action: "email_to_task",
+        status: "success",
+        timestamp: new Date().toISOString(),
+        sourceIds: ["m1"],
+        targetIds: ["t-old"],
+        providers: ["gmail", "todoist"],
+        dedupeKey: "email_to_task|thread-1|follow up",
+      })}\n`,
+    );
+    const service = createCrossSystemActionService("user-1");
+    const result = await service.emailToTask("m1");
+    expect(result.ok).toBe(true);
+    if (!result.ok || result.action !== "email_to_task") return;
+    expect(todoistAdapterMock.create).not.toHaveBeenCalled();
+    expect(result.taskSummary.id).toBe("t-old");
+  });
+
+  it("dedupes email_to_event within 15 minutes", async () => {
+    readFileMock.mockResolvedValueOnce(
+      `${JSON.stringify({
+        action: "email_to_event",
+        status: "success",
+        timestamp: new Date().toISOString(),
+        sourceIds: ["m1"],
+        targetIds: ["e-old"],
+        providers: ["gmail", "google_calendar"],
+        dedupeKey: "email_to_event|thread-1|follow up|2024-04-26t13:20:00.000z|2024-04-26t13:50:00.000z",
+      })}\n`,
+    );
+    const service = createCrossSystemActionService("user-1");
+    const result = await service.emailToEvent("m1");
+    expect(result.ok).toBe(true);
+    if (!result.ok || result.action !== "email_to_event" || result.outcome !== "created") return;
+    expect(calendarAdapterMock.create).not.toHaveBeenCalled();
+    expect(result.eventSummary.id).toBe("e-old");
   });
 
   it("archives email with direct provider write", async () => {

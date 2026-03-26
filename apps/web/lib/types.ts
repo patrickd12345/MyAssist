@@ -15,10 +15,35 @@ export type JobHuntAction =
   | "create_interview_event"
   | "update_pipeline";
 
+export type JobHuntStageAlias =
+  | "applied"
+  | "interview"
+  | "technical"
+  | "offer"
+  | "rejected";
+
+export type JobHuntManagerStageHint =
+  | "applied"
+  | "interview_scheduled"
+  | "waiting_call"
+  | "offer"
+  | "closed_lost";
+
+export type JobHuntNormalizedIdentity = {
+  company?: string;
+  role?: string;
+  recruiterName?: string;
+  threadId?: string;
+  messageId?: string;
+};
+
 export type JobHuntAnalysis = {
   signals: JobHuntSignal[];
   confidence: number;
   suggestedActions: JobHuntAction[];
+  stageAlias?: JobHuntStageAlias;
+  stageHintManager?: JobHuntManagerStageHint;
+  normalizedIdentity?: JobHuntNormalizedIdentity;
 };
 
 export type GmailSignal = {

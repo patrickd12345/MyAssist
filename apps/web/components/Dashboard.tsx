@@ -195,6 +195,21 @@ function jobHuntReasonCopy(signal: JobHuntSignal): string {
   }
 }
 
+function buildJobHuntHref(signal: GmailSignal): string {
+  const p = new URLSearchParams();
+  const identity = signal.job_hunt_analysis?.normalizedIdentity;
+  const stageAlias = signal.job_hunt_analysis?.stageAlias;
+  if (identity?.company) p.set("company", identity.company);
+  if (identity?.role) p.set("role", identity.role);
+  if (identity?.recruiterName) p.set("recruiter", identity.recruiterName);
+  if (identity?.threadId || signal.threadId) p.set("threadId", identity?.threadId ?? String(signal.threadId));
+  if (identity?.messageId || signal.id) p.set("messageId", identity?.messageId ?? String(signal.id));
+  if (stageAlias) p.set("stage", stageAlias);
+  p.set("tab", "pipeline");
+  const q = p.toString();
+  return q ? `/job-hunt?${q}` : "/job-hunt";
+}
+
 function MetricValue({
   value,
   href,
@@ -1814,7 +1829,7 @@ export function Dashboard({
                                 ) : null}
                                 {g.job_hunt_analysis.suggestedActions.includes("update_pipeline") ? (
                                   <Link
-                                    href="/job-hunt"
+                                    href={buildJobHuntHref(g)}
                                     className="theme-button-secondary inline-flex items-center rounded-full px-3 py-2 text-xs font-semibold transition"
                                   >
                                     Update pipeline

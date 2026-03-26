@@ -1,10 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { analyzeEmail, analyzeEmails } from "./jobHuntIntelligenceService";
+import {
+  analyzeEmail,
+  analyzeEmails,
+  extractJobIdentity,
+  managerStageHintForAlias,
+  stageAliasForSignals,
+} from "./jobHuntIntelligenceService";
 
 function signal(
-  partial: Partial<{ from: string; subject: string; snippet: string }>,
-): { from: string; subject: string; snippet: string } {
+  partial: Partial<{ id: string | null; threadId: string | null; from: string; subject: string; snippet: string }>,
+): { id: string | null; threadId: string | null; from: string; subject: string; snippet: string } {
   return {
+    id: partial.id ?? "m1",
+    threadId: partial.threadId ?? "th1",
     from: partial.from ?? "recruiter@company.com",
     subject: partial.subject ?? "Role update",
     snippet: partial.snippet ?? "",
@@ -112,5 +120,34 @@ describe("jobHuntIntelligenceService", () => {
     expect(out).toHaveLength(2);
     expect(out[0]?.signals).toContain("offer");
     expect(out[1]?.signals.length ?? 0).toBe(0);
+  });
+
+  it("extracts normalized company, role and recruiter", () => {
+    const identity = extractJobIdentity(
+      signal({
+        from: "Jane Recruiter <jane@acme.com>",
+        subject: "Interview for Senior Backend Engineer role",
+        snippet: "We would like to schedule a call with ACME Corp for the Senior Backend Engineer position.",
+      }),
+    );
+    expect(identity.company).toBe("ACME Corp");
+    expect(identity.role).toContain("Senior Backend Engineer");
+    expect(identity.recruiterName).toBe("Jane Recruiter");
+    expect(identity.threadId).toBe("th1");
+    expect(identity.messageId).toBe("m1");
+  });
+
+  it("maps stage transition aliases deterministically", () => {
+    expect(stageAliasForSignals(["application_confirmation"])).toBe("applied");
+    expect(stageAliasForSignals(["interview_request"])).toBe("interview");
+    expect(stageAliasForSignals(["technical_interview"])).toBe("technical");
+    expect(stageAliasForSignals(["offer"])).toBe("offer");
+    expect(stageAliasForSignals(["rejection"])).toBe("rejected");
+    expect(managerStageHintForAlias("technical")).toBe("waiting_call");
+  });
+
+  it("uses multi-signal precedence with rejection highest", () => {
+    const alias = stageAliasForSignals(["application_confirmation", "offer", "rejection"]);
+    expect(alias).toBe("rejected");
   });
 });

@@ -2,7 +2,10 @@ import type {
   GmailSignal,
   JobHuntAction,
   JobHuntAnalysis,
+  JobHuntManagerStageHint,
+  JobHuntNormalizedIdentity,
   JobHuntSignal,
+  JobHuntStageAlias,
   MyAssistDailyContext,
 } from "@/lib/types";
 
@@ -19,6 +22,12 @@ function combinedText(signal: Pick<GmailSignal, "from" | "subject" | "snippet">)
 function hasJobContext(text: string): boolean {
   return JOB_CONTEXT_RE.test(text) || RECRUITING_FROM_RE.test(text);
 }
+
+const COMPANY_HINT_RE =
+  /\b(?:at|with|from)\s+([A-Z][a-zA-Z0-9&.,' -]{1,60}?)(?:\s+(?:for|about|on)\b|[.,;]|$)/;
+
+const ROLE_HINT_RE =
+  /\b(?:for|about|regarding)\s+(?:the\s+)?([A-Za-z][a-zA-Z0-9/+& -]{2,80}?(?:engineer|developer|manager|analyst|designer|consultant|specialist|administrator|architect|coordinator|lead|intern|director|officer|scientist|role|position))\b/i;
 
 type Rule = { re: RegExp; signal: JobHuntSignal; weight: number };
 
@@ -99,6 +108,70 @@ function suggestedActionsFor(signals: JobHuntSignal[]): JobHuntAction[] {
   return order.filter((a) => actions.has(a));
 }
 
+const SIGNAL_STAGE_PRIORITY: JobHuntSignal[] = [
+  "rejection",
+  "offer",
+  "technical_interview",
+  "interview_request",
+  "application_confirmation",
+];
+
+export function stageAliasForSignals(signals: JobHuntSignal[]): JobHuntStageAlias | undefined {
+  for (const signal of SIGNAL_STAGE_PRIORITY) {
+    if (!signals.includes(signal)) continue;
+    if (signal === "rejection") return "rejected";
+    if (signal === "offer") return "offer";
+    if (signal === "technical_interview") return "technical";
+    if (signal === "interview_request") return "interview";
+    if (signal === "application_confirmation") return "applied";
+  }
+  return undefined;
+}
+
+export function managerStageHintForAlias(alias: JobHuntStageAlias | undefined): JobHuntManagerStageHint | undefined {
+  if (!alias) return undefined;
+  if (alias === "applied") return "applied";
+  if (alias === "interview") return "interview_scheduled";
+  if (alias === "technical") return "waiting_call";
+  if (alias === "offer") return "offer";
+  return "closed_lost";
+}
+
+function cleanIdentityValue(value: string | undefined): string | undefined {
+  const v = (value ?? "").replace(/\s+/g, " ").trim();
+  return v || undefined;
+}
+
+export function extractJobIdentity(signal: Pick<GmailSignal, "id" | "threadId" | "from" | "subject" | "snippet">): JobHuntNormalizedIdentity {
+  const from = signal.from ?? "";
+  const subject = signal.subject ?? "";
+  const snippet = signal.snippet ?? "";
+  const combined = `${subject}\n${snippet}`;
+  const fromName = from.replace(/<[^>]*>/g, "").replace(/["]/g, "").trim();
+  const recruiterName = fromName && !fromName.includes("@") ? fromName : undefined;
+  const companyFromFrom = (() => {
+    const emailMatch = from.match(/@([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+    if (!emailMatch?.[1]) return undefined;
+    const domain = emailMatch[1].toLowerCase();
+    const core = domain.split(".")[0] ?? "";
+    if (!core || ["gmail", "outlook", "hotmail", "yahoo", "icloud"].includes(core)) return undefined;
+    return core
+      .split(/[-_]/)
+      .map((p) => (p ? `${p[0]?.toUpperCase() ?? ""}${p.slice(1)}` : ""))
+      .join(" ")
+      .trim();
+  })();
+  const companyFromText = combined.match(COMPANY_HINT_RE)?.[1];
+  const roleFromText = combined.match(ROLE_HINT_RE)?.[1];
+  return {
+    company: cleanIdentityValue(companyFromText) ?? cleanIdentityValue(companyFromFrom),
+    role: cleanIdentityValue(roleFromText),
+    recruiterName: cleanIdentityValue(recruiterName),
+    threadId: cleanIdentityValue(signal.threadId ?? undefined),
+    messageId: cleanIdentityValue(signal.id ?? undefined),
+  };
+}
+
 function confidenceFromHits(rawScore: number, signalCount: number, jobBoost: boolean): number {
   let c = Math.min(0.95, rawScore + (jobBoost ? 0.12 : 0));
   if (signalCount > 1) c = Math.min(0.95, c + 0.06);
@@ -109,10 +182,11 @@ function confidenceFromHits(rawScore: number, signalCount: number, jobBoost: boo
  * Lightweight heuristic analysis of a single Gmail signal (subject/snippet/from only).
  * Conservative: returns empty signals when the text does not look job-related.
  */
-export function analyzeEmail(signal: Pick<GmailSignal, "from" | "subject" | "snippet">): JobHuntAnalysis {
+export function analyzeEmail(signal: Pick<GmailSignal, "id" | "threadId" | "from" | "subject" | "snippet">): JobHuntAnalysis {
   const text = combinedText(signal);
+  const normalizedIdentity = extractJobIdentity(signal);
   if (text.trim().length < 12) {
-    return { signals: [], confidence: 0, suggestedActions: [] };
+    return { signals: [], confidence: 0, suggestedActions: [], normalizedIdentity };
   }
 
   const jobOk = hasJobContext(text);
@@ -125,7 +199,7 @@ export function analyzeEmail(signal: Pick<GmailSignal, "from" | "subject" | "sni
   }
 
   if (hits.length === 0) {
-    return { signals: [], confidence: 0, suggestedActions: [] };
+    return { signals: [], confidence: 0, suggestedActions: [], normalizedIdentity };
   }
 
   const strongInterview =
@@ -156,7 +230,7 @@ export function analyzeEmail(signal: Pick<GmailSignal, "from" | "subject" | "sni
   }
 
   if (filtered.length === 0) {
-    return { signals: [], confidence: 0, suggestedActions: [] };
+    return { signals: [], confidence: 0, suggestedActions: [], normalizedIdentity };
   }
 
   const signalList = uniqueSignals(filtered.map((h) => h.signal));
@@ -164,13 +238,17 @@ export function analyzeEmail(signal: Pick<GmailSignal, "from" | "subject" | "sni
   const confidence = confidenceFromHits(rawScore, signalList.length, jobOk);
 
   if (confidence < 0.35) {
-    return { signals: [], confidence: 0, suggestedActions: [] };
+    return { signals: [], confidence: 0, suggestedActions: [], normalizedIdentity };
   }
+  const stageAlias = stageAliasForSignals(signalList);
 
   return {
     signals: signalList,
     confidence,
     suggestedActions: suggestedActionsFor(signalList),
+    stageAlias,
+    stageHintManager: managerStageHintForAlias(stageAlias),
+    normalizedIdentity,
   };
 }
 

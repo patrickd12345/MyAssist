@@ -43,6 +43,9 @@ export async function postJobHuntEmailSignals(signals: GmailSignal[]): Promise<J
       subject: s.subject,
       snippet: s.snippet,
       date: s.date,
+      normalizedIdentity: s.job_hunt_analysis?.normalizedIdentity,
+      stageAlias: s.job_hunt_analysis?.stageAlias,
+      stageHintManager: s.job_hunt_analysis?.stageHintManager,
     })),
   };
 

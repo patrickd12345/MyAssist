@@ -34,6 +34,47 @@ function parseSignalsBody(body: unknown): EmailSignalInput[] {
       date,
       id: typeof o.id === "string" ? o.id : o.id == null ? null : String(o.id),
       threadId: typeof o.threadId === "string" ? o.threadId : o.threadId == null ? null : String(o.threadId),
+      normalizedIdentity:
+        o.normalizedIdentity && typeof o.normalizedIdentity === "object"
+          ? {
+              company:
+                typeof (o.normalizedIdentity as Record<string, unknown>).company === "string"
+                  ? (o.normalizedIdentity as Record<string, unknown>).company as string
+                  : undefined,
+              role:
+                typeof (o.normalizedIdentity as Record<string, unknown>).role === "string"
+                  ? (o.normalizedIdentity as Record<string, unknown>).role as string
+                  : undefined,
+              recruiterName:
+                typeof (o.normalizedIdentity as Record<string, unknown>).recruiterName === "string"
+                  ? (o.normalizedIdentity as Record<string, unknown>).recruiterName as string
+                  : undefined,
+              threadId:
+                typeof (o.normalizedIdentity as Record<string, unknown>).threadId === "string"
+                  ? (o.normalizedIdentity as Record<string, unknown>).threadId as string
+                  : undefined,
+              messageId:
+                typeof (o.normalizedIdentity as Record<string, unknown>).messageId === "string"
+                  ? (o.normalizedIdentity as Record<string, unknown>).messageId as string
+                  : undefined,
+            }
+          : undefined,
+      stageAlias:
+        o.stageAlias === "applied" ||
+        o.stageAlias === "interview" ||
+        o.stageAlias === "technical" ||
+        o.stageAlias === "offer" ||
+        o.stageAlias === "rejected"
+          ? o.stageAlias
+          : undefined,
+      stageHintManager:
+        o.stageHintManager === "applied" ||
+        o.stageHintManager === "interview_scheduled" ||
+        o.stageHintManager === "waiting_call" ||
+        o.stageHintManager === "offer" ||
+        o.stageHintManager === "closed_lost"
+          ? o.stageHintManager
+          : undefined,
     });
   }
   return out;

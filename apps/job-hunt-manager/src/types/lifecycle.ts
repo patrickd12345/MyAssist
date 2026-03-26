@@ -27,6 +27,15 @@ export type EmailSignalInput = {
   subject: string;
   snippet: string;
   date: string;
+  normalizedIdentity?: {
+    company?: string;
+    role?: string;
+    recruiterName?: string;
+    threadId?: string;
+    messageId?: string;
+  };
+  stageAlias?: "applied" | "interview" | "technical" | "offer" | "rejected";
+  stageHintManager?: "applied" | "interview_scheduled" | "waiting_call" | "offer" | "closed_lost";
 };
 
 export type TouchpointRecord = {
@@ -37,6 +46,15 @@ export type TouchpointRecord = {
   body_summary?: string;
   /** Dedupe key when touchpoint was created from an email signal (threadId|id|date|subject). */
   signal_ref?: string;
+  signal_meta?: {
+    company?: string;
+    role?: string;
+    recruiterName?: string;
+    stageAlias?: string;
+    stageHintManager?: LifecycleStage;
+    threadId?: string;
+    messageId?: string;
+  };
 };
 
 export type TranscriptRecord = {
