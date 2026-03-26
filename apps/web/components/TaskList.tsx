@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import type { TodoistTask } from "@/lib/types";
 
 function taskContent(task: TodoistTask): string {
@@ -10,6 +10,16 @@ function taskContent(task: TodoistTask): string {
 function taskDue(task: TodoistTask): string | null {
   const due = task.due as { date?: string; datetime?: string } | undefined;
   return due?.datetime ?? due?.date ?? null;
+}
+
+function taskDeadline(task: TodoistTask): string | null {
+  const deadline = task.deadline as { date?: string } | string | null | undefined;
+  if (typeof deadline === "string") return deadline.trim() || null;
+  if (deadline && typeof deadline === "object" && typeof deadline.date === "string") {
+    return deadline.date.trim() || null;
+  }
+  if (typeof task.deadline_date === "string") return task.deadline_date.trim() || null;
+  return null;
 }
 
 function formatDue(value: string | null): string {
@@ -30,15 +40,87 @@ function priorityLabel(priority: unknown): string {
   return typeof priority === "number" ? `P${priority}` : "P?";
 }
 
-function deferOptions(now: Date): Array<{ label: string; value: string }> {
-  const options: Array<{ label: string; value: string }> = [];
+function priorityValue(priority: unknown): number {
+  if (priority === 1 || priority === 2 || priority === 3 || priority === 4) return priority;
+  return 99;
+}
+
+function hasDeadline(task: TodoistTask): boolean {
+  return Boolean(taskDeadline(task));
+}
+
+function parseTaskDate(value: string | null): number {
+  if (!value) return Number.POSITIVE_INFINITY;
+  const parsed = Date.parse(value);
+  if (Number.isNaN(parsed)) return Number.POSITIVE_INFINITY;
+  return parsed;
+}
+
+function isNearTimestamp(timestamp: number): boolean {
+  if (!Number.isFinite(timestamp)) return false;
+  const now = Date.now();
+  const diffMs = timestamp - now;
+  const withinTwoDays = diffMs <= 2 * 24 * 60 * 60 * 1000;
+  return withinTwoDays;
+}
+
+function deadlineUrgencyRank(task: TodoistTask): number {
+  if (!hasDeadline(task)) return 3;
+  const ts = effectiveUrgencyTimestamp(task);
+  if (!Number.isFinite(ts)) return 2;
+  const now = Date.now();
+  if (ts < now) return 0;
+  if (isNearTimestamp(ts)) return 1;
+  return 2;
+}
+
+function dueRank(task: TodoistTask): number {
+  const due = task.due as { date?: string; datetime?: string } | undefined;
+  if (typeof due?.datetime === "string" && due.datetime.trim()) return 0;
+  if (typeof due?.date === "string" && due.date.trim()) return 1;
+  return 2;
+}
+
+function dueTimestamp(task: TodoistTask): number {
+  return parseTaskDate(taskDue(task));
+}
+
+function deadlineTimestamp(task: TodoistTask): number {
+  return parseTaskDate(taskDeadline(task));
+}
+
+function effectiveUrgencyTimestamp(task: TodoistTask): number {
+  const deadlineTs = deadlineTimestamp(task);
+  if (Number.isFinite(deadlineTs)) return deadlineTs;
+  return dueTimestamp(task);
+}
+
+export type DeferOption = { label: string; value: string; intent: string };
+
+function deferOptions(now: Date): DeferOption[] {
+  const options: DeferOption[] = [];
   if (now.getHours() < 12) {
-    options.push({ label: "Defer this afternoon", value: "today at 3pm" });
+    options.push({
+      label: "Later today (afternoon)",
+      value: "today at 3pm",
+      intent: "Prefer later today",
+    });
   }
-  options.push({ label: "Defer tomorrow", value: "tomorrow at 9am" });
-  // Todoist's parser treats "next Monday" ambiguously (often feels like ~2 weeks on Mondays).
-  // "in 7 days" is unambiguous for a one-week slip.
-  options.push({ label: "Defer next week", value: "in 7 days at 9am" });
+  options.push({
+    label: "Too big — need focus time",
+    value: "tomorrow at 9am",
+    intent: "Needs focus time or deep-work block",
+  });
+  options.push({
+    label: "Waiting on someone else",
+    value: "tomorrow at 9am",
+    intent: "Blocked on external reply or dependency",
+  });
+  options.push({
+    label: "Not a priority this week",
+    value: "in 7 days at 9am",
+    intent: "Low priority — slipped one week",
+  });
   return options;
 }
 
@@ -47,18 +129,61 @@ export function TaskList({
   tasks,
   emptyLabel,
   pendingTaskIds = [],
+  nudges = {},
   onComplete,
   onSchedule,
+  onNudge,
 }: {
   title: string;
   tasks: TodoistTask[];
   emptyLabel: string;
   pendingTaskIds?: string[];
+  nudges?: Record<string, "up" | "down">;
   onComplete?: (taskId: string) => Promise<void>;
-  onSchedule?: (taskId: string, dueString: string) => Promise<void>;
+  onSchedule?: (taskId: string, dueString: string, intent?: string) => Promise<void>;
+  onNudge?: (taskId: string, direction: "up" | "down", taskText: string) => Promise<void>;
 }) {
   const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [menuTaskId, setMenuTaskId] = useState<string | null>(null);
+  const sortedTasks = useMemo(() => {
+    const baseSorted = [...tasks].sort((a, b) => {
+      const byDeadlineUrgency = deadlineUrgencyRank(a) - deadlineUrgencyRank(b);
+      if (byDeadlineUrgency !== 0) return byDeadlineUrgency;
+      const byUrgencyDate = effectiveUrgencyTimestamp(a) - effectiveUrgencyTimestamp(b);
+      if (byUrgencyDate !== 0) return byUrgencyDate;
+      const byRank = dueRank(a) - dueRank(b);
+      if (byRank !== 0) return byRank;
+      const byPriority = priorityValue(a.priority) - priorityValue(b.priority);
+      if (byPriority !== 0) return byPriority;
+      const byDueTime = dueTimestamp(a) - dueTimestamp(b);
+      if (byDueTime !== 0) return byDueTime;
+      return taskContent(a).localeCompare(taskContent(b));
+    });
+
+    // Apply nudges (one pass, up and down)
+    const result = [...baseSorted];
+    // Process "up" nudges (top to bottom to avoid cascading up infinitely if multiple)
+    for (let i = 1; i < result.length; i++) {
+      const taskId = String(result[i].id);
+      if (nudges[taskId] === "up") {
+        // Swap with the item above
+        const temp = result[i - 1];
+        result[i - 1] = result[i];
+        result[i] = temp;
+      }
+    }
+    // Process "down" nudges (bottom to top)
+    for (let i = result.length - 2; i >= 0; i--) {
+      const taskId = String(result[i].id);
+      if (nudges[taskId] === "down") {
+        // Swap with the item below
+        const temp = result[i + 1];
+        result[i + 1] = result[i];
+        result[i] = temp;
+      }
+    }
+    return result;
+  }, [tasks, nudges]);
 
   function clearHoldTimer() {
     if (holdTimerRef.current) {
@@ -84,13 +209,13 @@ export function TaskList({
       <h2 className="section-title mb-4 text-xs font-semibold">
         {title}
       </h2>
-      {tasks.length === 0 ? (
+      {sortedTasks.length === 0 ? (
         <p className="theme-empty rounded-2xl px-4 py-6 text-sm leading-6">
           {emptyLabel}
         </p>
       ) : (
         <ul className="max-h-[30rem] space-y-3 overflow-auto pr-1 text-sm">
-          {tasks.map((task, index) => {
+          {sortedTasks.map((task, index) => {
             const id =
               typeof task.id === "string" || typeof task.id === "number"
                 ? String(task.id)
@@ -102,7 +227,10 @@ export function TaskList({
               <li key={id} className="list-card rounded-[22px] px-4 py-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
-                    <p className="theme-ink break-words text-sm font-medium leading-6">
+                    <p
+                      className="theme-ink break-words text-sm font-medium leading-6"
+                      title={taskContent(task)}
+                    >
                       {taskContent(task)}
                     </p>
                     <p className="theme-muted mt-2 text-xs">{formatDue(taskDue(task))}</p>
@@ -112,7 +240,27 @@ export function TaskList({
                   </span>
                 </div>
                 {canComplete ? (
-                  <div className="relative mt-4 flex justify-end">
+                  <div className="relative mt-4 flex justify-between items-center">
+                    <div className="flex gap-1 opacity-40 hover:opacity-100 transition-opacity">
+                      <button
+                        type="button"
+                        disabled={isPending || index === 0}
+                        onClick={() => void onNudge?.(id, "up", taskContent(task))}
+                        className="rounded px-2 py-1 text-[10px] hover:bg-black/5 disabled:opacity-30 disabled:cursor-not-allowed"
+                        title="Bump up one slot (AI will learn this preference)"
+                      >
+                        ▲
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isPending || index === sortedTasks.length - 1}
+                        onClick={() => void onNudge?.(id, "down", taskContent(task))}
+                        className="rounded px-2 py-1 text-[10px] hover:bg-black/5 disabled:opacity-30 disabled:cursor-not-allowed"
+                        title="Bump down one slot (AI will learn this preference)"
+                      >
+                        ▼
+                      </button>
+                    </div>
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
@@ -149,15 +297,15 @@ export function TaskList({
                       ) : null}
                     </div>
                     {isMenuOpen && onSchedule ? (
-                      <div className="theme-menu absolute right-0 top-full z-20 mt-2 w-52 rounded-[20px] p-2 shadow-[0_18px_48px_rgba(50,25,8,0.12)]">
+                      <div className="theme-menu absolute right-0 top-full z-20 mt-2 w-64 max-w-[min(100vw-2rem,18rem)] rounded-[20px] p-2 shadow-[0_18px_48px_rgba(50,25,8,0.12)]">
                         {deferOptions(new Date()).map((option) => (
                           <button
-                            key={option.value}
+                            key={`${option.value}|${option.intent}`}
                             type="button"
                             disabled={isPending}
                             onClick={() => {
                               setMenuTaskId(null);
-                              void onSchedule(id, option.value);
+                              void onSchedule(id, option.value, option.intent);
                             }}
                             className="theme-menu-item block w-full rounded-[14px] px-3 py-2 text-left text-xs font-medium transition disabled:opacity-50"
                           >

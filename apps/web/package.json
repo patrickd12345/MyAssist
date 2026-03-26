@@ -3,7 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "clean": "node -e \"try{require('fs').rmSync('.next',{recursive:true,force:true});console.log('removed .next');}catch(e){if(e.code!=='ENOENT')throw e;}\"",
+    "dev": "cross-env NODE_OPTIONS=--max-old-space-size=6144 next dev",
+    "dev:fresh": "npm run clean && cross-env NODE_OPTIONS=--max-old-space-size=6144 next dev",
+    "dev:turbo": "cross-env NODE_OPTIONS=--max-old-space-size=6144 next dev --turbopack",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -13,9 +16,13 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "job-hunt-manager": "workspace:*",
     "next": "15.2.6",
+    "next-auth": "5.0.0-beta.30",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "server-only": "^0.0.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -27,6 +34,8 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^6.0.1",
+    "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0",
     "eslint": "^9",
     "eslint-config-next": "15.2.6",
     "jsdom": "^29.0.1",

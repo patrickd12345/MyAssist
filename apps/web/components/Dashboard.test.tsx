@@ -9,7 +9,16 @@ const sampleContext = {
   todoist_overdue: [{ id: "t1", content: "Overdue thing", priority: 2 }],
   todoist_due_today: [],
   todoist_upcoming_high_priority: [],
-  gmail_signals: [],
+  gmail_signals: [
+    {
+      id: "g1",
+      threadId: "th1",
+      from: "Monarch <hello@updates.monarch.com>",
+      subject: "Your trial is ending soon, you will be automatically charged",
+      snippet: "Renewal coming up.",
+      date: "2026-03-25T10:00:00.000Z",
+    },
+  ],
   calendar_today: [],
 };
 
@@ -22,6 +31,9 @@ function mockAssistantFetch() {
     if (url.includes("/api/assistant")) {
       if (body.kind === "headline") {
         return new Response(JSON.stringify({ answer: "Synthetic headline for test." }), { status: 200 });
+      }
+      if (body.kind === "memory_status") {
+        return new Response(JSON.stringify({ resolved_items: [] }), { status: 200 });
       }
       if (body.kind === "situation_brief") {
         return new Response(
@@ -41,6 +53,9 @@ function mockAssistantFetch() {
       }
       if (body.kind === "situation_feedback") {
         return new Response(JSON.stringify({ ok: true, memory_entries: 1 }), { status: 200 });
+      }
+      if (body.kind === "resolve_item") {
+        return new Response(JSON.stringify({ ok: true, memory_entries: 2 }), { status: 200 });
       }
     }
 
@@ -79,6 +94,9 @@ describe("Dashboard", () => {
     await waitFor(() => {
       expect(screen.getAllByText("Test pressure").length).toBeGreaterThanOrEqual(1);
     });
+
+    expect(screen.getAllByText("Brief picks").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("One priority").length).toBeGreaterThanOrEqual(1);
   });
 
   it("submits situation feedback when Useful is clicked", async () => {
@@ -108,6 +126,38 @@ describe("Dashboard", () => {
           body: expect.stringContaining("situation_feedback"),
         }),
       );
+    });
+  });
+
+  it("persists handled email items and hides them from the list", async () => {
+    const user = userEvent.setup();
+    render(
+      <Dashboard initialData={sampleContext} initialError={null} initialSource="n8n" />,
+    );
+
+    const subject = "Your trial is ending soon, you will be automatically charged";
+    const emailHeading = screen.getAllByRole("heading", { name: "In this pull" }).at(-1);
+    const emailSection = emailHeading?.closest("section");
+    expect(emailSection).toBeTruthy();
+    await waitFor(() => {
+      expect(within(emailSection as HTMLElement).getAllByText(subject).length).toBeGreaterThanOrEqual(1);
+    });
+
+    const handledButtons = within(emailSection as HTMLElement).getAllByRole("button", { name: "Handled" });
+    await user.click(handledButtons[0]);
+
+    await waitFor(() => {
+      expect(mockFetch).toHaveBeenCalledWith(
+        "/api/assistant",
+        expect.objectContaining({
+          method: "POST",
+          body: expect.stringContaining("resolve_item"),
+        }),
+      );
+    });
+
+    await waitFor(() => {
+      expect(within(emailSection as HTMLElement).queryByText(subject)).not.toBeInTheDocument();
     });
   });
 });

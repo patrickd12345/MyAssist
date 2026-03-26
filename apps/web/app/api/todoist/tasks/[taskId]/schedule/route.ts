@@ -1,4 +1,7 @@
 import { NextResponse } from "next/server";
+import { storeResolvedItem } from "@/lib/memoryStore";
+import { getSessionUserId } from "@/lib/session";
+import { resolveTodoistApiToken } from "@/lib/todoistToken";
 
 export const dynamic = "force-dynamic";
 
@@ -7,7 +10,12 @@ export async function POST(
   { params }: { params: Promise<{ taskId: string }> },
 ) {
   const { taskId } = await params;
-  const token = process.env.TODOIST_API_TOKEN?.trim();
+  const userId = await getSessionUserId();
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const token = await resolveTodoistApiToken(userId);
 
   if (!token) {
     return NextResponse.json(
@@ -16,9 +24,22 @@ export async function POST(
     );
   }
 
-  const body = (await req.json()) as { dueString?: unknown; dueLang?: unknown };
+  const body = (await req.json()) as {
+    dueString?: unknown;
+    dueLang?: unknown;
+    intent?: unknown;
+    taskContent?: unknown;
+    run_date?: unknown;
+  };
   const dueString = typeof body.dueString === "string" ? body.dueString.trim() : "";
   const dueLang = typeof body.dueLang === "string" ? body.dueLang.trim() : "en";
+  const intent = typeof body.intent === "string" ? body.intent.trim() : "";
+  const taskContent =
+    typeof body.taskContent === "string" ? body.taskContent.trim() : "";
+  const runDate =
+    typeof body.run_date === "string" && body.run_date.trim() !== ""
+      ? body.run_date.trim()
+      : new Date().toISOString().slice(0, 10);
 
   if (!taskId?.trim()) {
     return NextResponse.json({ error: "Task ID is required." }, { status: 400 });
@@ -53,6 +74,21 @@ export async function POST(
     }
 
     const payload = await response.json();
+
+    if (intent) {
+      const label = taskContent || "(untitled task)";
+      const text = `Snoozed task "${label}" because: ${intent}`;
+      try {
+        await storeResolvedItem(userId, {
+          text,
+          source: "generic",
+          run_date: runDate,
+        });
+      } catch (memoryError) {
+        console.error("[schedule] Failed to store snooze intent:", memoryError);
+      }
+    }
+
     return NextResponse.json({ ok: true, taskId, task: payload });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown Todoist error";

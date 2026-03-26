@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "job-hunt-manager": {
+      "command": "node",
+      "args": [
+        "node_modules/tsx/dist/cli.mjs",
+        "src/server.ts"
+      ],
+      "cwd": "REPLACE_WITH_ABSOLUTE_PATH_TO_REPO/apps/job-hunt-manager"
+    }
+  }
+}

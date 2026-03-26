@@ -99,13 +99,13 @@ html {
 
 body {
   min-height: 100vh;
-  color: var(--ink);
-  background-color: var(--canvas);
+  color: var(--ink, #f8fafc);
+  background-color: var(--canvas, #030014);
   background-image:
     radial-gradient(circle at 15% 50%, var(--glow), transparent 25%),
     radial-gradient(circle at 85% 30%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 28%),
     linear-gradient(135deg, var(--canvas) 0%, var(--canvas-alt) 100%);
-  font-family: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-space-grotesk, ui-sans-serif), ui-sans-serif, system-ui, sans-serif;
   transition:
     background-color 240ms ease,
     background-image 240ms ease,

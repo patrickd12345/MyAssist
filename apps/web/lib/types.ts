@@ -7,6 +7,9 @@ export type GmailSignal = {
   subject: string;
   snippet: string;
   date: string;
+  importance_score?: number;
+  importance_reason?: string;
+  importance_model?: string;
 };
 
 export type CalendarEvent = {
@@ -17,6 +20,18 @@ export type CalendarEvent = {
   location: string | null;
 };
 
+/** Email ↔ saved job match from job-hunt-manager (POST /signals). */
+export type JobHuntEmailMatch = {
+  job_id: string;
+  company: string;
+  title: string;
+  match_score: number;
+  match_reason: string;
+  touchpoint_logged: boolean;
+  stage_updated?: string;
+  signal: Pick<GmailSignal, "from" | "subject" | "snippet" | "date">;
+};
+
 export type MyAssistDailyContext = {
   generated_at: string;
   run_date: string;
@@ -25,6 +40,9 @@ export type MyAssistDailyContext = {
   todoist_upcoming_high_priority: TodoistTask[];
   gmail_signals: GmailSignal[];
   calendar_today: CalendarEvent[];
+  user_task_nudges?: Record<string, "up" | "down">;
+  /** Present after server-side match against saved leads in job-hunt-manager */
+  job_hunt_email_matches?: JobHuntEmailMatch[];
 };
 
 export type SituationBrief = {

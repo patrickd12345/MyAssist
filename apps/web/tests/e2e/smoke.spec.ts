@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
-test("home renders MyAssist shell", async ({ page }) => {
-  await page.goto("/");
+test("sign-in page renders MyAssist shell", async ({ page }) => {
+  await page.goto("/sign-in");
   await expect(page.getByText("MyAssist").first()).toBeVisible();
-  await expect(page.getByText("Welcome back", { exact: false }).first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
 });

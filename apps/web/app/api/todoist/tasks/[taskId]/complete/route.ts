@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { getSessionUserId } from "@/lib/session";
+import { resolveTodoistApiToken } from "@/lib/todoistToken";
 
 export const dynamic = "force-dynamic";
 
@@ -7,7 +9,12 @@ export async function POST(
   { params }: { params: Promise<{ taskId: string }> },
 ) {
   const { taskId } = await params;
-  const token = process.env.TODOIST_API_TOKEN?.trim();
+  const userId = await getSessionUserId();
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const token = await resolveTodoistApiToken(userId);
 
   if (!token) {
     return NextResponse.json(

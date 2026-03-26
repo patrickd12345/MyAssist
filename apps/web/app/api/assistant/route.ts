@@ -8,8 +8,19 @@ import {
   type AssistantReply,
   type TaskDraft,
 } from "@/lib/assistant";
-import { fetchDailyContextFromN8n } from "@/lib/fetchDailyContext";
-import { getRollingMemoryPrompt, storeBriefFeedback, storeSituationBrief } from "@/lib/memoryStore";
+import {
+  fetchDailyContextFromN8n,
+  type N8nIntegrationOverrides,
+} from "@/lib/fetchDailyContext";
+import {
+  getResolvedItems,
+  getRollingMemoryPrompt,
+  storeBriefFeedback,
+  storeResolvedItem,
+  storeSituationBrief,
+} from "@/lib/memoryStore";
+import { getSessionUserId } from "@/lib/session";
+import { getUserById } from "@/lib/userStore";
 import { isMyAssistDailyContext } from "@/lib/validateContext";
 import type { MyAssistDailyContext, SituationBrief } from "@/lib/types";
 
@@ -29,6 +40,20 @@ const DEFAULT_HEADLINE_MODELS = [
 
 export async function POST(req: Request) {
   try {
+    const userId = await getSessionUserId();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const user = await getUserById(userId);
+    const n8nIntegration: N8nIntegrationOverrides | undefined =
+      user && (user.n8nWebhookUrl?.trim() || user.n8nWebhookToken?.trim())
+        ? {
+            webhookUrl: user.n8nWebhookUrl,
+            webhookToken: user.n8nWebhookToken,
+          }
+        : undefined;
+
     const body = (await req.json()) as {
       message?: unknown;
       context?: unknown;
@@ -36,13 +61,20 @@ export async function POST(req: Request) {
       rating?: unknown;
       note?: unknown;
       run_date?: unknown;
+      text?: unknown;
+      source?: unknown;
+      energyLevel?: unknown;
+      resolution_feedback?: unknown;
     };
+    const energyLevel = parseEnergyLevel(body.energyLevel);
     const message = typeof body.message === "string" ? body.message.trim() : "";
     const kind =
       body.kind === "headline" ||
       body.kind === "chat" ||
       body.kind === "situation_brief" ||
-      body.kind === "situation_feedback"
+      body.kind === "situation_feedback" ||
+      body.kind === "resolve_item" ||
+      body.kind === "memory_status"
         ? body.kind
         : "chat";
 
@@ -61,7 +93,7 @@ export async function POST(req: Request) {
         );
       }
       const note = typeof body.note === "string" ? body.note.trim() : "";
-      const persisted = await storeBriefFeedback({
+      const persisted = await storeBriefFeedback(userId, {
         run_date: runDate,
         rating,
         note: note || undefined,
@@ -69,13 +101,50 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: true, memory_entries: persisted.entries });
     }
 
-    const context = await resolveContext(body.context);
+    if (kind === "resolve_item") {
+      const text = typeof body.text === "string" ? body.text.trim() : "";
+      const source =
+        body.source === "email" ||
+        body.source === "priority" ||
+        body.source === "risk" ||
+        body.source === "next_action" ||
+        body.source === "generic"
+          ? body.source
+          : null;
+      const runDate = typeof body.run_date === "string" ? body.run_date.trim() : "";
+      const resolutionFeedback =
+        body.resolution_feedback === "junk" || body.resolution_feedback === "useful_action"
+          ? body.resolution_feedback
+          : undefined;
+      if (!text || !source || !runDate) {
+        return NextResponse.json(
+          { error: "text, source, and run_date are required to resolve an item." },
+          { status: 400 },
+        );
+      }
+      const persisted = await storeResolvedItem(userId, {
+        text,
+        source,
+        run_date: runDate,
+        feedback: resolutionFeedback,
+      });
+      return NextResponse.json({ ok: true, memory_entries: persisted.entries });
+    }
+
+    if (kind === "memory_status") {
+      const resolvedItems = await getResolvedItems(userId);
+      return NextResponse.json({ resolved_items: resolvedItems });
+    }
+
+    const context = await resolveContext(body.context, n8nIntegration, userId);
     const reply =
       kind === "headline"
         ? await createHeadline(context)
         : kind === "situation_brief"
-          ? await createSituationBrief(context)
-          : await createReply(context, message);
+          ? await createSituationBrief(context, userId, energyLevel)
+          : kind === "chat" && isSituationBriefQuestion(message)
+            ? await createChiefOfStaffChatReply(context, userId, energyLevel)
+          : await createReply(context, message, userId);
     return NextResponse.json(reply);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
@@ -83,9 +152,13 @@ export async function POST(req: Request) {
   }
 }
 
-async function resolveContext(candidate: unknown): Promise<MyAssistDailyContext> {
+async function resolveContext(
+  candidate: unknown,
+  n8n: N8nIntegrationOverrides | null | undefined,
+  userId: string,
+): Promise<MyAssistDailyContext> {
   if (isMyAssistDailyContext(candidate)) return candidate;
-  const { context } = await fetchDailyContextFromN8n();
+  const { context } = await fetchDailyContextFromN8n(n8n, userId);
   return context;
 }
 
@@ -97,8 +170,57 @@ type SituationBriefResponse = {
   fallbackReason?: string;
 };
 
-async function createReply(context: MyAssistDailyContext, message: string): Promise<AssistantReply> {
+type EnergyLevel = "high" | "normal" | "low";
+
+function parseEnergyLevel(raw: unknown): EnergyLevel {
+  if (raw === "high" || raw === "normal" || raw === "low") return raw;
+  return "normal";
+}
+
+function buildEnergySituationInstructions(energy: EnergyLevel): string {
+  if (energy === "low") {
+    return [
+      "CRITICAL USER CONTEXT: The user reports low energy ('Brain Fried').",
+      "Prioritize quick wins, light admin, and small steps; recommend deferring heavy deep work or cognitively demanding tasks unless truly urgent.",
+      "In defer_recommendations and next_actions, favor recovery-friendly moves; mention protecting rest where appropriate.",
+      "In pressure_summary, acknowledge capacity honestly without being preachy.",
+    ].join(" ");
+  }
+  if (energy === "high") {
+    return [
+      "CRITICAL USER CONTEXT: The user reports high energy.",
+      "Surface the hardest strategic or deep-work blockers as top priorities when the snapshot supports it.",
+      "In next_actions, encourage tackling the most valuable demanding work while energy is available.",
+    ].join(" ");
+  }
+  return "";
+}
+
+async function createChiefOfStaffChatReply(
+  context: MyAssistDailyContext,
+  userId: string,
+  energyLevel: EnergyLevel,
+): Promise<AssistantReply> {
+  const result = await createSituationBrief(context, userId, energyLevel);
+  const actions = result.brief.next_actions.slice(0, 2);
+  const followUps = [
+    "What should I focus on first today?",
+    "What can I safely defer?",
+  ];
+
+  return {
+    mode: result.mode,
+    answer: result.brief.pressure_summary,
+    actions,
+    followUps,
+    taskDraft: null,
+  };
+}
+
+async function createReply(context: MyAssistDailyContext, message: string, userId: string): Promise<AssistantReply> {
   try {
+    const memoryPrompt = await getRollingMemoryPrompt(userId, context);
+    
     const raw = await requestOllama({
       format: "json",
       options: {
@@ -110,8 +232,10 @@ async function createReply(context: MyAssistDailyContext, message: string): Prom
           role: "system",
           content: [
             "You are MyAssist, a sharp executive operator for a busy founder.",
-            "Use only the supplied daily context snapshot. Do not invent facts.",
+            "Use the supplied daily context snapshot and historical memory to answer.",
+            "Do not invent facts.",
             "Be direct, useful, and a little forceful. No therapy tone. No fluff.",
+            "If the user asks about past context, use the Rolling Memory JSON to inform your answer.",
             "Keep answers short because this is a life assistant, not a strategy memo.",
             "If the user asks to create a task, return a taskDraft.",
             "Answer in JSON with keys: answer, actions, followUps, taskDraft.",
@@ -127,7 +251,7 @@ async function createReply(context: MyAssistDailyContext, message: string): Prom
         },
         {
           role: "user",
-          content: `Question:\n${message}\n\nDaily context snapshot:\n${buildContextDigest(context)}`,
+          content: `Question:\n${message}\n\nDaily context snapshot:\n${buildContextDigest(context)}\n\nHistorical Rolling Memory:\n${memoryPrompt}`,
         },
       ],
     });
@@ -143,10 +267,23 @@ async function createReply(context: MyAssistDailyContext, message: string): Prom
   }
 }
 
+function isSituationBriefQuestion(message: string): boolean {
+  const normalized = message.toLowerCase();
+  return (
+    normalized.includes("chief of staff") ||
+    normalized.includes("summarize my day") ||
+    normalized.includes("summary of my day") ||
+    (normalized.includes("summarize") && normalized.includes("day"))
+  );
+}
+
 async function createSituationBrief(
   context: MyAssistDailyContext,
+  userId: string,
+  energyLevel: EnergyLevel,
 ): Promise<SituationBriefResponse> {
-  const memoryPrompt = await getRollingMemoryPrompt(context);
+  const memoryPrompt = await getRollingMemoryPrompt(userId, context);
+  const energyInstructions = buildEnergySituationInstructions(energyLevel);
   const candidateModels = getSituationCandidateModels();
   const attemptErrors: string[] = [];
 
@@ -165,6 +302,12 @@ async function createSituationBrief(
               "You are MyAssist Situation Analyst.",
               "Produce one structured daily chief-of-staff brief from the provided snapshot and memory.",
               "Use only provided data. Do not invent meetings, tasks, or emails.",
+              "Use rolling memory to recognize repeated unresolved priorities, risks, and commitments across days.",
+              "If a risk or priority has appeared repeatedly, escalate it instead of treating it like a brand-new observation.",
+              "Rolling memory may include snoozed/deferred tasks with reasons (e.g. needs focus time, blocked on someone else, low priority).",
+              "If the same task or pattern appears often with snooze reasons like needs focus time, recommend breaking the work into smaller steps or scheduling a protected deep-work block in next_actions.",
+              "If snooze reasons indicate waiting on others, suggest a concrete follow-up or escalation in next_actions or defer_recommendations.",
+              energyInstructions,
               "Return valid JSON with keys:",
               "pressure_summary (string),",
               "top_priorities (array of 3 to 5 strings),",
@@ -174,7 +317,10 @@ async function createSituationBrief(
               "confidence_and_limits (string),",
               "memory_insights (array of 0 to 3 strings).",
               "Keep each array item concise and actionable.",
-            ].join(" "),
+              "Prefer action-oriented phrasing over raw email subject lines when possible.",
+            ]
+              .filter((line) => line.trim() !== "")
+              .join(" "),
           },
           {
             role: "user",
@@ -189,7 +335,7 @@ async function createSituationBrief(
         ],
       });
       const brief = parseSituationBrief(raw, context);
-      const persisted = await storeSituationBrief(context, brief);
+      const persisted = await storeSituationBrief(userId, context, brief);
       return {
         mode: "ollama",
         brief,
@@ -204,7 +350,7 @@ async function createSituationBrief(
   }
 
   const fallback = buildSituationBriefFallback(context);
-  const persisted = await storeSituationBrief(context, fallback);
+  const persisted = await storeSituationBrief(userId, context, fallback);
   return {
     mode: "fallback",
     brief: fallback,
@@ -243,6 +389,8 @@ async function createHeadline(context: MyAssistDailyContext): Promise<HeadlineAp
         "- No greeting",
         "- No explanation",
         "- No addressing the user",
+        "- Do not name specific task titles or email subjects (those appear elsewhere on the page)",
+        "- Summarize using load level and counts only: describe the shape of the day, not a list of items",
         "",
         "Tone:",
         "- Neutral",
@@ -399,7 +547,7 @@ function parseHeadlineAnswer(raw: string): string {
     // Plain-text output is acceptable.
   }
 
-  if (source.length > 300) {
+  if (source.length > 200) {
     throw new Error("Headline response too long");
   }
 
@@ -419,35 +567,36 @@ function cleanHeadline(text: string): string {
     .replace(/^the operator.*?\s*/i, "")
     .replace(/^the user's day(?:\s+at\s+the\s+office)?\s+(?:includes|is)\s*/i, "")
     .replace(/^here is.*?:\s*/i, "")
+    .replace(/^overdue tasks:\s*/i, "")
+    .replace(/^important emails:\s*/i, "")
     .replace(/\s+/g, " ")
     .trim();
 
-  const shortened = cleaned.slice(0, 140);
+  const shortened = cleaned.slice(0, 120);
   if (!shortened) return "";
   return shortened.charAt(0).toUpperCase() + shortened.slice(1);
 }
 
-function buildHeadlineDigest(context: MyAssistDailyContext): string {
-  const nextEvent = context.calendar_today[0];
-  const topOverdue = context.todoist_overdue[0];
-  const topDueToday = context.todoist_due_today[0];
-  const topEmail = context.gmail_signals[0];
+function headlineLoadLevel(context: MyAssistDailyContext): "Low" | "Medium" | "High" {
+  const urgent = context.todoist_overdue.length + context.todoist_due_today.length;
+  const score =
+    urgent * 3 + Math.min(context.gmail_signals.length, 5) + Math.min(context.calendar_today.length, 5);
+  if (score >= 24) return "High";
+  if (score >= 12) return "Medium";
+  return "Low";
+}
 
+/** Counts + load only — avoids repeating task/email titles in the hero line (see First move + lists below). */
+function buildHeadlineDigest(context: MyAssistDailyContext): string {
+  const urgent = context.todoist_overdue.length + context.todoist_due_today.length;
   const summary = {
     run_date: context.run_date,
     overdue_count: context.todoist_overdue.length,
     due_today_count: context.todoist_due_today.length,
     calendar_events_count: context.calendar_today.length,
     email_signals_count: context.gmail_signals.length,
-    top_overdue_task: typeof topOverdue?.content === "string" ? topOverdue.content : null,
-    top_due_today_task: typeof topDueToday?.content === "string" ? topDueToday.content : null,
-    next_event: nextEvent
-      ? {
-          summary: nextEvent.summary,
-          start: nextEvent.start,
-        }
-      : null,
-    top_email_subject: typeof topEmail?.subject === "string" ? topEmail.subject : null,
+    urgent_total: urgent,
+    load_level: headlineLoadLevel(context),
   };
 
   return JSON.stringify(summary, null, 2);
@@ -455,7 +604,7 @@ function buildHeadlineDigest(context: MyAssistDailyContext): string {
 
 function parseAssistantReply(raw: string): Omit<AssistantReply, "mode"> {
   const fallback = {
-    answer: raw.trim() || "I could not generate a useful reply from the current context.",
+    answer: "I could not generate a useful reply from the current context.",
     actions: [] as string[],
     followUps: [] as string[],
     taskDraft: null as TaskDraft | null,
@@ -469,8 +618,14 @@ function parseAssistantReply(raw: string): Omit<AssistantReply, "mode"> {
       taskDraft?: unknown;
     };
 
+    const answer =
+      typeof parsed.answer === "string" && parsed.answer.trim() ? parsed.answer.trim() : null;
+    if (!answer) {
+      throw new Error("Assistant response did not include answer");
+    }
+
     return {
-      answer: typeof parsed.answer === "string" && parsed.answer.trim() ? parsed.answer.trim() : fallback.answer,
+      answer,
       actions: Array.isArray(parsed.actions)
         ? parsed.actions.filter((item): item is string => typeof item === "string" && item.trim() !== "").slice(0, 3)
         : [],
@@ -482,8 +637,29 @@ function parseAssistantReply(raw: string): Omit<AssistantReply, "mode"> {
       taskDraft: coerceTaskDraft(parsed.taskDraft),
     };
   } catch {
-    return fallback;
+    const plainText = raw.trim();
+    if (!plainText) return fallback;
+
+    // Guardrail: avoid rendering raw context JSON when the model fails schema adherence.
+    if (looksLikeContextDump(plainText)) return fallback;
+
+    return {
+      answer: plainText,
+      actions: [],
+      followUps: [],
+      taskDraft: null,
+    };
   }
+}
+
+function looksLikeContextDump(text: string): boolean {
+  if (!text.trim().startsWith("{")) return false;
+  return (
+    /"run_date"\s*:/.test(text) &&
+    (/"urgent_counts"\s*:/.test(text) ||
+      /"todoist_overdue"\s*:/.test(text) ||
+      /"gmail_signals"\s*:/.test(text))
+  );
 }
 
 function parseSituationBrief(raw: string, context: MyAssistDailyContext): SituationBrief {

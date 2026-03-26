@@ -1,26 +1,16 @@
 import { Dashboard } from "@/components/Dashboard";
-import { fetchDailyContextFromN8n, type DailyContextSource } from "@/lib/fetchDailyContext";
-import type { MyAssistDailyContext } from "@/lib/types";
+import { getSessionUserId } from "@/lib/session";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  let initialData: MyAssistDailyContext | null = null;
-  let initialSource: DailyContextSource = "n8n";
-  let initialError: string | null = null;
-  try {
-    const { context, source } = await fetchDailyContextFromN8n();
-    initialData = context;
-    initialSource = source;
-  } catch (e) {
-    initialError = e instanceof Error ? e.message : "Unknown error";
+  const userId = await getSessionUserId();
+  if (!userId) {
+    redirect("/sign-in");
   }
 
   return (
-    <Dashboard
-      initialData={initialData}
-      initialError={initialError}
-      initialSource={initialSource}
-    />
+    <Dashboard initialData={null} initialError={null} initialSource="n8n" />
   );
 }

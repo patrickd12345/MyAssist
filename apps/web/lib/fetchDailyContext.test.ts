@@ -1,5 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { fetchDailyContextFromN8n } from "./fetchDailyContext";
+import {
+  fetchDailyContextFromN8n,
+  prioritizeGmailSignalsWithAi,
+  resolveGmailSubject,
+} from "./fetchDailyContext";
 
 const validPayload = {
   generated_at: "2026-03-25T00:00:00.000Z",
@@ -31,6 +35,7 @@ describe("fetchDailyContextFromN8n", () => {
   beforeEach(() => {
     mockFetch.mockReset();
     vi.stubGlobal("fetch", mockFetch);
+    process.env.MYASSIST_ENABLE_EMAIL_IMPORTANCE_AI = "0";
   });
 
   afterEach(() => {
@@ -64,6 +69,32 @@ describe("fetchDailyContextFromN8n", () => {
     expect(context.gmail_signals[0].subject).toBe("Hello");
   });
 
+  it("derives subject from snippet when subject is empty or placeholder", async () => {
+    process.env.MYASSIST_N8N_WEBHOOK_URL = "https://example.com/webhook";
+    setNodeEnv("production");
+
+    const payload = {
+      ...validPayload,
+      gmail_signals: [
+        {
+          id: "g2",
+          threadId: "t2",
+          from: "a@b.com",
+          subject: "",
+          snippet: "Hello Patrick, our fantastic team is growing again!",
+          date: "2026-03-25T12:00:00.000Z",
+        },
+      ],
+    };
+
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify(payload), { status: 200, headers: { "Content-Type": "application/json" } }),
+    );
+
+    const { context } = await fetchDailyContextFromN8n();
+    expect(context.gmail_signals[0].subject).toBe("Hello Patrick, our fantastic team is growing again!");
+  });
+
   it("throws when webhook URL is missing in production without mock override", async () => {
     delete process.env.MYASSIST_N8N_WEBHOOK_URL;
     setNodeEnv("production");
@@ -78,7 +109,7 @@ describe("fetchDailyContextFromN8n", () => {
 
     mockFetch.mockResolvedValueOnce(new Response("bad", { status: 502 }));
 
-    await expect(fetchDailyContextFromN8n()).rejects.toThrow(/502/);
+    await expect(fetchDailyContextFromN8n()).rejects.toThrow(/request failed \(502\)/);
   });
 
   it("throws when JSON is invalid", async () => {
@@ -99,5 +130,130 @@ describe("fetchDailyContextFromN8n", () => {
     );
 
     await expect(fetchDailyContextFromN8n()).rejects.toThrow(/does not match/);
+  });
+});
+
+describe("resolveGmailSubject", () => {
+  it("keeps a real subject", () => {
+    expect(resolveGmailSubject("Invoice due", "snippet")).toBe("Invoice due");
+  });
+
+  it("uses first line of snippet when subject is missing", () => {
+    expect(resolveGmailSubject("", "First line here\nrest")).toBe("First line here");
+  });
+
+  it("replaces (no subject) placeholder with snippet", () => {
+    expect(resolveGmailSubject("(no subject)", "Biron report ready")).toBe("Biron report ready");
+  });
+});
+
+describe("prioritizeGmailSignalsWithAi", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("reorders signals using model-provided importance", async () => {
+    process.env.MYASSIST_ENABLE_EMAIL_IMPORTANCE_AI = "1";
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          message: {
+            content: JSON.stringify({
+              ranked: [
+                { index: 1, importance: 95, reason: "explicit urgent help request" },
+                { index: 0, importance: 10, reason: "routine low-risk update" },
+              ],
+            }),
+          },
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const sorted = await prioritizeGmailSignalsWithAi([
+      {
+        id: "g1",
+        threadId: "t1",
+        from: "a@example.com",
+        subject: "Normal update",
+        snippet: "Routine weekly update.",
+        date: "2026-03-25T10:00:00.000Z",
+      },
+      {
+        id: "g2",
+        threadId: "t2",
+        from: "b@example.com",
+        subject: "Need help",
+        snippet: "This is an extreme emergency, call now.",
+        date: "2026-03-25T09:00:00.000Z",
+      },
+    ]);
+
+    expect(sorted[0]?.id).toBe("g2");
+    expect(sorted[1]?.id).toBe("g1");
+    expect(sorted[0]?.importance_reason).toBe("explicit urgent help request");
+    expect(sorted[0]?.importance_score).toBe(95);
+  });
+
+  it("parses fenced JSON ranking output", async () => {
+    process.env.MYASSIST_ENABLE_EMAIL_IMPORTANCE_AI = "1";
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          message: {
+            content: "```json\n{\"ranked\":[{\"index\":1,\"importance\":88},{\"index\":0,\"importance\":12}]}\n```",
+          },
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const sorted = await prioritizeGmailSignalsWithAi([
+      {
+        id: "g1",
+        threadId: "t1",
+        from: "a@example.com",
+        subject: "A",
+        snippet: "a",
+        date: "2026-03-25T10:00:00.000Z",
+      },
+      {
+        id: "g2",
+        threadId: "t2",
+        from: "b@example.com",
+        subject: "B",
+        snippet: "b",
+        date: "2026-03-25T09:00:00.000Z",
+      },
+    ]);
+
+    expect(sorted[0]?.id).toBe("g2");
+  });
+
+  it("returns original order when AI is disabled", async () => {
+    process.env.MYASSIST_ENABLE_EMAIL_IMPORTANCE_AI = "0";
+    const original = [
+      {
+        id: "g1",
+        threadId: "t1",
+        from: "a@example.com",
+        subject: "A",
+        snippet: "a",
+        date: "2026-03-25T10:00:00.000Z",
+      },
+      {
+        id: "g2",
+        threadId: "t2",
+        from: "b@example.com",
+        subject: "B",
+        snippet: "b",
+        date: "2026-03-25T09:00:00.000Z",
+      },
+    ];
+
+    const sorted = await prioritizeGmailSignalsWithAi(original);
+    expect(sorted).toEqual(original);
   });
 });

@@ -25,6 +25,52 @@ describe("TaskList", () => {
     expect(screen.getByText("P2")).toBeInTheDocument();
   });
 
+  it("sorts due-today tasks by urgency before rendering", () => {
+    render(
+      <TaskList
+        title="Today"
+        tasks={[
+          { id: "p4", content: "Low priority task", priority: 4, due: { date: "2026-03-25" } },
+          { id: "p1", content: "Critical deadline", priority: 1, due: { date: "2026-03-25" } },
+          { id: "p2", content: "Important task", priority: 2, due: { date: "2026-03-25" } },
+        ]}
+        emptyLabel="Nothing"
+        pendingTaskIds={[]}
+      />,
+    );
+
+    const orderedTitles = screen
+      .getAllByText(/Critical deadline|Important task|Low priority task/)
+      .map((node) => node.textContent);
+    expect(orderedTitles).toEqual(["Critical deadline", "Important task", "Low priority task"]);
+  });
+
+  it("boosts tasks with deadline metadata above other near tasks", () => {
+    render(
+      <TaskList
+        title="Today"
+        tasks={[
+          { id: "normal", content: "Regular p1", priority: 1, due: { date: "2099-03-25" } },
+          {
+            id: "deadline-flag",
+            content: "Deadline-backed p4",
+            priority: 4,
+            due: { date: "2099-03-25" },
+            deadline: { date: "2099-03-28" },
+          },
+          { id: "middle", content: "Regular p2", priority: 2, due: { date: "2099-03-25" } },
+        ]}
+        emptyLabel="Nothing"
+        pendingTaskIds={[]}
+      />,
+    );
+
+    const orderedTitles = screen
+      .getAllByText(/Regular p1|Regular p2|Deadline-backed p4/)
+      .map((node) => node.textContent);
+    expect(orderedTitles).toEqual(["Deadline-backed p4", "Regular p1", "Regular p2"]);
+  });
+
   it("calls onComplete when Complete is clicked", async () => {
     const user = userEvent.setup();
     const onComplete = vi.fn().mockResolvedValue(undefined);
@@ -59,10 +105,10 @@ describe("TaskList", () => {
     await user.click(screen.getByRole("button", { name: "Open defer options" }));
     const menu = screen.getByRole("button", { name: "Open defer options" }).closest(".relative");
     expect(menu).toBeTruthy();
-    const deferTomorrow = within(menu!.parentElement as HTMLElement).getByRole("button", {
-      name: "Defer tomorrow",
+    const deferFocus = within(menu!.parentElement as HTMLElement).getByRole("button", {
+      name: "Too big — need focus time",
     });
-    await user.click(deferTomorrow);
-    expect(onSchedule).toHaveBeenCalledWith("t99", "tomorrow at 9am");
+    await user.click(deferFocus);
+    expect(onSchedule).toHaveBeenCalledWith("t99", "tomorrow at 9am", "Needs focus time or deep-work block");
   });
 });

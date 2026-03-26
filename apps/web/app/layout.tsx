@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Mono, Space_Grotesk } from "next/font/google";
+import { AuthSessionProvider } from "@/components/AuthSessionProvider";
 import "./globals.css";
 
 const displaySans = Space_Grotesk({
@@ -24,9 +25,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={`${displaySans.variable} ${plexMono.variable} antialiased`}>
-        {children}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem("myassist-theme");if(t==="kpop-demon-hunters"||t==="zara-larsson")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(e){}})();`,
+          }}
+        />
+        <AuthSessionProvider>{children}</AuthSessionProvider>
       </body>
     </html>
   );

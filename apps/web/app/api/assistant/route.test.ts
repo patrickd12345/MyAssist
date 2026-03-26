@@ -1,8 +1,10 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/memoryStore", () => ({
+  getResolvedItems: vi.fn(async () => []),
   getRollingMemoryPrompt: vi.fn(async () => "[]"),
   storeBriefFeedback: vi.fn(async () => ({ entries: 7 })),
+  storeResolvedItem: vi.fn(async () => ({ entries: 8 })),
   storeSituationBrief: vi.fn(async () => ({ entries: 2 })),
 }));
 
@@ -57,6 +59,17 @@ describe("POST /api/assistant", () => {
     expect(res.status).toBe(400);
   });
 
+  it("returns 400 when resolve_item is missing fields", async () => {
+    const res = await POST(
+      new Request("http://localhost/api/assistant", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind: "resolve_item", text: "Cancel trial" }),
+      }),
+    );
+    expect(res.status).toBe(400);
+  });
+
   it("persists situation_feedback and returns ok", async () => {
     const res = await POST(
       new Request("http://localhost/api/assistant", {
@@ -74,6 +87,40 @@ describe("POST /api/assistant", () => {
     const json = (await res.json()) as { ok: boolean; memory_entries: number };
     expect(json.ok).toBe(true);
     expect(json.memory_entries).toBe(7);
+  });
+
+  it("persists resolved items and returns ok", async () => {
+    const res = await POST(
+      new Request("http://localhost/api/assistant", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          kind: "resolve_item",
+          run_date: "2026-03-25",
+          source: "email",
+          text: "Your trial is ending soon",
+        }),
+      }),
+    );
+    expect(res.status).toBe(200);
+    const json = (await res.json()) as { ok: boolean; memory_entries: number };
+    expect(json.ok).toBe(true);
+    expect(json.memory_entries).toBe(8);
+  });
+
+  it("returns memory status", async () => {
+    const res = await POST(
+      new Request("http://localhost/api/assistant", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          kind: "memory_status",
+        }),
+      }),
+    );
+    expect(res.status).toBe(200);
+    const json = (await res.json()) as { resolved_items: unknown[] };
+    expect(Array.isArray(json.resolved_items)).toBe(true);
   });
 
   it("returns ollama chat reply when Ollama returns JSON", async () => {
@@ -101,6 +148,42 @@ describe("POST /api/assistant", () => {
     const json = (await res.json()) as { mode: string; answer: string };
     expect(json.mode).toBe("ollama");
     expect(json.answer).toContain("Ship");
+  });
+
+  it("routes chief-of-staff day summary chat prompts to situation brief path", async () => {
+    const briefJson = {
+      pressure_summary: "Operational pressure is high.",
+      top_priorities: ["p1", "p2", "p3"],
+      conflicts_and_risks: ["r1", "r2"],
+      defer_recommendations: ["d1", "d2"],
+      next_actions: ["n1", "n2", "n3"],
+      confidence_and_limits: "Snapshot only.",
+      memory_insights: [],
+    };
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ message: { content: JSON.stringify(briefJson) } }), { status: 200 }),
+    );
+
+    const res = await POST(
+      new Request("http://localhost/api/assistant", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          kind: "chat",
+          message: "Summarize my day like a chief of staff.",
+          context: minimalContext,
+        }),
+      }),
+    );
+    expect(res.status).toBe(200);
+    const json = (await res.json()) as { mode: string; answer: string; actions: string[] };
+    expect(json.mode).toBe("ollama");
+    expect(json.answer).toContain("Operational pressure");
+    expect(json.actions).toEqual(["n1", "n2"]);
+
+    const call = mockFetch.mock.calls[0] as [string, { body: string }];
+    const request = JSON.parse(call[1].body) as { model: string };
+    expect(request.model).toBe("sit-model");
   });
 
   it("returns ollama headline when model returns plain text", async () => {

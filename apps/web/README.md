@@ -13,6 +13,18 @@ Interactive assistant UI over normalized daily context from n8n.
 - Supports AI-drafted task creation with explicit confirmation in the assistant console.
 - Still avoids autonomous Todoist writes in v1.
 
+## Sign-in
+
+The dashboard and APIs require a local account (email + password). Unauthenticated visitors are redirected to `/sign-in`.
+
+1. Open `/sign-in`, choose **Register**, and create an account (password at least 8 characters).
+2. Credentials are stored in `apps/web/.myassist-memory/users.json` (hashed passwords only).
+3. Set `AUTH_SECRET` (or `NEXTAUTH_SECRET`) in `apps/web/.env.local` — use a long random string in production.
+4. Optional: set `AUTH_URL` to the public origin (e.g. `http://localhost:3000` locally).
+5. For Vitest and local scripting only, `MYASSIST_AUTH_DISABLED=true` skips login checks (see `vitest.setup.ts`).
+
+Session protection is enforced in server components and API route handlers (no Edge middleware, to avoid bundling issues with Auth.js on Vercel Edge).
+
 ## Local run
 
 For UI-only work, leave `MYASSIST_N8N_WEBHOOK_URL` empty and the app will use mock data automatically in development.
@@ -48,14 +60,18 @@ Then open `http://localhost:3000`.
 
 Set in `apps/web/.env.local`:
 
+- `AUTH_SECRET` (or `NEXTAUTH_SECRET`): secret for Auth.js session cookies (required for `next build` / production; dev-only fallback when unset in development)
+- `MYASSIST_REGISTRATION_INVITE_CODE`: optional; when set, registration must send the same value as `inviteCode` in the JSON body
+- `AUTH_URL`: public site URL (recommended; e.g. `http://localhost:3000`)
+- `MYASSIST_AUTH_DISABLED`: set to `true` only for tests or special local setups (disables auth gates)
+- `MYASSIST_DEV_USER_ID`: user id to use when auth is disabled
+- `MYASSIST_USER_STORE_FILE`: optional path to the JSON user registry (default: `.myassist-memory/users.json`)
 - `MYASSIST_N8N_WEBHOOK_URL`: n8n production webhook URL
 - `MYASSIST_N8N_WEBHOOK_TOKEN`: optional Bearer token
 - `MYASSIST_USE_MOCK_CONTEXT`: optional `true` for demo data in production
 - `OLLAMA_BASE_URL`: optional local Ollama base URL, default `http://127.0.0.1:11434`
 - `OLLAMA_MODEL`: optional Ollama model name, default `llama3.2:3b`
-- `TODOIST_API_TOKEN`: required only for dashboard task completion
-- `TODOIST_API_TOKEN`: required for dashboard completion and defer actions
-- `TODOIST_API_TOKEN`: required for dashboard completion, defer actions, and confirmed task creation
+- `TODOIST_API_TOKEN`: required for dashboard completion, defer actions, and confirmed task creation from the assistant
 
 Notes:
 
@@ -69,6 +85,14 @@ Notes:
 npm run web:lint
 npm run web:build
 ```
+
+## Troubleshooting (Next.js dev)
+
+If the dev server throws **Cannot find module './NNN.js'** under `apps/web/.next/server`, the webpack cache is out of date. Stop `next dev`, run `npm run web:clean` from the repo root (or delete the `apps/web/.next` folder), then start dev again.
+
+If `/api/auth/session` returns **500** and logs show **MissingSecret**, set `AUTH_SECRET` in `apps/web/.env.local` (32+ random characters). In **development** only, a local fallback is used when both secrets are unset; **production** requires an explicit secret. Restart `next dev` after pulling auth changes.
+
+If logs show **Array buffer allocation failed** or **Caching failed for pack** from webpack, the dev server is running low on memory. The `pnpm dev` script sets a larger Node heap (`NODE_OPTIONS=--max-old-space-size=6144`) and dev mode disables webpack disk cache to reduce this. Close other heavy apps, run `npm run web:clean`, then `pnpm dev` again.
 
 ## Local smoke test
 
