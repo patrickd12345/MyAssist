@@ -1,6 +1,9 @@
 {
   "name": "myassist",
   "private": true,
+  "dependencies": {
+    "next": "15.2.6"
+  },
   "scripts": {
     "dev": "npm --prefix apps/web run dev",
     "web:dev": "npm --prefix apps/web run dev",
