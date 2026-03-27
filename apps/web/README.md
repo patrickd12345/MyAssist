@@ -50,7 +50,7 @@ The Vercel project **`web`** in your team should use this app as the deploy root
 - **Git repository:** `patrickd12345/MyAssist`, branch `main`
 - **Root Directory:** `apps/web` (pnpm monorepo; includes workspace package `job-hunt-manager`)
 - **Build:** `apps/web/vercel.json` runs `pnpm install` from the repo root, then `pnpm run build` in `apps/web`
-- **Production env:** set at least `AUTH_SECRET` and `AUTH_URL` (public origin, e.g. `https://myassist.bookiji.com`). Mirror any Supabase / OAuth values from `apps/web/.env.example` so hosted mode matches local behavior.
+- **Production env:** set at least `AUTH_SECRET` and `AUTH_URL` (public origin, e.g. `https://myassist.bookiji.com`). Mirror any Supabase / OAuth values from `apps/web/.env.example` so hosted mode matches local behavior. The CLI has no one-shot “import `.env`” command; use the dashboard **bulk paste** or run `scripts/push-env-to-vercel.ps1` from `apps/web` (see script header). Review keys before pushing—overwrite uses `vercel env add --force`.
 - **Custom domain:** assign `myassist.bookiji.com` to this project’s Production deployment in Vercel → Domains.
 
 ## Local run
