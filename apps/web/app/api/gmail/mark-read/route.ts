@@ -67,7 +67,7 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           ok: false,
-          error: `n8n mark-read failed (${upstream.status})`,
+          error: `mark-read webhook failed (${upstream.status})`,
           details: text.slice(0, 400),
         },
         { status: 502 },

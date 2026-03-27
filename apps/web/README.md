@@ -68,6 +68,7 @@ Set in `apps/web/.env.local`:
 - `MYASSIST_AUTH_DISABLED`: set to `true` only for tests or special local setups (disables auth gates)
 - `MYASSIST_DEV_USER_ID`: user id to use when auth is disabled
 - `MYASSIST_USER_STORE_FILE`: optional path to the JSON user registry (default: `.myassist-memory/users.json`)
+- `MYASSIST_USE_MOCK_CONTEXT`: set to `true` or `1` to serve **mock** daily context instead of live Gmail/Calendar/Todoist reads (useful for UI dev without OAuth)
 - `MYASSIST_INTEGRATIONS_ENCRYPTION_KEY`: base64 32-byte key (recommended) used to encrypt OAuth integration tokens at rest
 - `GOOGLE_CLIENT_ID`: Google OAuth client id for Gmail + Calendar connect flow
 - `GOOGLE_CLIENT_SECRET`: Google OAuth client secret for Gmail + Calendar connect flow
@@ -75,10 +76,11 @@ Set in `apps/web/.env.local`:
 - `TODOIST_CLIENT_SECRET`: Todoist OAuth client secret
 - `OLLAMA_BASE_URL`: optional local Ollama base URL, default `http://127.0.0.1:11434`
 - `OLLAMA_MODEL`: optional Ollama model name, default `llama3.2:3b`
-- `TODOIST_API_TOKEN`: required for dashboard completion, defer actions, and confirmed task creation from the assistant
+- `TODOIST_API_TOKEN`: optional global fallback for Todoist REST if the user has not completed Todoist OAuth; dashboard actions need **either** OAuth **or** this token **or** a per-user token in the user registry (see `resolveTodoistApiToken` behavior in code)
 
 Notes:
 
+- **Daily context** default path (`GET /api/daily-context`) builds the Today payload from **live** provider APIs. The response header `x-myassist-context-source` is **`live`**, **`mock`**, or **`cache`** (`?source=cache` loads the last written snapshot from disk under `.myassist-memory` — useful for debugging, not a canonical data store).
 - Provider data is fetched live on demand.
 - Writes are sent directly to provider APIs.
 - UI state should auto-refresh after successful writes.

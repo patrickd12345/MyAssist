@@ -42,6 +42,26 @@ MyAssist does not store provider mirror tables and does not run reconciliation p
   - keep available only as hidden/debug fallback
   - not the primary UX model
 
+## Daily context and source model
+
+- **Full daily context** is assembled in the app from **unified live reads** of Gmail, Google Calendar, and Todoist. MyAssist does not run a sync engine and does not treat a workflow orchestrator as the source of truth for Today.
+- **Source values** (also exposed as the `x-myassist-context-source` header on `GET /api/daily-context`):
+  - **`live`**: current provider-backed snapshot from the default refresh path.
+  - **`mock`**: demo payload when `MYASSIST_USE_MOCK_CONTEXT` is enabled (development/demo only by convention).
+  - **`cache`**: last persisted snapshot when the client requests `?source=cache` (debug / fast replay path — still not a provider mirror).
+
+## Job Hunt intelligence (web lane)
+
+- **Inputs:** Gmail signals from the same live read path used for Today (no separate mirror table for email bodies).
+- **Detection:** Heuristic classification (e.g. interview, application confirmation, outreach, offer, rejection) with guarded precision rules; **normalized identity** (company, role, recruiter) with sanitization and **identity suppression** when an item is treated as non-job with zero confidence.
+- **Stages:** Deterministic stage hints from signal precedence (single ordered mapping).
+- **Cross-system actions:** User-triggered actions (prep tasks, calendar blocks, Todoist, etc.) go through provider APIs; the app tracks **dedupe metadata** and surfaces **reused target** summaries in the UI when an action is skipped as already done.
+- **Saved-job matching:** The **job-hunt-manager** service (HTTP `POST /signals`) scores email against saved leads; **equal-score ties** resolve with a **deterministic** ordering (thread match, role/subject overlap, stable job id).
+
+## Historical orchestration (dormant n8n)
+
+- Exported workflows under `n8n/` and related notes in `docs/n8n-*.md` are **preserved** for reference or optional future reactivation. They are **not** part of the active runtime for daily context. See [n8n-dormant.md](./n8n-dormant.md).
+
 ## Recommended module boundaries
 
 - `gmailAdapter`

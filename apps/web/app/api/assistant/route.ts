@@ -8,10 +8,7 @@ import {
   type AssistantReply,
   type TaskDraft,
 } from "@/lib/assistant";
-import {
-  fetchDailyContextFromN8n,
-  type N8nIntegrationOverrides,
-} from "@/lib/fetchDailyContext";
+import { fetchDailyContextLive } from "@/lib/fetchDailyContext";
 import {
   getResolvedItems,
   getRollingMemoryPrompt,
@@ -21,7 +18,6 @@ import {
 } from "@/lib/memoryStore";
 import { maybeHandleJobHuntAssistantCommand } from "@/lib/jobHuntAssistantTools";
 import { getSessionUserId } from "@/lib/session";
-import { getUserById } from "@/lib/userStore";
 import { isMyAssistDailyContext } from "@/lib/validateContext";
 import type { MyAssistDailyContext, SituationBrief } from "@/lib/types";
 
@@ -45,15 +41,6 @@ export async function POST(req: Request) {
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
-    const user = await getUserById(userId);
-    const n8nIntegration: N8nIntegrationOverrides | undefined =
-      user && (user.n8nWebhookUrl?.trim() || user.n8nWebhookToken?.trim())
-        ? {
-            webhookUrl: user.n8nWebhookUrl,
-            webhookToken: user.n8nWebhookToken,
-          }
-        : undefined;
 
     const body = (await req.json()) as {
       message?: unknown;
@@ -137,7 +124,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ resolved_items: resolvedItems });
     }
 
-    const context = await resolveContext(body.context, n8nIntegration, userId);
+    const context = await resolveContext(body.context, userId);
     const reply =
       kind === "headline"
         ? await createHeadline(context)
@@ -153,13 +140,9 @@ export async function POST(req: Request) {
   }
 }
 
-async function resolveContext(
-  candidate: unknown,
-  n8n: N8nIntegrationOverrides | null | undefined,
-  userId: string,
-): Promise<MyAssistDailyContext> {
+async function resolveContext(candidate: unknown, userId: string): Promise<MyAssistDailyContext> {
   if (isMyAssistDailyContext(candidate)) return candidate;
-  const { context } = await fetchDailyContextFromN8n(n8n, userId);
+  const { context } = await fetchDailyContextLive(userId);
   return context;
 }
 

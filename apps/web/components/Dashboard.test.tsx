@@ -4,6 +4,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { JobHuntAction, MyAssistDailyContext } from "@/lib/types";
 import { Dashboard } from "./Dashboard";
 
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({
+    push: vi.fn(),
+    replace: vi.fn(),
+    prefetch: vi.fn(),
+  }),
+}));
+
 const sampleContext: MyAssistDailyContext = {
   generated_at: "2026-03-25T12:00:00.000Z",
   run_date: "2026-03-25",
@@ -143,7 +151,7 @@ describe("Dashboard", () => {
   it("loads headline and situation brief from the assistant API", async () => {
     const user = userEvent.setup();
     render(
-      <Dashboard initialData={sampleContext} initialError={null} initialSource="n8n" />,
+      <Dashboard initialData={sampleContext} initialError={null} initialSource="live" />,
     );
 
     await waitFor(() => {
@@ -162,7 +170,7 @@ describe("Dashboard", () => {
   it("submits situation feedback when Useful is clicked", async () => {
     const user = userEvent.setup();
     render(
-      <Dashboard initialData={sampleContext} initialError={null} initialSource="n8n" />,
+      <Dashboard initialData={sampleContext} initialError={null} initialSource="live" />,
     );
 
     await waitFor(() => {
@@ -192,7 +200,7 @@ describe("Dashboard", () => {
   it("persists handled email items and hides them from the list", async () => {
     const user = userEvent.setup();
     render(
-      <Dashboard initialData={sampleContext} initialError={null} initialSource="n8n" />,
+      <Dashboard initialData={sampleContext} initialError={null} initialSource="live" />,
     );
     await user.click(screen.getAllByRole("button", { name: "Inbox" })[0]);
 
@@ -257,13 +265,11 @@ describe("Dashboard", () => {
       return delegate(input, init);
     });
 
-    render(<Dashboard initialData={sampleContext} initialError={null} initialSource="n8n" />);
+    render(<Dashboard initialData={sampleContext} initialError={null} initialSource="live" />);
 
     await user.click(screen.getAllByRole("button", { name: "Inbox" })[0]);
-    await waitFor(() => {
-      expect(screen.getByRole("region", { name: "Job hunt suggestions" })).toBeInTheDocument();
-    });
-    await user.click(screen.getByRole("button", { name: "Create prep tasks" }));
+    const jhRegion = await screen.findByRole("region", { name: "Job hunt suggestions" });
+    await user.click(within(jhRegion).getByRole("button", { name: "Create prep tasks" }));
 
     await waitFor(() => {
       expect(screen.getByText(/Prep tasks were already created recently/i)).toBeInTheDocument();
@@ -273,15 +279,12 @@ describe("Dashboard", () => {
 
   it("shows job hunt suggestion panel and can run prep tasks action", async () => {
     const user = userEvent.setup();
-    render(<Dashboard initialData={sampleContext} initialError={null} initialSource="n8n" />);
+    render(<Dashboard initialData={sampleContext} initialError={null} initialSource="live" />);
 
     await user.click(screen.getAllByRole("button", { name: "Inbox" })[0]);
 
-    await waitFor(() => {
-      expect(screen.getByRole("region", { name: "Job hunt suggestions" })).toBeInTheDocument();
-    });
-
-    await user.click(screen.getByRole("button", { name: "Create prep tasks" }));
+    const jhRegion = await screen.findByRole("region", { name: "Job hunt suggestions" });
+    await user.click(within(jhRegion).getByRole("button", { name: "Create prep tasks" }));
 
     await waitFor(() => {
       expect(mockFetch).toHaveBeenCalledWith(
@@ -296,7 +299,7 @@ describe("Dashboard", () => {
 
   it("hides job hunt panel when Ignore is clicked", async () => {
     const user = userEvent.setup();
-    render(<Dashboard initialData={sampleContext} initialError={null} initialSource="n8n" />);
+    render(<Dashboard initialData={sampleContext} initialError={null} initialSource="live" />);
 
     await user.click(screen.getAllByRole("button", { name: "Inbox" })[0]);
 
@@ -313,7 +316,7 @@ describe("Dashboard", () => {
   it("switches dashboard tabs and shows focused content", async () => {
     const user = userEvent.setup();
     render(
-      <Dashboard initialData={sampleContext} initialError={null} initialSource="n8n" />,
+      <Dashboard initialData={sampleContext} initialError={null} initialSource="live" />,
     );
 
     await user.click(screen.getAllByRole("button", { name: "Tasks" })[0]);

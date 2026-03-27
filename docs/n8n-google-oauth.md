@@ -1,5 +1,10 @@
 # Google OAuth for n8n (Gmail + Google Calendar)
 
+> **Dormant / historical**  
+> **MyAssist** connects Gmail and Calendar through **`apps/web` OAuth**, not through n8n. This page documents Google OAuth console steps for **n8n credentials** only if you run the preserved n8n workflow. See [n8n-dormant.md](./n8n-dormant.md).
+
+---
+
 This cannot be fixed from code or this repo alone. Google requires the **exact** redirect URL n8n uses to be registered on the **same** OAuth client whose Client ID and secret are in n8n.
 
 ## Local n8n (default port 5678)

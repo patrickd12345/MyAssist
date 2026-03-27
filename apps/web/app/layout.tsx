@@ -16,7 +16,7 @@ const plexMono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   title: "MyAssist",
-  description: "Read-only daily context from n8n (Todoist, Gmail, Calendar)",
+  description: "Live daily context from connected Gmail, Google Calendar, and Todoist",
 };
 
 export default function RootLayout({

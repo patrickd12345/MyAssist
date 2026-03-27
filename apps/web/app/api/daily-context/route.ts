@@ -1,15 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { readLastDailyContext, writeLastDailyContext } from "@/lib/dailyContextSnapshot";
-import {
-  fetchDailyContextFromN8n,
-  MYASSIST_CONTEXT_SOURCE_HEADER,
-  type N8nIntegrationOverrides,
-} from "@/lib/fetchDailyContext";
+import { fetchDailyContextLive, MYASSIST_CONTEXT_SOURCE_HEADER } from "@/lib/fetchDailyContext";
 import { integrationService } from "@/lib/integrations/service";
 import { getTaskNudges } from "@/lib/memoryStore";
 import { getSessionUserId } from "@/lib/session";
 import { resolveTodoistApiToken } from "@/lib/todoistToken";
-import { getUserById } from "@/lib/userStore";
 import type { MyAssistDailyContext } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -211,16 +206,7 @@ export async function GET(request: NextRequest) {
       return res;
     }
 
-    const user = await getUserById(userId);
-    const n8nIntegration: N8nIntegrationOverrides | undefined =
-      user && (user.n8nWebhookUrl?.trim() || user.n8nWebhookToken?.trim())
-        ? {
-            webhookUrl: user.n8nWebhookUrl,
-            webhookToken: user.n8nWebhookToken,
-          }
-        : undefined;
-
-    const { context, source } = await fetchDailyContextFromN8n(n8nIntegration, userId);
+    const { context, source } = await fetchDailyContextLive(userId);
 
     await writeLastDailyContext(userId, context);
 

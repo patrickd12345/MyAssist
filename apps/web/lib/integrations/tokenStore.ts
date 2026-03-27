@@ -131,7 +131,7 @@ export async function revokeIntegration(userId: string, provider: IntegrationPro
 export async function listIntegrationStatuses(userId: string): Promise<
   Array<{ provider: IntegrationProvider; status: "connected" | "revoked" | "disconnected"; updated_at?: string }>
 > {
-  const providers: IntegrationProvider[] = ["gmail", "todoist", "google_calendar", "n8n"];
+  const providers: IntegrationProvider[] = ["gmail", "todoist", "google_calendar"];
   const file = await loadFile(userId);
   return providers.map((provider) => {
     const row = file.integrations.find((x) => x.provider === provider);

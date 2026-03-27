@@ -1,7 +1,7 @@
 import type { MyAssistDailyContext } from "./types";
 import { analyzeEmail } from "./services/jobHuntIntelligenceService";
 
-/** Minimal valid payload for UI dev when n8n webhook URL is not configured. */
+/** Minimal valid payload for UI dev when MYASSIST_USE_MOCK_CONTEXT is enabled. */
 export function getMockDailyContext(): MyAssistDailyContext {
   const now = new Date();
   const runDate = now.toISOString().slice(0, 10);
@@ -32,7 +32,7 @@ export function getMockDailyContext(): MyAssistDailyContext {
         threadId: "t1",
         from: "notifications@example.com",
         subject: "Example signal (mock)",
-        snippet: "Set MYASSIST_N8N_WEBHOOK_URL for live Gmail signals.",
+        snippet: "Connect Gmail and refresh for live signals, or use MYASSIST_USE_MOCK_CONTEXT for demo data.",
         date: now.toISOString(),
       },
       {

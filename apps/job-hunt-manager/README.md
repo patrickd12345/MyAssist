@@ -14,11 +14,13 @@ Cursor: merge the block from repo root [`tools/cursor-mcp-job-hunt-manager.examp
 
 Claude Desktop / manual: `command` = `node`, `args` = full path to `node_modules/tsx/dist/cli.mjs` then `src/server.ts`, `cwd` = `apps/job-hunt-manager` (absolute recommended).
 
-## Digest HTTP (for n8n)
+## Digest HTTP (local MCP companion)
 
 ```bash
 npm --prefix apps/job-hunt-manager run digest:dev
 ```
+
+The **MyAssist web app** does not require this server for the Today view; it uses live Gmail/Calendar/Todoist and posts email **signals** to job-hunt-manager when configured (`JOB_HUNT_SIGNALS_URL` / defaults). The digest server is useful for **MCP**, local tooling, and Job Hunt UI features that call the HTTP API.
 
 - `GET http://127.0.0.1:3847/digest` — JSON summary by track and follow-up counts.
 - `POST http://127.0.0.1:3847/signals` — body `{ "signals": [ { "from", "subject", "snippet", "date", "id?", "threadId?" } ] }`. Heuristic match to saved leads; logs incoming email touchpoints and may advance lifecycle. Response: `{ "processed", "matches" }`.

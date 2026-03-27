@@ -11,6 +11,6 @@ export default async function Home() {
   }
 
   return (
-    <Dashboard initialData={null} initialError={null} initialSource="n8n" />
+    <Dashboard initialData={null} initialError={null} initialSource="live" />
   );
 }

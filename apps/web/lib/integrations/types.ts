@@ -1,4 +1,4 @@
-export type IntegrationProvider = "gmail" | "todoist" | "google_calendar" | "n8n";
+export type IntegrationProvider = "gmail" | "todoist" | "google_calendar";
 
 export type IntegrationTokenPayload = {
   access_token?: string;

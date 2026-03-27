@@ -2,102 +2,179 @@ import "server-only";
 
 import { MYASSIST_CONTEXT_SOURCE_HEADER, type DailyContextSource } from "./dailyContextShared";
 import { getMockDailyContext } from "./mockDailyContext";
-import { assertSafeN8nWebhookUrl, type N8nIntegrationOverrides } from "./n8nWebhookUrl";
 import { syncContactsFromJobHuntEmailMatches } from "./jobHuntEmailAssignment";
 import { postJobHuntEmailSignals } from "./jobHuntEmailSignals";
 import { enrichGmailSignalsWithJobHuntAnalysis } from "./services/jobHuntIntelligenceService";
 import { integrationService } from "./integrations/service";
 import { getEmailTriageHints } from "./memoryStore";
-import { isMyAssistDailyContext } from "./validateContext";
+import { resolveTodoistApiToken } from "./todoistToken";
 import type { MyAssistDailyContext } from "./types";
 
-export type { DailyContextSource, N8nIntegrationOverrides };
+export type { DailyContextSource };
 export { MYASSIST_CONTEXT_SOURCE_HEADER };
 const OLLAMA_URL = (process.env.OLLAMA_BASE_URL ?? "http://127.0.0.1:11434").replace(/\/$/, "");
 const EMAIL_IMPORTANCE_TIMEOUT_MS = 60000;
 
-function shouldUseMock(url: string | undefined): boolean {
-  const trimmed = url?.trim() ?? "";
-  if (trimmed !== "") return false;
-  const force =
-    process.env.MYASSIST_USE_MOCK_CONTEXT === "1" ||
-    process.env.MYASSIST_USE_MOCK_CONTEXT === "true";
-  if (force) return true;
-  return process.env.NODE_ENV === "development";
+function shouldUseMockContext(): boolean {
+  const v = process.env.MYASSIST_USE_MOCK_CONTEXT?.trim().toLowerCase();
+  return v === "1" || v === "true";
 }
 
-function mergeWebhookUrl(overrides?: N8nIntegrationOverrides | null): string | undefined {
-  const fromUser = overrides?.webhookUrl?.trim();
-  if (fromUser) return fromUser;
-  return process.env.MYASSIST_N8N_WEBHOOK_URL;
+function dateOnly(value: Date): string {
+  return value.toISOString().slice(0, 10);
 }
 
-function mergeWebhookToken(overrides?: N8nIntegrationOverrides | null): string | undefined {
-  const fromUser = overrides?.webhookToken?.trim();
-  if (fromUser) return fromUser;
-  return process.env.MYASSIST_N8N_WEBHOOK_TOKEN;
+function getTaskDueDate(task: Record<string, unknown>): string | null {
+  const due = task.due as Record<string, unknown> | undefined;
+  if (!due || typeof due !== "object") return null;
+  if (typeof due.date === "string" && due.date.trim()) return due.date.trim();
+  if (typeof due.datetime === "string" && due.datetime.trim()) {
+    const parsed = new Date(due.datetime);
+    if (!Number.isNaN(parsed.getTime())) return dateOnly(parsed);
+  }
+  return null;
 }
 
-export async function fetchDailyContextFromN8n(
-  overrides?: N8nIntegrationOverrides | null,
-  userIdForEmailRanking?: string | null,
-): Promise<{
+function getTaskPriority(task: Record<string, unknown>): number {
+  return typeof task.priority === "number" ? task.priority : 1;
+}
+
+function compareTasks(a: Record<string, unknown>, b: Record<string, unknown>): number {
+  const dueA = getTaskDueDate(a) ?? "9999-12-31";
+  const dueB = getTaskDueDate(b) ?? "9999-12-31";
+  if (dueA !== dueB) return dueA.localeCompare(dueB);
+  const priorityA = getTaskPriority(a);
+  const priorityB = getTaskPriority(b);
+  if (priorityA !== priorityB) return priorityB - priorityA;
+  return String(a.id ?? "").localeCompare(String(b.id ?? ""));
+}
+
+async function fetchTodoistSlicesForUser(
+  userId: string,
+): Promise<Pick<
+  MyAssistDailyContext,
+  "todoist_overdue" | "todoist_due_today" | "todoist_upcoming_high_priority"
+> | null> {
+  const token = await resolveTodoistApiToken(userId);
+  if (!token) return null;
+  const res = await fetch("https://api.todoist.com/api/v1/tasks?limit=200", {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store",
+  });
+  if (!res.ok) return null;
+  const json = (await res.json()) as unknown;
+  if (!Array.isArray(json)) return null;
+  const tasks = json.filter(
+    (item): item is Record<string, unknown> => Boolean(item && typeof item === "object"),
+  );
+
+  const today = dateOnly(new Date());
+  const todoist_overdue: Record<string, unknown>[] = [];
+  const todoist_due_today: Record<string, unknown>[] = [];
+  const todoist_upcoming_high_priority: Record<string, unknown>[] = [];
+
+  for (const task of tasks) {
+    const dueDate = getTaskDueDate(task);
+    if (dueDate && dueDate < today) {
+      todoist_overdue.push(task);
+      continue;
+    }
+    if (dueDate && dueDate === today) {
+      todoist_due_today.push(task);
+      continue;
+    }
+    if (getTaskPriority(task) >= 3) {
+      todoist_upcoming_high_priority.push(task);
+    }
+  }
+
+  todoist_overdue.sort(compareTasks);
+  todoist_due_today.sort(compareTasks);
+  todoist_upcoming_high_priority.sort(compareTasks);
+
+  return {
+    todoist_overdue: todoist_overdue.slice(0, 50),
+    todoist_due_today: todoist_due_today.slice(0, 50),
+    todoist_upcoming_high_priority: todoist_upcoming_high_priority.slice(0, 50),
+  };
+}
+
+function mapCalendarFromOAuth(raw: Array<Record<string, unknown>>): MyAssistDailyContext["calendar_today"] {
+  return raw.map((e) => {
+    const startObj = (e.start as Record<string, unknown> | undefined) || {};
+    const endObj = (e.end as Record<string, unknown> | undefined) || {};
+    return {
+      id: typeof e.id === "string" ? e.id : null,
+      summary: typeof e.summary === "string" ? e.summary : "(untitled event)",
+      start:
+        (typeof startObj.dateTime === "string" && startObj.dateTime) ||
+        (typeof startObj.date === "string" && startObj.date) ||
+        null,
+      end:
+        (typeof endObj.dateTime === "string" && endObj.dateTime) ||
+        (typeof endObj.date === "string" && endObj.date) ||
+        null,
+      location: typeof e.location === "string" ? e.location : null,
+    };
+  });
+}
+
+function mapGmailFromOAuth(raw: Array<Record<string, unknown>>): MyAssistDailyContext["gmail_signals"] {
+  return raw.map((g) => ({
+    id: (typeof g.id === "string" ? g.id : null) ?? null,
+    threadId: (typeof g.threadId === "string" ? g.threadId : null) ?? null,
+    from: flattenText(g.from),
+    subject: flattenText(g.subject),
+    snippet: flattenText(g.snippet),
+    date: typeof g.date === "string" ? g.date : flattenText(g.date),
+  }));
+}
+
+/**
+ * Builds daily context from live Gmail, Google Calendar, and Todoist reads (providers are source of truth).
+ * Uses mock data only when MYASSIST_USE_MOCK_CONTEXT is true.
+ */
+export async function fetchDailyContextLive(userId: string | null): Promise<{
   context: MyAssistDailyContext;
   source: DailyContextSource;
 }> {
-  const url = mergeWebhookUrl(overrides);
-  if (shouldUseMock(url)) {
+  if (shouldUseMockContext()) {
     return { context: enrichGmailSignalsWithJobHuntAnalysis(getMockDailyContext()), source: "mock" };
   }
 
-  const resolved = (url ?? "").trim();
-  if (!resolved) {
-    throw new Error(
-      "MYASSIST_N8N_WEBHOOK_URL is not set. Add the n8n production webhook URL (Webhook - Fetch Daily Context), or set MYASSIST_USE_MOCK_CONTEXT=true for demo data.",
-    );
+  const trimmed = userId?.trim() ?? "";
+  if (!trimmed) {
+    throw new Error("Daily context requires a signed-in user. Connect Gmail, Calendar, and Todoist after signing in.");
   }
 
-  await assertSafeN8nWebhookUrl(resolved, overrides);
+  const [gmailRaw, calendarRaw, todoistSlices] = await Promise.all([
+    integrationService.fetchGmailSignals(trimmed),
+    integrationService.fetchCalendarEvents(trimmed),
+    fetchTodoistSlicesForUser(trimmed),
+  ]);
 
-  const headers: HeadersInit = {
-    Accept: "application/json",
+  const gmail_signals = gmailRaw ? mapGmailFromOAuth(gmailRaw) : [];
+  const calendar_today = Array.isArray(calendarRaw) ? mapCalendarFromOAuth(calendarRaw) : [];
+
+  const now = new Date().toISOString();
+  const run_date = now.slice(0, 10);
+
+  let base: MyAssistDailyContext = {
+    generated_at: now,
+    run_date,
+    gmail_signals,
+    calendar_today,
+    todoist_overdue: todoistSlices?.todoist_overdue ?? [],
+    todoist_due_today: todoistSlices?.todoist_due_today ?? [],
+    todoist_upcoming_high_priority: todoistSlices?.todoist_upcoming_high_priority ?? [],
   };
-  const token = mergeWebhookToken(overrides);
-  if (token && token.trim() !== "") {
-    headers.Authorization = `Bearer ${token.trim()}`;
-  }
 
-  const res = await fetch(resolved, {
-    method: "GET",
-    headers,
-    cache: "no-store",
-  });
-
-  const text = await res.text();
-  if (!res.ok) {
-    throw new Error(`n8n webhook request failed (${res.status}).`);
-  }
-
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(text) as unknown;
-  } catch {
-    throw new Error("n8n webhook did not return valid JSON");
-  }
-
-  if (!isMyAssistDailyContext(parsed)) {
-    throw new Error(
-      "n8n response does not match MyAssist daily context shape (expected Normalize Aggregated Data output).",
-    );
-  }
-
-  const flattened = flattenGmailSignals(parsed);
-  const prioritized = await prioritizeContextEmails(flattened, userIdForEmailRanking ?? undefined);
-  const oauthEnriched = await enrichWithOAuthReads(prioritized, userIdForEmailRanking ?? null);
-  const withJobHuntAnalysis = enrichGmailSignalsWithJobHuntAnalysis(oauthEnriched);
+  base = flattenGmailSignals(base);
+  const prioritized = await prioritizeContextEmails(base, trimmed);
+  const withJobHuntAnalysis = enrichGmailSignalsWithJobHuntAnalysis(prioritized);
   const job_hunt_email_matches = await postJobHuntEmailSignals(withJobHuntAnalysis.gmail_signals);
-  if (userIdForEmailRanking && job_hunt_email_matches.length > 0) {
-    await syncContactsFromJobHuntEmailMatches(userIdForEmailRanking, job_hunt_email_matches);
+  if (trimmed && job_hunt_email_matches.length > 0) {
+    await syncContactsFromJobHuntEmailMatches(trimmed, job_hunt_email_matches);
   }
 
   return {
@@ -105,57 +182,7 @@ export async function fetchDailyContextFromN8n(
       ...withJobHuntAnalysis,
       ...(job_hunt_email_matches.length > 0 ? { job_hunt_email_matches } : {}),
     },
-    source: "n8n",
-  };
-}
-
-async function enrichWithOAuthReads(
-  context: MyAssistDailyContext,
-  userId: string | null,
-): Promise<MyAssistDailyContext> {
-  if (!userId) return context;
-  const [gmailSignals, calendarEvents] = await Promise.all([
-    integrationService.fetchGmailSignals(userId),
-    integrationService.fetchCalendarEvents(userId),
-  ]);
-  const mappedCalendarEvents = Array.isArray(calendarEvents)
-    ? calendarEvents.map((e) => {
-        const startObj = (e.start as Record<string, unknown> | undefined) || {};
-        const endObj = (e.end as Record<string, unknown> | undefined) || {};
-        return {
-          id: typeof e.id === "string" ? e.id : null,
-          summary: typeof e.summary === "string" ? e.summary : "(untitled event)",
-          start:
-            (typeof startObj.dateTime === "string" && startObj.dateTime) ||
-            (typeof startObj.date === "string" && startObj.date) ||
-            null,
-          end:
-            (typeof endObj.dateTime === "string" && endObj.dateTime) ||
-            (typeof endObj.date === "string" && endObj.date) ||
-            null,
-          location: typeof e.location === "string" ? e.location : null,
-        };
-      })
-    : null;
-  return {
-    ...context,
-    ...(gmailSignals
-      ? {
-          gmail_signals: gmailSignals.map((g) => ({
-            id: (typeof g.id === "string" ? g.id : null) ?? null,
-            threadId: (typeof g.threadId === "string" ? g.threadId : null) ?? null,
-            from: typeof g.from === "string" ? g.from : "",
-            subject: typeof g.subject === "string" ? g.subject : "",
-            snippet: typeof g.snippet === "string" ? g.snippet : "",
-            date: typeof g.date === "string" ? g.date : "",
-          })),
-        }
-      : {}),
-    ...(mappedCalendarEvents && (mappedCalendarEvents.length > 0 || context.calendar_today.length === 0)
-      ? {
-          calendar_today: mappedCalendarEvents,
-        }
-      : {}),
+    source: "live",
   };
 }
 

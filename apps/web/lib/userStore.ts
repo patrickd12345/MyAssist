@@ -7,8 +7,6 @@ export type StoredUser = {
   id: string;
   email: string;
   passwordHash: string;
-  n8nWebhookUrl?: string;
-  n8nWebhookToken?: string;
   todoistApiToken?: string;
 };
 
@@ -73,8 +71,6 @@ export async function getUserById(id: string): Promise<SafeUser | null> {
   return {
     id: found.id,
     email: found.email,
-    n8nWebhookUrl: found.n8nWebhookUrl,
-    n8nWebhookToken: found.n8nWebhookToken,
     todoistApiToken: found.todoistApiToken,
   };
 }
@@ -109,8 +105,6 @@ export async function createUser(input: {
   return {
     id: user.id,
     email: user.email,
-    n8nWebhookUrl: user.n8nWebhookUrl,
-    n8nWebhookToken: user.n8nWebhookToken,
     todoistApiToken: user.todoistApiToken,
   };
 }

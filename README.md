@@ -61,7 +61,7 @@ Purpose:
 Setup:
 
 1. In `apps/web`, copy `apps/web/.env.example` to `apps/web/.env.local`.
-2. Configure the app integrations and optional local model settings.
+2. Configure OAuth for Gmail, Google Calendar, and Todoist in `apps/web/.env.local` (see `apps/web/README.md`). Optional: set `MYASSIST_USE_MOCK_CONTEXT=true` for demo data without provider connections. Optional: local model (Ollama) settings for the assistant.
 3. From repo root run `npm run web:dev`.
 4. Open `http://localhost:3000`.
 
@@ -83,7 +83,8 @@ Assistant behavior:
 
 Verification:
 
-- `GET /api/daily-context` should return normalized app data.
+- `GET /api/daily-context` should return normalized app data built from **live** Gmail, Google Calendar, and Todoist reads (providers are canonical — not a local mirror of mail/events/tasks).
+- The response may include header `x-myassist-context-source` with value **`live`** (default refresh), **`mock`** (when `MYASSIST_USE_MOCK_CONTEXT` is enabled in `apps/web/.env.local`), or **`cache`** (when using `GET /api/daily-context?source=cache` for the last saved snapshot).
 - `POST /api/assistant` should return JSON with `mode`, `answer`, `actions`, and `followUps`.
 - `mode=ollama` means the local model is active.
 - `mode=fallback` means the assistant is running on built-in heuristics.

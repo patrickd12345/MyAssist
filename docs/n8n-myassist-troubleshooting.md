@@ -1,6 +1,11 @@
 # MyAssist n8n workflow troubleshooting
 
-End-to-end flow: **Webhook or Cron** triggers three parallel nodes (**Todoist HTTP**, **Gmail**, **Google Calendar**), two **Merge (Append)** nodes fan in, then **Normalize Aggregated Data** returns JSON for the web app.
+> **Dormant / historical (n8n)**  
+> The **MyAssist web app** does **not** use n8n webhooks for daily context. **Today** is built from **live** Gmail, Google Calendar, and Todoist via in-app OAuth. The content below describes the **preserved** workflow under `n8n/` for optional self-hosted use or archaeology — **not** current product setup. See [n8n-dormant.md](./n8n-dormant.md).
+
+---
+
+End-to-end flow (in the preserved workflow design): **Webhook or Cron** triggers three parallel nodes (**Todoist HTTP**, **Gmail**, **Google Calendar**), two **Merge (Append)** nodes fan in, then **Normalize Aggregated Data** returns JSON comparable to the app's context shape.
 
 ## Live n8n vs repo (MCP snapshot)
 
@@ -70,10 +75,13 @@ The Code node reads sibling outputs with **`$items('Node Name')`** (all items). 
 
 - **Append** mode needs **both** inputs to complete. If one branch errors, the merge may not run. Use [n8n-local-merge-version.md](./n8n-local-merge-version.md) if Merge nodes show `?` or `execute` errors (wrong `typeVersion`).
 
-## 6. Web app still shows zeros
+## 6. “Data looks empty” — app vs preserved workflow
 
-- **`MYASSIST_N8N_WEBHOOK_URL`** must point at the **active** workflow webhook that runs this graph.
-- **`Copy payload`** in the app should show the same `gmail_signals` / `calendar_today` as the n8n **Normalize** output. If n8n is correct but the app is not, check caching and env (production vs local).
+**MyAssist web app (current runtime):** Today/full context come from **live** provider reads (Gmail, Google Calendar, Todoist OAuth) or **mock** / **cache** for dev (`x-myassist-context-source`, optional `MYASSIST_USE_MOCK_CONTEXT`). There is **no** production path that requires n8n or **`MYASSIST_N8N_WEBHOOK_URL`** for the UI.
+
+**If you are only running the preserved n8n graph** (optional / historical): an HTTP **Webhook** node must expose a URL your client can call; the repo’s optional `tools/webhook-proxy.mjs` forwards to **`MYASSIST_N8N_WEBHOOK_TARGET`** (default `http://localhost:5678/webhook/...`); see that script for optional **`MYASSIST_TUNNEL_*`** vars. Comparing payloads: normalized n8n output should be *comparable in shape* to the app’s provider-backed context, but the app does **not** call that webhook in the default stack.
+
+- **`Copy payload`** in the app reflects **live / mock / cache** — not necessarily the same execution as a local n8n run unless you have built a custom bridge (out of scope for default setup).
 
 ## 7. Re-import workflow
 

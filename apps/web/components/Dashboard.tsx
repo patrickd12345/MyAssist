@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { buildHeadlineFallback } from "@/lib/assistant";
@@ -18,13 +19,24 @@ import type {
   TodoistTask,
 } from "@/lib/types";
 import type { SavedJobRow } from "@/lib/jobHuntUiTypes";
+import { buildJobHuntExpansion } from "@/lib/services/jobHuntExpansionService";
+import type { FollowUpTimingStatus } from "@/lib/services/jobHuntExpansionService";
+import {
+  executeInsightAction,
+  insightActionButtonLabel,
+  insightActionPendingKey,
+  insightActionsToRender,
+} from "@/lib/services/insightActionService";
+import type { SuggestedAction } from "@/lib/services/insightActionService";
+import type { Insight } from "@/lib/services/todayIntelligenceService";
+import { buildTodayInsights } from "@/lib/services/todayIntelligenceService";
 import { AssistantConsole } from "./AssistantConsole";
 import { TaskList } from "./TaskList";
 
 type ThemeKey = "light" | "neon" | "kpop-demon-hunters" | "zara-larsson";
 type DashboardTab = "overview" | "tasks" | "inbox" | "calendar" | "assistant";
 type IntegrationStatus = "connected" | "revoked" | "disconnected";
-type IntegrationProvider = "gmail" | "todoist" | "google_calendar" | "n8n";
+type IntegrationProvider = "gmail" | "todoist" | "google_calendar";
 type IntegrationStatusRow = { provider: IntegrationProvider; status: IntegrationStatus };
 type ProviderSlice = "gmail" | "google_calendar" | "todoist";
 
@@ -64,6 +76,83 @@ function formatWhen(iso: string | null): string {
 function firstName(from: string): string {
   const cleaned = from.replace(/".*?"/g, "").replace(/<.*?>/g, "").trim();
   return cleaned || from;
+}
+
+function insightSeverityClass(severity: Insight["severity"]): string {
+  if (severity === "high") {
+    return "border-red-400/40 bg-red-500/15 text-red-100";
+  }
+  if (severity === "medium") {
+    return "border-amber-400/35 bg-amber-500/12 text-amber-50";
+  }
+  return "border-zinc-500/25 bg-zinc-500/10 text-zinc-200";
+}
+
+function followUpTimingStatusClass(status: FollowUpTimingStatus): string {
+  if (status === "follow_up_now") {
+    return "border-rose-400/40 bg-rose-500/15 text-rose-100";
+  }
+  if (status === "monitor") {
+    return "border-sky-400/35 bg-sky-500/12 text-sky-50";
+  }
+  return "border-zinc-500/25 bg-zinc-500/10 text-zinc-200";
+}
+
+function TodayInsightList({
+  items,
+  onAction,
+  pendingKeys,
+}: {
+  items: Insight[];
+  onAction: (insightId: string, action: SuggestedAction) => void | Promise<void>;
+  pendingKeys: ReadonlySet<string>;
+}) {
+  if (items.length === 0) {
+    return <p className="theme-muted mt-3 text-sm">Nothing flagged</p>;
+  }
+  return (
+    <ul className="mt-3 space-y-3">
+      {items.map((insight) => {
+        const actions = insightActionsToRender(insight);
+        return (
+          <li key={insight.id} className="list-card rounded-[18px] border px-3 py-3 text-sm leading-6">
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <p className="font-semibold text-zinc-100">{insight.title}</p>
+              {insight.severity ? (
+                <span
+                  className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase ${insightSeverityClass(insight.severity)}`}
+                >
+                  {insight.severity}
+                </span>
+              ) : null}
+            </div>
+            {insight.description ? (
+              <p className="theme-muted mt-1 text-xs leading-5">{insight.description}</p>
+            ) : null}
+            {actions.length > 0 ? (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {actions.map((action) => {
+                  const pk = insightActionPendingKey(insight.id, action);
+                  const busy = pendingKeys.has(pk);
+                  return (
+                    <button
+                      key={pk}
+                      type="button"
+                      disabled={busy}
+                      onClick={() => void onAction(insight.id, action)}
+                      className="theme-button-secondary rounded-full px-3 py-1.5 text-[11px] font-semibold disabled:opacity-60"
+                    >
+                      {busy ? "…" : insightActionButtonLabel(action)}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : null}
+          </li>
+        );
+      })}
+    </ul>
+  );
 }
 
 function normalizeMemoryKey(value: string): string {
@@ -460,6 +549,12 @@ export function Dashboard({
   const [pendingResolvedTexts, setPendingResolvedTexts] = useState<string[]>([]);
   const [energyLevel, setEnergyLevel] = useState<"high" | "normal" | "low">("normal");
   const [activeTab, setActiveTab] = useState<DashboardTab>("overview");
+  const router = useRouter();
+  const [pendingInsightActionKeys, setPendingInsightActionKeys] = useState<string[]>([]);
+  const pendingInsightKeySet = useMemo(
+    () => new Set(pendingInsightActionKeys),
+    [pendingInsightActionKeys],
+  );
   const [savedJobsForAssign, setSavedJobsForAssign] = useState<SavedJobRow[]>([]);
   const [assignBusyKey, setAssignBusyKey] = useState<string | null>(null);
   const [assignError, setAssignError] = useState<string | null>(null);
@@ -677,7 +772,7 @@ export function Dashboard({
 
       if (res.status === 404) {
         setData(null);
-        setContextSource("n8n");
+        setContextSource("live");
         return;
       }
 
@@ -692,7 +787,7 @@ export function Dashboard({
         return;
       }
       setContextSource(
-        headerSource === "mock" ? "mock" : headerSource === "cache" ? "cache" : "n8n",
+        headerSource === "mock" ? "mock" : headerSource === "cache" ? "cache" : "live",
       );
       setData(j as MyAssistDailyContext);
     } catch (e) {
@@ -721,7 +816,7 @@ export function Dashboard({
         setError(j.error);
         return;
       }
-      setContextSource(headerSource === "mock" ? "mock" : "n8n");
+      setContextSource(headerSource === "mock" ? "mock" : "live");
       setData(j as MyAssistDailyContext);
     } catch (e) {
       setData(null);
@@ -788,6 +883,75 @@ export function Dashboard({
     [],
   );
 
+  type ActionApiResponseBody = {
+    ok?: boolean;
+    error?: string;
+    action?: string;
+    dedupe?: {
+      deduped?: boolean;
+      message?: string;
+      reusedTargetIds?: string[];
+      reusedTargetSummaries?: Array<{ id?: string; label?: string; href?: string | null }>;
+    };
+    opportunityLinkage?: JobHuntCalendarOpportunityLink;
+    refreshHints?: { providers?: unknown };
+  };
+
+  const applyActionsResponseBody = useCallback(
+    async (body: ActionApiResponseBody) => {
+      if (body.ok === false) {
+        throw new Error(typeof body.error === "string" ? body.error : "Action failed.");
+      }
+      if (body.dedupe?.deduped && typeof body.dedupe.message === "string") {
+        const explicitSummaries: Array<{ id: string; label: string; href?: string | null }> = [];
+        if (Array.isArray(body.dedupe.reusedTargetSummaries)) {
+          for (const item of body.dedupe.reusedTargetSummaries) {
+            const id = typeof item?.id === "string" ? item.id.trim() : "";
+            if (!id) continue;
+            const label = typeof item?.label === "string" && item.label.trim() ? item.label.trim() : id;
+            explicitSummaries.push({
+              id,
+              label,
+              href: typeof item?.href === "string" ? item.href : null,
+            });
+          }
+        }
+        const fallbackSummaries =
+          explicitSummaries.length > 0
+            ? explicitSummaries
+            : Array.isArray(body.dedupe.reusedTargetIds)
+              ? body.dedupe.reusedTargetIds
+                  .map((id) => (typeof id === "string" && id.trim() ? { id: id.trim(), label: id.trim() } : null))
+                  .filter((item): item is { id: string; label: string } => Boolean(item))
+              : [];
+        setIntegrationActionNotice({
+          message: body.dedupe.message,
+          href: body.opportunityLinkage ? buildJobHuntHrefFromOpportunityLinkage(body.opportunityLinkage) : undefined,
+          reusedTargets: fallbackSummaries,
+        });
+      } else if (body.opportunityLinkage) {
+        setIntegrationActionNotice({
+          message: "Calendar event linked for Job Hunt follow-up.",
+          href: buildJobHuntHrefFromOpportunityLinkage(body.opportunityLinkage),
+        });
+      } else {
+        setIntegrationActionNotice(null);
+      }
+      const rawProviders = body.refreshHints?.providers;
+      const providers = (
+        Array.isArray(rawProviders)
+          ? rawProviders.filter(
+              (p): p is ProviderSlice =>
+                p === "gmail" || p === "google_calendar" || p === "todoist",
+            )
+          : []
+      ) as ProviderSlice[];
+      const unique = [...new Set(providers)];
+      await Promise.all(unique.map((provider) => refreshProviderSlice(provider)));
+    },
+    [refreshProviderSlice],
+  );
+
   const runCrossSystemAction = useCallback(
     async (
       action: "email_to_task" | "email_to_event" | "task_to_calendar_block" | "job_hunt_prep_tasks",
@@ -805,78 +969,53 @@ export function Dashboard({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ action, sourceId: trimmed }),
         });
-        const body = (await response.json()) as {
-          ok?: boolean;
-          error?: string;
-          action?: string;
-          dedupe?: {
-            deduped?: boolean;
-            message?: string;
-            reusedTargetIds?: string[];
-            reusedTargetSummaries?: Array<{ id?: string; label?: string; href?: string | null }>;
-          };
-          opportunityLinkage?: JobHuntCalendarOpportunityLink;
-          refreshHints?: { providers?: unknown };
-        };
+        const body = (await response.json()) as ActionApiResponseBody;
         if (!response.ok) {
           throw new Error(body.error ?? `HTTP ${response.status}`);
         }
-        if (body.ok === false) {
-          throw new Error(typeof body.error === "string" ? body.error : "Action failed.");
-        }
-        if (body.dedupe?.deduped && typeof body.dedupe.message === "string") {
-          const explicitSummaries: Array<{ id: string; label: string; href?: string | null }> = [];
-          if (Array.isArray(body.dedupe.reusedTargetSummaries)) {
-            for (const item of body.dedupe.reusedTargetSummaries) {
-              const id = typeof item?.id === "string" ? item.id.trim() : "";
-              if (!id) continue;
-              const label = typeof item?.label === "string" && item.label.trim() ? item.label.trim() : id;
-              explicitSummaries.push({
-                id,
-                label,
-                href: typeof item?.href === "string" ? item.href : null,
-              });
-            }
-          }
-          const fallbackSummaries =
-            explicitSummaries.length > 0
-              ? explicitSummaries
-              : Array.isArray(body.dedupe.reusedTargetIds)
-                ? body.dedupe.reusedTargetIds
-                    .map((id) => (typeof id === "string" && id.trim() ? { id: id.trim(), label: id.trim() } : null))
-                    .filter((item): item is { id: string; label: string } => Boolean(item))
-                : [];
-          setIntegrationActionNotice({
-            message: body.dedupe.message,
-            href: body.opportunityLinkage ? buildJobHuntHrefFromOpportunityLinkage(body.opportunityLinkage) : undefined,
-            reusedTargets: fallbackSummaries,
-          });
-        } else if (body.opportunityLinkage) {
-          setIntegrationActionNotice({
-            message: "Calendar event linked for Job Hunt follow-up.",
-            href: buildJobHuntHrefFromOpportunityLinkage(body.opportunityLinkage),
-          });
-        } else {
-          setIntegrationActionNotice(null);
-        }
-        const rawProviders = body.refreshHints?.providers;
-        const providers = (
-          Array.isArray(rawProviders)
-            ? rawProviders.filter(
-                (p): p is ProviderSlice =>
-                  p === "gmail" || p === "google_calendar" || p === "todoist",
-              )
-            : []
-        ) as ProviderSlice[];
-        const unique = [...new Set(providers)];
-        await Promise.all(unique.map((provider) => refreshProviderSlice(provider)));
+        await applyActionsResponseBody(body);
       } catch (cause) {
         setTaskActionError(cause instanceof Error ? cause.message : "Action failed.");
       } finally {
         setPendingCrossActionKeys((current) => current.filter((entry) => entry !== key));
       }
     },
-    [refreshProviderSlice],
+    [applyActionsResponseBody],
+  );
+
+  const runInsightAction = useCallback(
+    async (insightId: string, action: SuggestedAction) => {
+      const pendingKey = insightActionPendingKey(insightId, action);
+      setTaskActionError(null);
+      setIntegrationActionNotice(null);
+      setPendingInsightActionKeys((current) => [...new Set([...current, pendingKey])]);
+      try {
+        const result = await executeInsightAction(action);
+        if (result.outcome === "navigate_tab") {
+          setActiveTab(result.tab);
+          return;
+        }
+        if (result.outcome === "navigate_href") {
+          router.push(result.href);
+          return;
+        }
+        if (result.outcome === "api") {
+          const body = result.body as ActionApiResponseBody;
+          if (!result.ok) {
+            throw new Error(
+              typeof body.error === "string" ? body.error : `HTTP ${result.status}`,
+            );
+          }
+          await applyActionsResponseBody(body);
+          return;
+        }
+      } catch (cause) {
+        setTaskActionError(cause instanceof Error ? cause.message : "Action failed.");
+      } finally {
+        setPendingInsightActionKeys((current) => current.filter((entry) => entry !== pendingKey));
+      }
+    },
+    [applyActionsResponseBody, router],
   );
 
   useEffect(() => {
@@ -1053,6 +1192,20 @@ export function Dashboard({
     [data, visibleEmailSignals],
   );
   const nextAction = useMemo(() => (displayData ? buildNextAction(displayData) : null), [displayData]);
+  const todayInsights = useMemo(
+    () => (displayData ? buildTodayInsights(displayData) : null),
+    [displayData],
+  );
+  const jobHuntExpansion = useMemo(
+    () => (displayData ? buildJobHuntExpansion(displayData) : null),
+    [displayData],
+  );
+  const hasJobHuntExpansion = Boolean(
+    jobHuntExpansion &&
+      (jobHuntExpansion.prepRecommendations.length > 0 ||
+        jobHuntExpansion.followUpTiming.length > 0 ||
+        jobHuntExpansion.researchSuggestions.length > 0),
+  );
   const showSkeleton = Boolean(loading && !data && !error);
   const needsFirstRefresh = Boolean(bootstrapped && !data && !error && !loading);
 
@@ -1190,7 +1343,7 @@ export function Dashboard({
                     ? "Demo feed"
                     : contextSource === "cache"
                       ? "Last snapshot"
-                      : "Live n8n feed"}
+                      : "Live from providers"}
                 </span>
               ) : showSkeleton ? (
                 <span className="theme-chip rounded-full px-3 py-1 text-xs font-medium">Loading context…</span>
@@ -1231,7 +1384,7 @@ export function Dashboard({
                     Welcome back.
                   </span>
                   <span className="mt-2 block">
-                    No saved snapshot yet. Refresh runs the n8n workflow and saves it for instant next visits.
+                    No saved snapshot yet. Refresh pulls live Gmail, Calendar, and Todoist and saves a snapshot for faster next visits.
                   </span>
                 </>
               ) : (
@@ -1247,9 +1400,9 @@ export function Dashboard({
                   <SkeletonBlock className="h-4 w-full max-w-xl" />
                 </span>
               ) : needsFirstRefresh ? (
-                "After the first successful Refresh, opening Today loads that data from disk without calling n8n again."
+                "After the first successful Refresh, opening Today loads that snapshot from disk first."
               ) : (
-                "Live daily context from n8n, with tasks, calendar, email, and assistant actions in one place."
+                "Live daily context from connected providers, with tasks, calendar, email, and assistant actions in one place."
               )}
             </p>
           </div>
@@ -1444,8 +1597,8 @@ export function Dashboard({
         <div className="glass-panel mb-6 rounded-[24px] border-blue-500/30 bg-blue-500/10 p-5 text-blue-100" role="status">
           <p className="font-semibold">Demo mode is active.</p>
           <p className="mt-1 text-xs leading-6 opacity-90">
-            The interface is working, but the assistant is reading mock data because{" "}
-            <code className="rounded bg-white/5 px-1.5 py-0.5">MYASSIST_N8N_WEBHOOK_URL</code> is empty.
+            The interface is using demo data because <code className="rounded bg-white/5 px-1.5 py-0.5">MYASSIST_USE_MOCK_CONTEXT</code> is
+            enabled on the server. Turn it off and connect Gmail, Calendar, and Todoist for live data.
           </p>
         </div>
       )}
@@ -1457,8 +1610,7 @@ export function Dashboard({
         >
           <p className="font-semibold">Showing your last saved snapshot</p>
           <p className="mt-1 text-sm leading-6 text-emerald-900/90">
-            Workflow last captured {formatWhen(data.generated_at)}. Use Refresh to run n8n again, re-rank email, and
-            replace this snapshot.
+            Snapshot last captured {formatWhen(data.generated_at)}. Use Refresh to pull live provider data again and replace this snapshot.
           </p>
         </div>
       )}
@@ -1467,7 +1619,7 @@ export function Dashboard({
         <div className="glass-panel mb-6 rounded-[24px] border-white/10 p-5" role="status">
           <p className="font-semibold theme-ink">No snapshot on disk yet</p>
           <p className="theme-muted mt-2 text-sm leading-6">
-            Refresh calls n8n and stores the result under{" "}
+            Refresh pulls live provider data and stores the snapshot under{" "}
             <code className="rounded bg-white/5 px-1.5 py-0.5">.myassist-memory</code>. Later visits load that file
             first so Today opens immediately; only Refresh triggers a new run.
           </p>
@@ -1477,7 +1629,7 @@ export function Dashboard({
             disabled={loading}
             className="theme-button-primary mt-4 rounded-full px-5 py-3 text-sm font-semibold transition disabled:opacity-50"
           >
-            {loading ? "Refreshing..." : "Refresh from n8n"}
+            {loading ? "Refreshing..." : "Refresh live context"}
           </button>
         </div>
       )}
@@ -1487,8 +1639,7 @@ export function Dashboard({
           <p className="font-semibold">The assistant could not pull context.</p>
           <p className="mt-2 font-mono text-xs opacity-90">{error}</p>
           <p className="mt-3 text-xs leading-6">
-            Check the active n8n webhook and the value of{" "}
-            <code className="rounded bg-white/5 px-1.5 py-0.5">MYASSIST_N8N_WEBHOOK_URL</code>, then refresh.
+            Check that Gmail, Google Calendar, and Todoist are connected, then try Refresh again.
           </p>
         </div>
       )}
@@ -1595,6 +1746,270 @@ export function Dashboard({
                   </span>
                 </div>
               </section>
+              ) : null}
+
+              {activeTab === "overview" && todayInsights ? (
+                <section className="glass-panel rounded-[30px] p-6" aria-label="Today insights">
+                  <p className="section-title text-xs font-semibold">Today Insights</p>
+                  <h2 className="theme-ink mt-2 text-2xl font-semibold tracking-[-0.03em]">
+                    Rule-based snapshot
+                  </h2>
+                  <p className="theme-muted mt-2 text-sm leading-7">
+                    From the current daily context: calendar, tasks, and Gmail signals (no background jobs).
+                  </p>
+                  <div className="mt-5 grid gap-5 lg:grid-cols-3">
+                    <div>
+                      <p className="theme-accent text-[11px] font-semibold uppercase tracking-[0.12em]">
+                        Priorities
+                      </p>
+                      <TodayInsightList
+                        items={todayInsights.priorities}
+                        onAction={runInsightAction}
+                        pendingKeys={pendingInsightKeySet}
+                      />
+                    </div>
+                    <div>
+                      <p className="theme-accent text-[11px] font-semibold uppercase tracking-[0.12em]">
+                        Risks
+                      </p>
+                      <TodayInsightList
+                        items={todayInsights.risks}
+                        onAction={runInsightAction}
+                        pendingKeys={pendingInsightKeySet}
+                      />
+                    </div>
+                    <div>
+                      <p className="theme-accent text-[11px] font-semibold uppercase tracking-[0.12em]">
+                        Suggestions
+                      </p>
+                      <TodayInsightList
+                        items={todayInsights.suggestions}
+                        onAction={runInsightAction}
+                        pendingKeys={pendingInsightKeySet}
+                      />
+                      <p className="theme-accent mt-5 text-[11px] font-semibold uppercase tracking-[0.12em]">
+                        Follow-ups
+                      </p>
+                      <TodayInsightList
+                        items={todayInsights.followUps}
+                        onAction={runInsightAction}
+                        pendingKeys={pendingInsightKeySet}
+                      />
+                    </div>
+                  </div>
+                </section>
+              ) : null}
+
+              {activeTab === "overview" && hasJobHuntExpansion && jobHuntExpansion ? (
+                <section className="glass-panel rounded-[30px] p-6" aria-label="Job hunt expansion">
+                  <p className="section-title text-xs font-semibold">Job hunt expansion</p>
+                  <h2 className="theme-ink mt-2 text-2xl font-semibold tracking-[-0.03em]">
+                    Prep, timing, research
+                  </h2>
+                  <p className="theme-muted mt-2 text-sm leading-7">
+                    From job-hunt signals, Todoist wording, and normalized identity — same live context as Today
+                    Insights.
+                  </p>
+                  <div className="mt-5 grid gap-5 lg:grid-cols-3">
+                    <div>
+                      <p className="theme-accent text-[11px] font-semibold uppercase tracking-[0.12em]">
+                        Interview prep gaps
+                      </p>
+                      {jobHuntExpansion.prepRecommendations.length === 0 ? (
+                        <p className="theme-muted mt-3 text-sm">None detected</p>
+                      ) : (
+                        <ul className="mt-3 space-y-3">
+                          {jobHuntExpansion.prepRecommendations.map((p) => (
+                            <li key={p.id} className="list-card rounded-[18px] border px-3 py-3 text-sm leading-6">
+                              <p className="font-semibold text-zinc-100">{p.contextLabel}</p>
+                              <p className="theme-muted text-[11px]">
+                                {p.source === "gmail" ? "Email" : "Calendar"}
+                                {p.company || p.role
+                                  ? ` · ${[p.company, p.role].filter(Boolean).join(" · ")}`
+                                  : ""}
+                              </p>
+                              <ul className="theme-muted mt-2 list-inside list-disc text-xs leading-5">
+                                {p.missingItems.map((m) => (
+                                  <li key={m.id}>{m.label}</li>
+                                ))}
+                              </ul>
+                              {(() => {
+                                const mid = typeof p.messageId === "string" ? p.messageId.trim() : "";
+                                const rowId = `jh-prep-${p.id}`;
+                                if (mid) {
+                                  const prepAction: SuggestedAction = {
+                                    type: "create_prep_tasks",
+                                    payload: { messageId: mid },
+                                  };
+                                  const blockAction: SuggestedAction = {
+                                    type: "block_focus_time",
+                                    payload: { messageId: mid },
+                                  };
+                                  return (
+                                    <div className="mt-2 flex flex-wrap gap-2">
+                                      <button
+                                        type="button"
+                                        disabled={pendingInsightKeySet.has(
+                                          insightActionPendingKey(rowId, prepAction),
+                                        )}
+                                        onClick={() => void runInsightAction(rowId, prepAction)}
+                                        className="theme-button-secondary rounded-full px-3 py-1.5 text-[11px] font-semibold disabled:opacity-60"
+                                      >
+                                        {pendingInsightKeySet.has(insightActionPendingKey(rowId, prepAction))
+                                          ? "…"
+                                          : insightActionButtonLabel(prepAction)}
+                                      </button>
+                                      <button
+                                        type="button"
+                                        disabled={pendingInsightKeySet.has(
+                                          insightActionPendingKey(rowId, blockAction),
+                                        )}
+                                        onClick={() => void runInsightAction(rowId, blockAction)}
+                                        className="theme-button-secondary rounded-full px-3 py-1.5 text-[11px] font-semibold disabled:opacity-60"
+                                      >
+                                        {pendingInsightKeySet.has(insightActionPendingKey(rowId, blockAction))
+                                          ? "…"
+                                          : insightActionButtonLabel(blockAction)}
+                                      </button>
+                                    </div>
+                                  );
+                                }
+                                return (
+                                  <button
+                                    type="button"
+                                    onClick={() => setActiveTab("tasks")}
+                                    className="theme-button-secondary mt-2 rounded-full px-3 py-1.5 text-[11px] font-semibold"
+                                  >
+                                    Open tasks
+                                  </button>
+                                );
+                              })()}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                    <div>
+                      <p className="theme-accent text-[11px] font-semibold uppercase tracking-[0.12em]">
+                        Follow-up timing
+                      </p>
+                      {jobHuntExpansion.followUpTiming.length === 0 ? (
+                        <p className="theme-muted mt-3 text-sm">None scored</p>
+                      ) : (
+                        <ul className="mt-3 space-y-3">
+                          {jobHuntExpansion.followUpTiming.map((f) => (
+                            <li key={f.id} className="list-card rounded-[18px] border px-3 py-3 text-sm leading-6">
+                              <div className="flex flex-wrap items-start justify-between gap-2">
+                                <p className="font-semibold text-zinc-100">{f.subject}</p>
+                                <span
+                                  className={
+                                    "rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase " +
+                                    followUpTimingStatusClass(f.status)
+                                  }
+                                >
+                                  {f.status.replace(/_/g, " ")}
+                                </span>
+                              </div>
+                              <p className="theme-muted mt-1 text-xs leading-5">{f.summary}</p>
+                              {typeof f.daysSinceTouch === "number" ? (
+                                <p className="theme-muted mt-1 text-[11px]">
+                                  ~{f.daysSinceTouch} day{f.daysSinceTouch === 1 ? "" : "s"} since email date
+                                </p>
+                              ) : null}
+                              {(() => {
+                                const mid = typeof f.messageId === "string" ? f.messageId.trim() : "";
+                                const rowId = `jh-fu-${f.id}`;
+                                if (mid) {
+                                  const prepAction: SuggestedAction = {
+                                    type: "create_prep_tasks",
+                                    payload: { messageId: mid },
+                                  };
+                                  const followAction: SuggestedAction = {
+                                    type: "create_followup_task",
+                                    payload: { messageId: mid },
+                                  };
+                                  const blockAction: SuggestedAction = {
+                                    type: "block_focus_time",
+                                    payload: { messageId: mid },
+                                  };
+                                  return (
+                                    <div className="mt-2 flex flex-wrap gap-2">
+                                      {[prepAction, followAction, blockAction].map((action) => (
+                                        <button
+                                          key={insightActionPendingKey(rowId, action)}
+                                          type="button"
+                                          disabled={pendingInsightKeySet.has(
+                                            insightActionPendingKey(rowId, action),
+                                          )}
+                                          onClick={() => void runInsightAction(rowId, action)}
+                                          className="theme-button-secondary rounded-full px-3 py-1.5 text-[11px] font-semibold disabled:opacity-60"
+                                        >
+                                          {pendingInsightKeySet.has(insightActionPendingKey(rowId, action))
+                                            ? "…"
+                                            : insightActionButtonLabel(action)}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  );
+                                }
+                                return (
+                                  <button
+                                    type="button"
+                                    onClick={() => setActiveTab("inbox")}
+                                    className="theme-button-secondary mt-2 rounded-full px-3 py-1.5 text-[11px] font-semibold"
+                                  >
+                                    Open inbox
+                                  </button>
+                                );
+                              })()}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                    <div>
+                      <p className="theme-accent text-[11px] font-semibold uppercase tracking-[0.12em]">
+                        Company / role research
+                      </p>
+                      {jobHuntExpansion.researchSuggestions.length === 0 ? (
+                        <p className="theme-muted mt-3 text-sm">Need company and role on a signal</p>
+                      ) : (
+                        <ul className="mt-3 space-y-3">
+                          {jobHuntExpansion.researchSuggestions.map((r) => (
+                            <li key={r.id} className="list-card rounded-[18px] border px-3 py-3 text-sm leading-6">
+                              <p className="font-semibold text-zinc-100">
+                                {r.company} · {r.role}
+                              </p>
+                              <ul className="theme-muted mt-2 list-inside list-disc text-xs leading-5">
+                                {r.bullets.map((b) => (
+                                  <li key={b}>{b}</li>
+                                ))}
+                              </ul>
+                              {(() => {
+                                const openJh: SuggestedAction = { type: "open_job_hunt" };
+                                const rowId = `jh-rs-${r.id}`;
+                                return (
+                                  <button
+                                    type="button"
+                                    disabled={pendingInsightKeySet.has(
+                                      insightActionPendingKey(rowId, openJh),
+                                    )}
+                                    onClick={() => void runInsightAction(rowId, openJh)}
+                                    className="theme-button-secondary mt-2 rounded-full px-3 py-1.5 text-[11px] font-semibold disabled:opacity-60"
+                                  >
+                                    {pendingInsightKeySet.has(insightActionPendingKey(rowId, openJh))
+                                      ? "…"
+                                      : insightActionButtonLabel(openJh)}
+                                  </button>
+                                );
+                              })()}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </div>
+                </section>
               ) : null}
 
               {activeTab === "inbox" &&

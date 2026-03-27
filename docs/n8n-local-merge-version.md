@@ -1,5 +1,10 @@
 # Local n8n: Merge nodes show "?" and `execute` errors
 
+> **Dormant / historical**  
+> Applies only if you import the preserved `n8n/` workflow into a **local n8n** instance. **MyAssist** does not require n8n for runtime daily context. See [n8n-dormant.md](./n8n-dormant.md).
+
+---
+
 ## Symptom
 
 - Merge nodes render as **unknown** (question mark).

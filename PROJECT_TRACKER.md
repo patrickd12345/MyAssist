@@ -23,9 +23,10 @@ Live execution tracker for the unified live operational window model.
 
 ## Done
 
-- [x] Built `apps/web` read-only dashboard and JSON copy flow.
-- [x] Added dev mock fallback when webhook URL is missing.
-- [x] Validated app lint/type checks after fallback changes.
+- [x] Built `apps/web` unified Today dashboard and JSON copy flow.
+- [x] Provider-canonical daily context: live Gmail, Calendar, and Todoist reads; source model `live` | `mock` | `cache`; optional mock via `MYASSIST_USE_MOCK_CONTEXT`.
+- [x] Removed active n8n webhook/bootstrap from runtime; n8n workflow exports preserved as **dormant** (see `docs/n8n-dormant.md`).
+- [x] Validated app lint/type checks after integration alignment.
 - [x] Documented baseline infra cost bands for pilot and early commercial rollout.
 - [x] Confirmed product strategy: commercial-safe foundations now, local-first implementation first.
 - [x] Implemented app-owned OAuth integrations for Gmail, Calendar, and Todoist.

@@ -26,9 +26,9 @@ vi.mock("@/lib/dailyContextSnapshot", () => ({
 }));
 
 vi.mock("@/lib/fetchDailyContext", () => ({
-  fetchDailyContextFromN8n: vi.fn(async () => ({
+  fetchDailyContextLive: vi.fn(async () => ({
     context: mockContext,
-    source: "n8n" as const,
+    source: "live" as const,
   })),
   MYASSIST_CONTEXT_SOURCE_HEADER: "x-myassist-context-source",
 }));
@@ -70,7 +70,7 @@ describe("GET /api/daily-context", () => {
     expect(res.status).toBe(200);
     const json = (await res.json()) as { run_date: string };
     expect(json.run_date).toBe("2026-03-25");
-    expect(res.headers.get("x-myassist-context-source")).toBe("n8n");
+    expect(res.headers.get("x-myassist-context-source")).toBe("live");
     expect(writeLastDailyContext).toHaveBeenCalled();
     expect(readLastDailyContext).not.toHaveBeenCalled();
   });
