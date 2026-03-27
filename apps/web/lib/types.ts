@@ -62,6 +62,8 @@ export type GmailSignal = {
   subject: string;
   snippet: string;
   date: string;
+  /** Gmail API label ids for this message (e.g. includes UNREAD when unread). */
+  label_ids?: string[];
   importance_score?: number;
   importance_reason?: string;
   importance_model?: string;

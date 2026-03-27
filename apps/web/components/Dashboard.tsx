@@ -576,6 +576,7 @@ export function Dashboard({
   const [briefFeedbackState, setBriefFeedbackState] = useState<"idle" | "sending" | "saved">("idle");
   const [resolvedItems, setResolvedItems] = useState<ResolvedMemoryItem[]>([]);
   const [pendingResolvedTexts, setPendingResolvedTexts] = useState<string[]>([]);
+  const [gmailReadTogglePendingKey, setGmailReadTogglePendingKey] = useState<string | null>(null);
   const [energyLevel, setEnergyLevel] = useState<"high" | "normal" | "low">("normal");
   const [activeTab, setActiveTab] = useState<DashboardTab>("overview");
   const router = useRouter();
@@ -1529,6 +1530,40 @@ export function Dashboard({
       }
     },
     [data, refreshProviderSlice],
+  );
+
+  const markEmailUnreadInGmail = useCallback(
+    async (g: GmailSignal) => {
+      const messageId = typeof g.id === "string" ? g.id.trim() : "";
+      const threadId = typeof g.threadId === "string" ? g.threadId.trim() : "";
+      if (!messageId && !threadId) return;
+      const key = messageId || threadId;
+      setGmailReadTogglePendingKey(key);
+      try {
+        const res = await fetch("/api/gmail/mark-read", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            unread: true,
+            ...(messageId ? { messageId } : {}),
+            ...(threadId ? { threadId } : {}),
+          }),
+        });
+        if (!res.ok) {
+          const body = (await res.json()) as { error?: string };
+          setTaskActionError(
+            body.error ?? "Gmail mark-as-unread did not complete. Try again after reconnecting Gmail.",
+          );
+        } else {
+          await refreshProviderSlice("gmail");
+        }
+      } catch (cause) {
+        setTaskActionError(cause instanceof Error ? cause.message : "Could not mark as unread in Gmail.");
+      } finally {
+        setGmailReadTogglePendingKey(null);
+      }
+    },
+    [refreshProviderSlice],
   );
 
   const handleTaskNudge = useCallback(
@@ -2791,6 +2826,8 @@ export function Dashboard({
                                 assignEmailToJob={assignEmailToJob}
                                 resolveMemoryItem={resolveMemoryItem}
                                 pendingResolvedTexts={pendingResolvedTexts}
+                                onMarkEmailUnread={markEmailUnreadInGmail}
+                                gmailReadTogglePendingKey={gmailReadTogglePendingKey}
                               />
                             ))}
                           </ul>
@@ -2829,6 +2866,8 @@ export function Dashboard({
                                 assignEmailToJob={assignEmailToJob}
                                 resolveMemoryItem={resolveMemoryItem}
                                 pendingResolvedTexts={pendingResolvedTexts}
+                                onMarkEmailUnread={markEmailUnreadInGmail}
+                                gmailReadTogglePendingKey={gmailReadTogglePendingKey}
                               />
                             ))}
                           </ul>

@@ -7,6 +7,8 @@ export const dynamic = "force-dynamic";
 type MarkReadPayload = {
   messageId?: string;
   threadId?: string;
+  /** When true, adds UNREAD instead of removing it (same endpoint for Gmail read state). */
+  unread?: boolean;
 };
 
 export async function POST(req: Request) {
@@ -29,6 +31,7 @@ export async function POST(req: Request) {
   const payload = body as MarkReadPayload;
   const messageId = typeof payload.messageId === "string" ? payload.messageId.trim() : "";
   const threadId = typeof payload.threadId === "string" ? payload.threadId.trim() : "";
+  const unread = payload.unread === true;
   if (!messageId && !threadId) {
     return NextResponse.json(
       { ok: false, error: "messageId or threadId is required" },
@@ -37,6 +40,18 @@ export async function POST(req: Request) {
   }
 
   try {
+    if (unread) {
+      const direct = await integrationService.markEmailUnread(userId, { messageId, threadId });
+      if (direct.ok) return NextResponse.json({ ok: true, mode: "oauth" });
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "Gmail is disconnected or mark-unread failed. Connect Gmail integration.",
+        },
+        { status: 409 },
+      );
+    }
+
     const direct = await integrationService.markEmailRead(userId, { messageId, threadId });
     if (direct.ok) return NextResponse.json({ ok: true, mode: "oauth" });
 

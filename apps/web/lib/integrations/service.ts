@@ -84,6 +84,39 @@ export const integrationService = {
     return { ok: true as const };
   },
 
+  async markEmailUnread(userId: string, input: { messageId?: string; threadId?: string }) {
+    const token = await withGoogleToken(userId, "gmail");
+    if (!token) return { ok: false as const, reason: "disconnected" };
+    const ids: string[] = [];
+    if (input.messageId?.trim()) ids.push(input.messageId.trim());
+    if (ids.length === 0 && input.threadId?.trim()) {
+      const listRes = await fetch(
+        `https://gmail.googleapis.com/gmail/v1/users/me/threads/${encodeURIComponent(
+          input.threadId.trim(),
+        )}?format=metadata`,
+        { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" },
+      );
+      if (listRes.ok) {
+        const thread = (await listRes.json()) as { messages?: Array<{ id?: string }> };
+        for (const m of thread.messages || []) {
+          if (m.id?.trim()) ids.push(m.id.trim());
+        }
+      }
+    }
+    if (ids.length === 0) return { ok: false as const, reason: "missing-id" };
+    const res = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages/batchModify", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ ids, addLabelIds: ["UNREAD"] }),
+      cache: "no-store",
+    });
+    if (!res.ok) return { ok: false as const, reason: `gmail-${res.status}` };
+    return { ok: true as const };
+  },
+
   async completeTodoistTask(userId: string, taskId: string) {
     const token = await getIntegrationToken(userId, "todoist");
     const access = token?.access_token;
@@ -143,11 +176,13 @@ export const integrationService = {
         id?: string;
         threadId?: string;
         snippet?: string;
+        labelIds?: string[];
         payload?: { headers?: Array<{ name?: string; value?: string }> };
       };
       const headers = msg.payload?.headers || [];
       const header = (name: string) =>
         headers.find((h) => (h.name || "").toLowerCase() === name.toLowerCase())?.value || "";
+      const labelIds = Array.isArray(msg.labelIds) ? msg.labelIds.filter((x): x is string => typeof x === "string") : [];
       out.push({
         id: msg.id || m.id,
         threadId: msg.threadId || m.threadId,
@@ -155,6 +190,7 @@ export const integrationService = {
         subject: header("Subject"),
         date: header("Date"),
         snippet: msg.snippet || "",
+        label_ids: labelIds,
       });
     }
     return out;

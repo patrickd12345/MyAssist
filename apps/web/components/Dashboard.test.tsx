@@ -26,6 +26,7 @@ const sampleContext: MyAssistDailyContext = {
       subject: "Your trial is ending soon, you will be automatically charged",
       snippet: "Renewal coming up.",
       date: "2026-03-25T10:00:00.000Z",
+      label_ids: ["INBOX", "UNREAD"],
     },
     {
       id: "g2",
@@ -34,6 +35,7 @@ const sampleContext: MyAssistDailyContext = {
       subject: "Schedule your interview for the engineer role",
       snippet: "We would like to schedule an interview. Please book a time that works.",
       date: "2026-03-25T11:00:00.000Z",
+      label_ids: ["INBOX", "UNREAD"],
       job_hunt_analysis: {
         signals: ["interview_request"],
         confidence: 0.82,
@@ -69,6 +71,7 @@ const onlyRecentEmailContext: MyAssistDailyContext = {
       subject: "Weekly digest",
       snippet: "Stories for you.",
       date: "2026-03-25T10:00:00.000Z",
+      label_ids: ["INBOX", "UNREAD"],
     },
   ],
 };
@@ -275,8 +278,8 @@ describe("Dashboard", () => {
 
     const recentBlock = screen.getByRole("heading", { name: "Recent in this pull" }).parentElement;
     expect(recentBlock).toBeTruthy();
-    const handledInRecent = within(recentBlock as HTMLElement).getByRole("button", { name: "Handled" });
-    await user.click(handledInRecent);
+    const markReadInRecent = within(recentBlock as HTMLElement).getByRole("button", { name: "Mark as read" });
+    await user.click(markReadInRecent);
 
     await waitFor(() => {
       expect(mockFetch).toHaveBeenCalledWith(

@@ -53,14 +53,22 @@ function mapCalendarFromOAuth(raw: Array<Record<string, unknown>>): MyAssistDail
 }
 
 function mapGmailFromOAuth(raw: Array<Record<string, unknown>>): MyAssistDailyContext["gmail_signals"] {
-  return raw.map((g) => ({
-    id: (typeof g.id === "string" ? g.id : null) ?? null,
-    threadId: (typeof g.threadId === "string" ? g.threadId : null) ?? null,
-    from: flattenText(g.from),
-    subject: flattenText(g.subject),
-    snippet: flattenText(g.snippet),
-    date: typeof g.date === "string" ? g.date : flattenText(g.date),
-  }));
+  return raw.map((g) => {
+    const labelRaw = g.label_ids;
+    const label_ids =
+      Array.isArray(labelRaw) && labelRaw.every((x) => typeof x === "string")
+        ? (labelRaw as string[])
+        : undefined;
+    return {
+      id: (typeof g.id === "string" ? g.id : null) ?? null,
+      threadId: (typeof g.threadId === "string" ? g.threadId : null) ?? null,
+      from: flattenText(g.from),
+      subject: flattenText(g.subject),
+      snippet: flattenText(g.snippet),
+      date: typeof g.date === "string" ? g.date : flattenText(g.date),
+      ...(label_ids ? { label_ids } : {}),
+    };
+  });
 }
 
 /**

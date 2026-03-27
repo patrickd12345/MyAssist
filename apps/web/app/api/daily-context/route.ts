@@ -37,14 +37,22 @@ function isDailyContextProviderSlice(value: string | null): value is DailyContex
 }
 
 function mapOAuthGmailSignals(raw: Array<Record<string, unknown>>): MyAssistDailyContext["gmail_signals"] {
-  return raw.map((g) => ({
-    id: (typeof g.id === "string" ? g.id : null) ?? null,
-    threadId: (typeof g.threadId === "string" ? g.threadId : null) ?? null,
-    from: typeof g.from === "string" ? g.from : "",
-    subject: typeof g.subject === "string" ? g.subject : "",
-    snippet: typeof g.snippet === "string" ? g.snippet : "",
-    date: typeof g.date === "string" ? g.date : "",
-  }));
+  return raw.map((g) => {
+    const labelRaw = g.label_ids;
+    const label_ids =
+      Array.isArray(labelRaw) && labelRaw.every((x) => typeof x === "string")
+        ? (labelRaw as string[])
+        : undefined;
+    return {
+      id: (typeof g.id === "string" ? g.id : null) ?? null,
+      threadId: (typeof g.threadId === "string" ? g.threadId : null) ?? null,
+      from: typeof g.from === "string" ? g.from : "",
+      subject: typeof g.subject === "string" ? g.subject : "",
+      snippet: typeof g.snippet === "string" ? g.snippet : "",
+      date: typeof g.date === "string" ? g.date : "",
+      ...(label_ids ? { label_ids } : {}),
+    };
+  });
 }
 
 async function fetchTodoistSlices(userId: string): Promise<Pick<

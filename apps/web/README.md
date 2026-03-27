@@ -85,7 +85,7 @@ Notes:
 - Writes are sent directly to provider APIs.
 - UI state should auto-refresh after successful writes.
 - The assistant route falls back gracefully if Ollama is unavailable.
-- `Handled` in the Inbox tab uses direct Gmail OAuth mark-read.
+- Inbox rows show **Mark as read** or **Mark as unread** from Gmail `label_ids` (OAuth `batchModify` on `UNREAD`).
 - Integration statuses and connect links are available in the dashboard header (Gmail, Todoist, Calendar).
 - OAuth redirect URIs are built from `AUTH_URL` (then `NEXTAUTH_URL`, then `MYASSIST_PUBLIC_APP_URL`, then request origin). Register the exact callback URL in provider consoles, for example:
   - `http://localhost:3000/api/integrations/gmail/callback`

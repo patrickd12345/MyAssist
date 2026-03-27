@@ -12,6 +12,13 @@ function firstName(from: string): string {
   return cleaned || from;
 }
 
+/** When labels are missing (older cache), assume unread so the primary action stays "Mark as read". */
+function gmailMessageIsUnread(g: GmailSignal): boolean {
+  const ids = g.label_ids;
+  if (!ids || ids.length === 0) return true;
+  return ids.includes("UNREAD");
+}
+
 function formatJobHuntSignals(signals: JobHuntSignal[]): string {
   if (signals.length === 0) return "";
   const labels: Record<JobHuntSignal, string> = {
@@ -87,6 +94,8 @@ export type InboxEmailRowProps = {
     emailSignal?: Pick<GmailSignal, "id" | "threadId">,
   ) => void | Promise<void>;
   pendingResolvedTexts: string[];
+  onMarkEmailUnread: (signal: GmailSignal) => void | Promise<void>;
+  gmailReadTogglePendingKey: string | null;
 };
 
 export function InboxEmailRow({
@@ -104,6 +113,8 @@ export function InboxEmailRow({
   assignEmailToJob,
   resolveMemoryItem,
   pendingResolvedTexts,
+  onMarkEmailUnread,
+  gmailReadTogglePendingKey,
 }: InboxEmailRowProps) {
   const subject = g.subject || "(no subject)";
   const itemTooltip = [subject, g.snippet].filter(Boolean).join("\n\n");
@@ -113,6 +124,13 @@ export function InboxEmailRow({
     typeof g.importance_score === "number" ? Math.round(g.importance_score) : null;
   const messageId =
     g.id !== undefined && g.id !== null && String(g.id).trim() !== "" ? String(g.id).trim() : "";
+  const threadKey =
+    g.threadId !== undefined && g.threadId !== null && String(g.threadId).trim() !== ""
+      ? String(g.threadId).trim()
+      : "";
+  const gmailToggleKey = messageId || threadKey;
+  const isGmailUnread = gmailMessageIsUnread(g);
+  const markUnreadBusy = Boolean(gmailToggleKey && gmailReadTogglePendingKey === gmailToggleKey);
   const emailToTaskKey = `email_to_task:${messageId}`;
   const emailToEventKey = `email_to_event:${messageId}`;
   const crossEmailBusy =
@@ -296,20 +314,32 @@ export function InboxEmailRow({
         >
           {pendingCrossActionKeys.includes(emailToEventKey) ? "Event…" : "To Calendar"}
         </button>
-        <button
-          type="button"
-          disabled={pendingResolvedTexts.includes(subject)}
-          onClick={() =>
-            void resolveMemoryItem(subject, "email", "useful_action", {
-              id: g.id,
-              threadId: g.threadId,
-            })
-          }
-          className="theme-button-secondary rounded-full px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50"
-          title="Real work — teach the AI this kind of mail matters"
-        >
-          {pendingResolvedTexts.includes(subject) ? "Saving..." : "Handled"}
-        </button>
+        {isGmailUnread ? (
+          <button
+            type="button"
+            disabled={pendingResolvedTexts.includes(subject)}
+            onClick={() =>
+              void resolveMemoryItem(subject, "email", "useful_action", {
+                id: g.id,
+                threadId: g.threadId,
+              })
+            }
+            className="theme-button-secondary rounded-full px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50"
+            title="Mark as read in Gmail and teach the assistant this kind of mail matters"
+          >
+            {pendingResolvedTexts.includes(subject) ? "Saving..." : "Mark as read"}
+          </button>
+        ) : (
+          <button
+            type="button"
+            disabled={!gmailToggleKey || markUnreadBusy}
+            onClick={() => void onMarkEmailUnread(g)}
+            className="theme-button-secondary rounded-full px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50"
+            title="Mark as unread in Gmail"
+          >
+            {markUnreadBusy ? "Updating..." : "Mark as unread"}
+          </button>
+        )}
         <button
           type="button"
           disabled={pendingResolvedTexts.includes(subject)}
