@@ -1,3 +1,4 @@
+import { PHASE_PRODUCTION_BUILD } from "next/constants";
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { compare } from "bcryptjs";
@@ -29,6 +30,12 @@ function ensureAuthSecretForAuthJs(): string {
     return FALLBACK_SECRET;
   }
   if (process.env.NODE_ENV === "test") {
+    process.env.AUTH_SECRET = FALLBACK_SECRET;
+    return FALLBACK_SECRET;
+  }
+  // `next build` loads route modules with NODE_ENV=production while collecting page data; secrets
+  // may be unset locally or not yet applied. Runtime on Vercel still gets AUTH_SECRET from env.
+  if (process.env.NEXT_PHASE === PHASE_PRODUCTION_BUILD) {
     process.env.AUTH_SECRET = FALLBACK_SECRET;
     return FALLBACK_SECRET;
   }
