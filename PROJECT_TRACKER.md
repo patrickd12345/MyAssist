@@ -8,6 +8,7 @@ Live execution tracker for the unified live operational window model.
 - [ ] Verify live Gmail/Calendar/Todoist reads in Today view without manual refresh as primary UX.
 - [ ] Rotate any secret that was exposed during setup and update the affected local or cloud config.
 - [ ] Keep provider adapter and service interfaces stable for hosted rollout.
+- [x] **Hosted readiness (Path A):** Supabase migration + dual-mode `userStore` / `tokenStore` when `SUPABASE_*` is set; Sentry hooks; [`docs/commercial-pilot-readiness.md`](docs/commercial-pilot-readiness.md) checklist and runbook.
 
 ## Next
 

@@ -1363,7 +1363,7 @@ export function Dashboard({
         signal?.id != null ? String(signal.id).trim() : "",
         interviewStartIso?.trim() ?? "",
       ].join("\u001f");
-      if (lastCommunicationDraftFingerprintRef.current === fingerprint) {
+      if (lastCommunicationDraftFingerprintRef.current === fingerprint && activeTab === "assistant") {
         setActiveTab("assistant");
         return;
       }
@@ -1383,7 +1383,7 @@ export function Dashboard({
       });
       setActiveTab("assistant");
     },
-    [communicationDraftLang],
+    [communicationDraftLang, activeTab],
   );
 
   const clearCommunicationDraftInject = useCallback(() => {
@@ -1849,28 +1849,37 @@ export function Dashboard({
           })}
           <div className="ml-auto flex flex-wrap gap-2">
             {integrationStatuses.find((x) => x.provider === "gmail")?.status !== "connected" && (
-              <Link
-                href="/api/integrations/gmail/connect"
+              <button
+                type="button"
+                onClick={() => {
+                  window.location.assign("/api/integrations/gmail/connect");
+                }}
                 className="theme-button-secondary rounded-full px-3 py-1 text-xs font-semibold"
               >
                 Connect Gmail
-              </Link>
+              </button>
             )}
             {integrationStatuses.find((x) => x.provider === "todoist")?.status !== "connected" && (
-              <Link
-                href="/api/integrations/todoist/connect"
+              <button
+                type="button"
+                onClick={() => {
+                  window.location.assign("/api/integrations/todoist/connect");
+                }}
                 className="theme-button-secondary rounded-full px-3 py-1 text-xs font-semibold"
               >
                 Connect Todoist
-              </Link>
+              </button>
             )}
             {integrationStatuses.find((x) => x.provider === "google_calendar")?.status !== "connected" && (
-              <Link
-                href="/api/integrations/google_calendar/connect"
+              <button
+                type="button"
+                onClick={() => {
+                  window.location.assign("/api/integrations/google_calendar/connect");
+                }}
                 className="theme-button-secondary rounded-full px-3 py-1 text-xs font-semibold"
               >
                 Connect Calendar
-              </Link>
+              </button>
             )}
           </div>
         </div>

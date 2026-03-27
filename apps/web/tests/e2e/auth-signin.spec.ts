@@ -7,7 +7,7 @@ test("register completes and dashboard shows welcome", async ({ page }) => {
   await page.goto("/sign-in");
   await page.getByRole("button", { name: "Register" }).click();
   await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill(password);
+  await page.locator("#sign-in-password").fill(password);
   await page.getByRole("button", { name: "Create account" }).click();
 
   await expect(page.getByText("Welcome back", { exact: false }).first()).toBeVisible({

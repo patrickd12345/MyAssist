@@ -28,12 +28,20 @@ export async function GET(req: Request) {
     const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) {
       const text = await res.text();
-      return NextResponse.json({ ok: false, error: `Upstream error: ${res.status} ${text}` }, { status: 502 });
+      return NextResponse.json({
+        ok: false,
+        error: `Upstream error: ${res.status} ${text}`,
+        jobs: [],
+      });
     }
     const data = (await res.json()) as unknown;
     return NextResponse.json(data);
   } catch (e) {
-    return NextResponse.json({ ok: false, error: e instanceof Error ? e.message : String(e) }, { status: 500 });
+    return NextResponse.json({
+      ok: false,
+      error: e instanceof Error ? e.message : String(e),
+      jobs: [],
+    });
   }
 }
 

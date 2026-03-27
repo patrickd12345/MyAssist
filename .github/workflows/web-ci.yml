@@ -40,6 +40,12 @@ jobs:
         working-directory: apps/web
         run: pnpm typecheck
 
+      - name: Production build
+        working-directory: apps/web
+        run: pnpm build
+        env:
+          AUTH_SECRET: ci-build-placeholder-secret-32chars-minimum-length
+
       - name: Unit tests
         working-directory: apps/web
         run: pnpm test

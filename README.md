@@ -8,6 +8,7 @@ Personal operations system as a unified live operational window over Gmail, Goog
 - OAuth integration layer for Gmail, Google Calendar, and Todoist through `/api/integrations/*`.
 - local app memory and lightweight metadata in `.myassist-memory`.
 - `docs/architecture.md`: provider-canonical boundaries and module layout.
+- `docs/commercial-pilot-readiness.md`: hosted deployment checklist (Supabase storage, Sentry, env vars).
 - `PROJECT_TRACKER.md`: execution tracker aligned to the live-window model.
 
 ## Tooling preference

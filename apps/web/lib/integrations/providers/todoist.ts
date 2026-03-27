@@ -34,18 +34,22 @@ export async function exchangeTodoistCode(input: {
   const cid = todoistClientId();
   const secret = todoistClientSecret();
   if (!cid || !secret) throw new Error("Todoist OAuth credentials are not configured");
+  const body = new URLSearchParams({
+    client_id: cid,
+    client_secret: secret,
+    code: input.code,
+    redirect_uri: input.redirectUri,
+  });
   const res = await fetch(TODOIST_TOKEN_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      client_id: cid,
-      client_secret: secret,
-      code: input.code,
-      redirect_uri: input.redirectUri,
-    }),
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: body.toString(),
     cache: "no-store",
   });
-  if (!res.ok) throw new Error(`Todoist token exchange failed (${res.status})`);
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Todoist token exchange failed (${res.status}): ${text.slice(0, 250)}`);
+  }
   const json = (await res.json()) as Record<string, unknown>;
   return {
     access_token: typeof json.access_token === "string" ? json.access_token : undefined,

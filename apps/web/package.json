@@ -12,10 +12,13 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:hosted-smoke": "cross-env RUN_MYASSIST_HOSTED_SMOKE=1 node --env-file=.env.local node_modules/vitest/vitest.mjs run lib/hostedRuntimeSmoke.test.ts",
     "test:watch": "vitest",
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@sentry/nextjs": "^9.47.1",
+    "@supabase/supabase-js": "2.100.1",
     "bcryptjs": "^3.0.3",
     "job-hunt-manager": "workspace:*",
     "next": "15.2.6",

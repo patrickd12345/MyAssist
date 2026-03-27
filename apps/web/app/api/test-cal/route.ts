@@ -5,12 +5,10 @@ import { getSessionUserId } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(req: Request) {
-  const url = new URL(req.url);
-  const userId = url.searchParams.get("userId") || await getSessionUserId();
-  
+export async function GET() {
+  const userId = await getSessionUserId();
   if (!userId) {
-    return NextResponse.json({ error: "Missing userId" }, { status: 400 });
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {

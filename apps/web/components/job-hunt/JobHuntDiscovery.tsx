@@ -17,6 +17,42 @@ type JobHuntContactPerson = {
 
 type JobHuntLooseNote = { id: string; job_id: string; text: string; created_at: string };
 
+function stagePill(stage: string): { label: string; className: string } {
+  const s = stage.trim().toLowerCase();
+  if (s === "lead") {
+    return { label: "Saved", className: "bg-sky-500/15 text-sky-200 ring-1 ring-sky-400/35" };
+  }
+  if (s === "applied") {
+    return { label: "Applied", className: "bg-indigo-500/15 text-indigo-200 ring-1 ring-indigo-400/35" };
+  }
+  if (s === "waiting_call" || s === "interview_scheduled" || s === "interviewed") {
+    return { label: "Interview", className: "bg-amber-500/15 text-amber-200 ring-1 ring-amber-400/35" };
+  }
+  if (s === "offer") {
+    return { label: "Offer", className: "bg-emerald-500/15 text-emerald-200 ring-1 ring-emerald-400/35" };
+  }
+  if (s === "closed_won") {
+    return { label: "Closed won", className: "bg-emerald-600/20 text-emerald-100 ring-1 ring-emerald-400/40" };
+  }
+  if (s === "closed_lost") {
+    return { label: "Closed", className: "bg-zinc-500/20 text-zinc-200 ring-1 ring-zinc-400/35" };
+  }
+  return { label: "Saved", className: "bg-sky-500/15 text-sky-200 ring-1 ring-sky-400/35" };
+}
+
+function isAppliedOrBeyond(stage: string): boolean {
+  const s = stage.trim().toLowerCase();
+  return (
+    s === "applied" ||
+    s === "waiting_call" ||
+    s === "interview_scheduled" ||
+    s === "interviewed" ||
+    s === "offer" ||
+    s === "closed_won" ||
+    s === "closed_lost"
+  );
+}
+
 export const RSS_FEED_KEYS: { key: string; label: string }[] = [
   { key: "JOB_HUNT_LINKEDIN_RSS_URLS", label: "LinkedIn" },
   { key: "JOB_HUNT_INDEED_RSS_URLS", label: "Indeed" },
@@ -72,6 +108,7 @@ type Props = {
   notesDraft: Record<string, string>;
   setNotesDraft: Dispatch<SetStateAction<Record<string, string>>>;
   savedJobIdSet: Set<string>;
+  savedJobStageById: Record<string, string>;
   saveListError: string | null;
   pipelineRows: { key: string; title: string; sub: string }[];
   loading: boolean;
@@ -124,6 +161,7 @@ export function JobHuntDiscovery({
   notesDraft,
   setNotesDraft,
   savedJobIdSet,
+  savedJobStageById,
   saveListError,
   pipelineRows,
   loading,
@@ -467,6 +505,9 @@ export function JobHuntDiscovery({
             <div className="space-y-4">
               {jobs.map((job) => {
                 const already = savedJobIdSet.has(job.id);
+                const currentStage = savedJobStageById[job.id] ?? "";
+                const stageBadge = already ? stagePill(currentStage || "lead") : null;
+                const appliedBadge = already && isAppliedOrBeyond(currentStage);
                 return (
                   <div key={job.id} className="list-card rounded-[22px] px-4 py-4">
                     <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
@@ -487,6 +528,30 @@ export function JobHuntDiscovery({
                         <span className="theme-chip rounded-full px-2 py-1 text-[10px] uppercase tracking-wider">
                           {job.source}
                         </span>
+                        {stageBadge ? (
+                          <span
+                            className={`rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-wider ${stageBadge.className}`}
+                            title="Current pipeline status"
+                          >
+                            {stageBadge.label}
+                          </span>
+                        ) : null}
+                        {already ? (
+                          <span
+                            className="rounded-full bg-sky-500/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-sky-100 ring-1 ring-sky-400/35"
+                            title="Already saved in your jobs"
+                          >
+                            In My Jobs
+                          </span>
+                        ) : null}
+                        {appliedBadge ? (
+                          <span
+                            className="rounded-full bg-indigo-500/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-indigo-100 ring-1 ring-indigo-400/40"
+                            title="Already applied to this posting"
+                          >
+                            Applied
+                          </span>
+                        ) : null}
                       </div>
                     </div>
                     {job.posted_date ? (

@@ -83,6 +83,12 @@ type JobHuntListingRow = {
   posted_date: string | null;
 };
 
+function parsePostedDateForSort(value: string | null): number {
+  if (!value || !value.trim()) return Number.NEGATIVE_INFINITY;
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) ? parsed : Number.NEGATIVE_INFINITY;
+}
+
 type TabId = "discovery" | "pipeline" | "contacts";
 
 export function JobHuntCockpit() {
@@ -169,7 +175,13 @@ export function JobHuntCockpit() {
       }
       const data = await res.json();
       if (data.ok && data.data && Array.isArray(data.data.jobs)) {
-        setJobs(data.data.jobs as JobHuntListingRow[]);
+        const sorted = [...(data.data.jobs as JobHuntListingRow[])].sort((a, b) => {
+          const tsA = parsePostedDateForSort(a.posted_date);
+          const tsB = parsePostedDateForSort(b.posted_date);
+          if (tsA !== tsB) return tsB - tsA;
+          return String(a.id).localeCompare(String(b.id));
+        });
+        setJobs(sorted);
       } else {
         setJobsError(data.error || "No jobs returned");
       }
@@ -570,6 +582,9 @@ export function JobHuntCockpit() {
     : trackOptions.find((t) => t.id === selectedTrack)?.label ?? selectedTrack;
 
   const savedJobIdSet = new Set(savedJobs.map((r) => r.saved.job_id));
+  const savedJobStageById = Object.fromEntries(
+    savedJobs.map((row) => [row.saved.job_id, row.lifecycle.stage]),
+  );
 
   const pipelineRows =
     digest?.tracks?.map((t) => {
@@ -809,6 +824,7 @@ export function JobHuntCockpit() {
           notesDraft={notesDraft}
           setNotesDraft={setNotesDraft}
           savedJobIdSet={savedJobIdSet}
+          savedJobStageById={savedJobStageById}
           saveListError={saveListError}
           pipelineRows={pipelineRows}
           loading={loading}

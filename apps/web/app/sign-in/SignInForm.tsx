@@ -42,6 +42,7 @@ function SignInFormFields() {
   const [mode, setMode] = useState<"sign-in" | "register">("sign-in");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -148,6 +149,9 @@ function SignInFormFields() {
 
         <form
           className="mt-6"
+          method="post"
+          action={mode === "register" ? "/api/auth/register" : "/api/auth/callback/credentials"}
+          autoComplete="on"
           onSubmit={(e) => {
             e.preventDefault();
             void (mode === "register" ? onRegister() : onSignIn());
@@ -160,7 +164,11 @@ function SignInFormFields() {
               id="sign-in-email"
               name="email"
               type="email"
-              autoComplete="email"
+              autoComplete="username"
+              inputMode="email"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="theme-input mt-2 w-full rounded-2xl px-4 py-3 text-sm"
@@ -172,15 +180,26 @@ function SignInFormFields() {
             htmlFor="sign-in-password"
           >
             Password
-            <input
-              id="sign-in-password"
-              name="password"
-              type="password"
-              autoComplete={mode === "register" ? "new-password" : "current-password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="theme-input mt-2 w-full rounded-2xl px-4 py-3 text-sm"
-            />
+            <div className="relative mt-2">
+              <input
+                id="sign-in-password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                autoComplete={mode === "register" ? "new-password" : "current-password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="theme-input w-full rounded-2xl px-4 py-3 pr-12 text-sm"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="theme-muted absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium transition hover:opacity-80"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                title={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? "Hide" : "Show"}
+              </button>
+            </div>
           </label>
 
           {message ? (
@@ -196,6 +215,14 @@ function SignInFormFields() {
           >
             {busy ? "Working..." : mode === "register" ? "Create account" : "Sign in"}
           </button>
+          {mode === "sign-in" ? (
+            <a
+              href="/forgot-password"
+              className="theme-muted mt-4 inline-block text-xs underline underline-offset-2 transition hover:opacity-80"
+            >
+              Forgot password?
+            </a>
+          ) : null}
         </form>
       </div>
     </div>

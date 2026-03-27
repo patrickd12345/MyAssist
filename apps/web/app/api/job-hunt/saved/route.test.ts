@@ -44,6 +44,19 @@ describe("/api/job-hunt/saved", () => {
     );
   });
 
+  it("GET degrades to empty jobs when digest is unreachable", async () => {
+    globalThis.fetch = vi.fn().mockRejectedValue(new Error("connect ECONNREFUSED"));
+
+    const req = new Request("http://localhost/api/job-hunt/saved");
+    const res = await GET(req);
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { ok?: boolean; jobs?: unknown[]; error?: string };
+    expect(body.ok).toBe(false);
+    expect(Array.isArray(body.jobs)).toBe(true);
+    expect(body.jobs).toHaveLength(0);
+    expect(typeof body.error).toBe("string");
+  });
+
   it("POST proxies save-job body to digest", async () => {
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,

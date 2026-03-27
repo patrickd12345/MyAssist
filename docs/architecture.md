@@ -58,6 +58,14 @@ MyAssist does not store provider mirror tables and does not run reconciliation p
 - **Cross-system actions:** User-triggered actions (prep tasks, calendar blocks, Todoist, etc.) go through provider APIs; the app tracks **dedupe metadata** and surfaces **reused target** summaries in the UI when an action is skipped as already done.
 - **Saved-job matching:** The **job-hunt-manager** service (HTTP `POST /signals`) scores email against saved leads; **equal-score ties** resolve with a **deterministic** ordering (thread match, role/subject overlap, stable job id).
 
+## Hosted beta / production checklist
+
+For deploying the same app off `localhost` (durable accounts, OAuth, monitoring), see [commercial-pilot-readiness.md](./commercial-pilot-readiness.md).
+
+## Database (Bookiji shared Supabase)
+
+On the shared Bookiji Inc database, product data is segregated by schema: `platform.*` (cross-product spine), `bookiji.*`, `kinetix.*`, `chess.*`, and **`myassist.*`** for this app’s durable tables (`app_users`, `integration_tokens`). The legacy `public.*` namespace is avoided for new product tables. Post-migration verification SQL and rollout notes: [myassist-schema-segregation-readiness.md](./myassist-schema-segregation-readiness.md).
+
 ## Historical orchestration (dormant n8n)
 
 - Exported workflows under `n8n/` and related notes in `docs/n8n-*.md` are **preserved** for reference or optional future reactivation. They are **not** part of the active runtime for daily context. See [n8n-dormant.md](./n8n-dormant.md).
