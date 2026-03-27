@@ -2745,7 +2745,7 @@ export function Dashboard({
                         Email in this pull
                       </h2>
                       <p className="theme-muted mt-1 max-w-xl text-xs leading-5">
-                        Primary inbox, last 10 days — priority rows are highlighted; everything else stays visible below.
+                        Inbox (all categories), last 10 days — priority rows are highlighted; everything else stays visible below.
                       </p>
                     </div>
                     <span className="signal-pill rounded-full px-3 py-1 text-[11px] font-semibold">

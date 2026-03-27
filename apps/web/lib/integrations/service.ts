@@ -125,7 +125,7 @@ export const integrationService = {
     const token = await withGoogleToken(userId, "gmail");
     if (!token) return null;
     const listRes = await fetch(
-      "https://gmail.googleapis.com/gmail/v1/users/me/messages?q=category:primary newer_than:10d&maxResults=20",
+      "https://gmail.googleapis.com/gmail/v1/users/me/messages?q=in:inbox newer_than:10d&maxResults=20",
       { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" },
     );
     if (!listRes.ok) return null;
