@@ -8,6 +8,7 @@ import type { GmailMessage } from "@/lib/adapters/gmailAdapter";
 import { createGmailAdapter } from "@/lib/adapters/gmailAdapter";
 import { createTodoistAdapter } from "@/lib/adapters/todoistAdapter";
 import type { JobHuntCalendarOpportunityLink } from "@/lib/types";
+import { buildFollowUpTaskContent, buildFollowUpTaskDescription } from "@/lib/services/followUpDraftService";
 import { analyzeEmail } from "@/lib/services/jobHuntIntelligenceService";
 
 export type ActionName =
@@ -399,8 +400,15 @@ export class CrossSystemActionService {
     try {
       const email = await this.gmail.getById(sourceId);
       if (!email) throw new Error("email_not_found");
-      const content = titleFromEmailSubject(email.subject);
-      const description = emailBodyForDescription(email);
+      const analysis = analyzeEmail({
+        id: email.id,
+        threadId: email.threadId ?? email.id,
+        from: email.from,
+        subject: email.subject,
+        snippet: email.snippet,
+      });
+      const content = buildFollowUpTaskContent(email, analysis);
+      const description = buildFollowUpTaskDescription(email, analysis);
       const dedupeKey = buildDedupeKey([
         action,
         email.threadId ?? sourceId,

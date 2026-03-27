@@ -42,6 +42,25 @@ describe("todayIntelligenceService", () => {
     expect(overdue).toBeDefined();
     expect(overdue?.title).toContain("overdue");
     expect(overdue?.description).toContain("Finish report");
+    expect(overdue?.explanation).toMatch(/overdue/i);
+  });
+
+  it("ranks interview priority before overdue when both exist", () => {
+    const ctx = base({
+      calendar_today: [
+        {
+          id: "ev",
+          summary: "Technical interview — Panel",
+          start: "2025-06-15T14:00:00-04:00",
+          end: "2025-06-15T15:00:00-04:00",
+          location: "Zoom",
+        },
+      ],
+      todoist_overdue: [{ id: "t1", content: "X" }],
+    });
+    const { priorities } = buildTodayInsights(ctx);
+    expect(priorities[0]?.id.startsWith("priority-interview-")).toBe(true);
+    expect(priorities.some((p) => p.id === "priority-overdue-tasks")).toBe(true);
   });
 
   it("adds follow-up when Gmail signal has follow_up job-hunt analysis", () => {

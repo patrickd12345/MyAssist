@@ -19,6 +19,7 @@ import type {
   TodoistTask,
 } from "@/lib/types";
 import type { SavedJobRow } from "@/lib/jobHuntUiTypes";
+import { buildDailySynthesis } from "@/lib/services/dailySynthesisService";
 import { buildJobHuntExpansion } from "@/lib/services/jobHuntExpansionService";
 import type { FollowUpTimingStatus } from "@/lib/services/jobHuntExpansionService";
 import {
@@ -126,8 +127,11 @@ function TodayInsightList({
                 </span>
               ) : null}
             </div>
-            {insight.description ? (
-              <p className="theme-muted mt-1 text-xs leading-5">{insight.description}</p>
+            {insight.explanation ? (
+              <p className="theme-muted mt-1 text-xs leading-5">{insight.explanation}</p>
+            ) : null}
+            {insight.description && insight.description !== insight.explanation ? (
+              <p className="theme-muted mt-1 text-[11px] leading-5 opacity-90">{insight.description}</p>
             ) : null}
             {actions.length > 0 ? (
               <div className="mt-2 flex flex-wrap gap-2">
@@ -1206,6 +1210,10 @@ export function Dashboard({
         jobHuntExpansion.followUpTiming.length > 0 ||
         jobHuntExpansion.researchSuggestions.length > 0),
   );
+  const dailySynthesis = useMemo(() => {
+    if (!displayData || !todayInsights || !jobHuntExpansion) return null;
+    return buildDailySynthesis(displayData, todayInsights, jobHuntExpansion);
+  }, [displayData, todayInsights, jobHuntExpansion]);
   const showSkeleton = Boolean(loading && !data && !error);
   const needsFirstRefresh = Boolean(bootstrapped && !data && !error && !loading);
 
@@ -1757,6 +1765,34 @@ export function Dashboard({
                   <p className="theme-muted mt-2 text-sm leading-7">
                     From the current daily context: calendar, tasks, and Gmail signals (no background jobs).
                   </p>
+                  {dailySynthesis ? (
+                    <div className="mt-4 rounded-[20px] border border-zinc-500/25 bg-zinc-500/[0.07] px-4 py-3 text-sm">
+                      <p className="theme-accent text-[11px] font-semibold uppercase tracking-[0.12em]">
+                        Operational snapshot
+                      </p>
+                      <p className="theme-ink mt-2 font-medium leading-6">{dailySynthesis.oneLineSummary}</p>
+                      {dailySynthesis.actionNow.length > 0 ? (
+                        <div className="mt-3">
+                          <p className="text-[11px] font-semibold text-emerald-200/90">Action now</p>
+                          <ul className="theme-muted mt-1 list-inside list-disc text-xs leading-5">
+                            {dailySynthesis.actionNow.map((line) => (
+                              <li key={line}>{line}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null}
+                      {dailySynthesis.canWait.length > 0 ? (
+                        <div className="mt-3">
+                          <p className="text-[11px] font-semibold text-zinc-400">Can wait</p>
+                          <ul className="theme-muted mt-1 list-inside list-disc text-xs leading-5">
+                            {dailySynthesis.canWait.map((line) => (
+                              <li key={line}>{line}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
                   <div className="mt-5 grid gap-5 lg:grid-cols-3">
                     <div>
                       <p className="theme-accent text-[11px] font-semibold uppercase tracking-[0.12em]">

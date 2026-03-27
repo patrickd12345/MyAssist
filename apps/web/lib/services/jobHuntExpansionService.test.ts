@@ -93,6 +93,46 @@ describe("jobHuntExpansionService", () => {
     expect(row?.status).toBe("follow_up_now");
   });
 
+  it("orders follow-up timing with follow_up_now before wait", () => {
+    const ctx = base({
+      gmail_signals: [
+        {
+          id: "g-wait",
+          threadId: "tw",
+          from: "jobs@greenhouse.io",
+          subject: "Application received",
+          snippet: "We received your application for the role.",
+          date: "2025-06-15T10:00:00.000Z",
+          job_hunt_analysis: {
+            signals: ["application_confirmation"],
+            confidence: 0.7,
+            suggestedActions: ["update_pipeline"],
+          },
+        },
+        {
+          id: "g-fu",
+          threadId: "tf",
+          from: "recruiter@company.com",
+          subject: "Following up on interview",
+          snippet: "Checking in on next steps for the engineering role.",
+          date: "2025-06-01T10:00:00.000Z",
+          job_hunt_analysis: {
+            signals: ["follow_up"],
+            confidence: 0.6,
+            suggestedActions: ["create_followup_task"],
+          },
+        },
+      ],
+    });
+    const out = buildJobHuntExpansion(ctx, new Date("2025-06-15T12:00:00.000Z").getTime());
+    const statuses = out.followUpTiming.map((r) => r.status);
+    const followIdx = statuses.indexOf("follow_up_now");
+    const waitIdx = statuses.indexOf("wait");
+    if (followIdx >= 0 && waitIdx >= 0) {
+      expect(followIdx).toBeLessThan(waitIdx);
+    }
+  });
+
   it("builds research rows when company and role present", () => {
     const row = buildResearchRowsForIdentity("Acme Corp", "Backend Engineer", "k1");
     expect(row).not.toBeNull();

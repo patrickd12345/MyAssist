@@ -10,6 +10,8 @@ export type Insight = {
   id: string;
   title: string;
   description?: string;
+  /** Short reason tied to live context (counts, times, aging). */
+  explanation?: string;
   /** Legacy single control; prefer `actions` when multiple automations apply. */
   action?: SuggestedAction;
   actions?: SuggestedAction[];
@@ -113,6 +115,48 @@ function signalDedupeKey(s: GmailSignal): string {
   return s.threadId || s.id || `${s.from}:${s.subject}`;
 }
 
+function formatTimeToronto(iso: string): string | null {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: TORONTO,
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  }).format(d);
+}
+
+function daysSinceEmailDate(iso: string | undefined, nowMs: number): number | null {
+  if (!iso?.trim()) return null;
+  const t = Date.parse(iso);
+  if (Number.isNaN(t)) return null;
+  return Math.max(0, Math.floor((nowMs - t) / 86_400_000));
+}
+
+/** Lower sorts earlier (higher value). */
+function rankPriorityInsight(id: string): number {
+  if (id.startsWith("priority-interview-")) return 0;
+  if (id === "priority-overdue-tasks") return 1;
+  return 5;
+}
+
+function rankRiskInsight(id: string): number {
+  if (id.startsWith("risk-interview-no-prep-")) return 0;
+  if (id.startsWith("risk-cal-conflict-")) return 1;
+  return 5;
+}
+
+function followUpInsightId(signal: GmailSignal): string {
+  const key = signalDedupeKey(signal);
+  return `followup-${key.replace(/\s+/g, "-").slice(0, 80)}`;
+}
+
+function rankSuggestionInsight(id: string): number {
+  if (id === "suggestion-high-priority-backlog") return 1;
+  if (id === "suggestion-inbox-depth") return 2;
+  return 5;
+}
+
 export function buildTodayInsights(context: MyAssistDailyContext): TodayInsights {
   const priorities: Insight[] = [];
   const risks: Insight[] = [];
@@ -127,20 +171,28 @@ export function buildTodayInsights(context: MyAssistDailyContext): TodayInsights
     const localStartDay = formatLocalDateInToronto(ev.start);
     if (localStartDay !== runDate) continue;
 
+    const timeLabel = ev.start ? formatTimeToronto(ev.start) : null;
     priorities.push({
       id: `priority-interview-${ev.id ?? ev.summary}`,
       title: `Interview today: ${ev.summary}`,
       description: ev.location ? `Location: ${ev.location}` : undefined,
+      explanation: timeLabel
+        ? `Interview today at ${timeLabel}${ev.location ? ` · ${ev.location}` : ""}`
+        : "Interview-typed event is on today’s calendar",
       severity: "high",
       action: { kind: "tab", tab: "calendar" },
     });
 
     const timed = eventTimedBounds(ev);
     if (timed && timed.startMs > now && !hasPrepLikeTask(context)) {
+      const startHuman = ev.start ? formatTimeToronto(ev.start) : null;
       risks.push({
         id: `risk-interview-no-prep-${ev.id ?? ev.summary}`,
         title: "Upcoming interview without prep tasks",
         description: `“${ev.summary}” starts later today; no obvious prep/review tasks found in Todoist slices.`,
+        explanation: startHuman
+          ? `Interview at ${startHuman} and no prep/review tasks found in Todoist`
+          : "Interview window today without prep coverage in Todoist",
         severity: "high",
         action: { kind: "tab", tab: "tasks" },
       });
@@ -158,6 +210,10 @@ export function buildTodayInsights(context: MyAssistDailyContext): TodayInsights
       id: "priority-overdue-tasks",
       title: overdueCount === 1 ? "1 overdue task" : `${overdueCount} overdue tasks`,
       description: samples ? `Includes: ${samples}${overdueCount > 3 ? "…" : ""}` : undefined,
+      explanation:
+        overdueCount === 1
+          ? "1 overdue task is still open"
+          : `${overdueCount} overdue tasks are still open`,
       severity: overdueCount >= 5 ? "high" : "medium",
       action: { kind: "tab", tab: "tasks" },
     });
@@ -171,10 +227,20 @@ export function buildTodayInsights(context: MyAssistDailyContext): TodayInsights
     seenFollowUp.add(key);
 
     const messageId = signal.id?.trim();
+    const days = daysSinceEmailDate(signal.date, now);
+    const aging =
+      days === null
+        ? "Follow-up signal in today’s Gmail slice"
+        : days === 0
+          ? "Recruiter follow-up signal from today — confirm next steps"
+          : days === 1
+            ? "Last recruiter touch was about 1 day ago"
+            : `Last recruiter follow-up signal is aging (~${days} days since email date)`;
     followUps.push({
-      id: `followup-${key.replace(/\s+/g, "-").slice(0, 80)}`,
+      id: followUpInsightId(signal),
       title: `Follow up: ${signal.subject || "Email"}`,
       description: signal.from ? `From ${signal.from}` : undefined,
+      explanation: aging,
       severity: "medium",
       ...(messageId
         ? {
@@ -203,6 +269,7 @@ export function buildTodayInsights(context: MyAssistDailyContext): TodayInsights
           id: `risk-cal-conflict-${idA}-${idB}`,
           title: "Calendar overlap",
           description: `“${A.ev.summary}” and “${B.ev.summary}” overlap.`,
+          explanation: "Two timed events overlap on today’s calendar",
           severity: "high",
           action: { kind: "tab", tab: "calendar" },
         });
@@ -216,6 +283,7 @@ export function buildTodayInsights(context: MyAssistDailyContext): TodayInsights
       id: "suggestion-high-priority-backlog",
       title: "Heavy upcoming load",
       description: `${upcomingHp} high-priority tasks ahead. Consider time-blocking before new commitments.`,
+      explanation: `${upcomingHp} high-priority tasks queued ahead — can wait until urgent work clears`,
       severity: "low",
       action: { kind: "tab", tab: "tasks" },
     });
@@ -226,10 +294,25 @@ export function buildTodayInsights(context: MyAssistDailyContext): TodayInsights
       id: "suggestion-inbox-depth",
       title: "Busy inbox signals",
       description: `${context.gmail_signals.length} items in today’s Gmail slice. Batch triage may help.`,
+      explanation: `${context.gmail_signals.length} signals in today’s slice — batch triage when fires are out`,
       severity: "low",
       action: { kind: "tab", tab: "inbox" },
     });
   }
+
+  priorities.sort((a, b) => rankPriorityInsight(a.id) - rankPriorityInsight(b.id));
+  risks.sort((a, b) => rankRiskInsight(a.id) - rankRiskInsight(b.id));
+  followUps.sort((a, b) => {
+    const sa = context.gmail_signals.find((s) => followUpInsightId(s) === a.id);
+    const sb = context.gmail_signals.find((s) => followUpInsightId(s) === b.id);
+    const da = sa ? daysSinceEmailDate(sa.date, now) : null;
+    const db = sb ? daysSinceEmailDate(sb.date, now) : null;
+    if (da === null && db === null) return 0;
+    if (da === null) return 1;
+    if (db === null) return -1;
+    return db - da;
+  });
+  suggestions.sort((a, b) => rankSuggestionInsight(a.id) - rankSuggestionInsight(b.id));
 
   return { priorities, risks, suggestions, followUps };
 }

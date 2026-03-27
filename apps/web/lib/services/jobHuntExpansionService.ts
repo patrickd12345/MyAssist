@@ -312,5 +312,12 @@ export function buildJobHuntExpansion(
     researchSuggestions.push(row);
   }
 
+  const timingRank: Record<FollowUpTimingStatus, number> = {
+    follow_up_now: 0,
+    monitor: 1,
+    wait: 2,
+  };
+  followUpTiming.sort((a, b) => timingRank[a.status] - timingRank[b.status]);
+
   return { prepRecommendations, followUpTiming, researchSuggestions };
 }

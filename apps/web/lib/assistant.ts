@@ -1,3 +1,4 @@
+import { buildDailySynthesisFromContext } from "./services/dailySynthesisService";
 import type { MyAssistDailyContext, SituationBrief, TodoistTask } from "./types";
 
 export type AssistantMode = "ollama" | "fallback";
@@ -52,31 +53,20 @@ export function buildSuggestedPrompts(context: MyAssistDailyContext): string[] {
 }
 
 export function buildWelcomeReply(context: MyAssistDailyContext): AssistantReply {
-  const overdue = context.todoist_overdue.length;
-  const dueToday = context.todoist_due_today.length;
-  const meetings = context.calendar_today.length;
-  const signals = context.gmail_signals.length;
-  const nextMeeting = context.calendar_today.find((item) => item.start)?.summary;
+  const syn = buildDailySynthesisFromContext(context);
+  const focusLine =
+    syn.topPriorities.length > 0 ? `Priority: ${syn.topPriorities.slice(0, 2).join(" · ")}.` : "";
+  const answer = [syn.oneLineSummary, focusLine].filter(Boolean).join(" ");
 
-  const parts = [
-    `I am reading ${overdue + dueToday} urgent task items, ${meetings} calendar events, and ${signals} email signals.`,
-    nextMeeting ? `Your first visible schedule anchor is ${nextMeeting}.` : "Your schedule looks relatively open from this snapshot.",
-    overdue > 0
-      ? "The day should start with triage, not inbox drift."
-      : "There is room to be more deliberate instead of reactive.",
-  ];
-
-  const actions: string[] = [];
-  const topOverdue = taskTitle(context.todoist_overdue[0]);
-  const topDue = taskTitle(context.todoist_due_today[0]);
-  if (topOverdue) actions.push(`Close overdue: ${topOverdue}`);
-  if (topDue) actions.push(`Protect time for: ${topDue}`);
-  if (nextMeeting) actions.push(`Prepare for: ${nextMeeting}`);
+  const actions =
+    syn.actionNow.length > 0
+      ? syn.actionNow.slice(0, 3)
+      : syn.topPriorities.slice(0, 3);
 
   return {
     mode: "fallback",
-    answer: parts.join(" "),
-    actions: actions.slice(0, 3),
+    answer: answer || "Snapshot loaded; use the panels for detail.",
+    actions: actions.length > 0 ? actions : buildSuggestedPrompts(context).slice(0, 3),
     followUps: buildSuggestedPrompts(context).slice(0, 3),
     taskDraft: null,
   };
