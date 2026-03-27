@@ -43,6 +43,16 @@ The dashboard and APIs require a local account (email + password). Unauthenticat
 
 Session protection is enforced in server components and API route handlers (no Edge middleware, to avoid bundling issues with Auth.js on Vercel Edge).
 
+## Production (Vercel, e.g. myassist.bookiji.com)
+
+The Vercel project **`web`** in your team should use this app as the deploy root:
+
+- **Git repository:** `patrickd12345/MyAssist`, branch `main`
+- **Root Directory:** `apps/web` (pnpm monorepo; includes workspace package `job-hunt-manager`)
+- **Build:** `apps/web/vercel.json` runs `pnpm install` from the repo root, then `pnpm run build` in `apps/web`
+- **Production env:** set at least `AUTH_SECRET` and `AUTH_URL` (public origin, e.g. `https://myassist.bookiji.com`). Mirror any Supabase / OAuth values from `apps/web/.env.example` so hosted mode matches local behavior.
+- **Custom domain:** assign `myassist.bookiji.com` to this project’s Production deployment in Vercel → Domains.
+
 ## Local run
 
 1. Copy `apps/web/.env.example` to `apps/web/.env.local`.
