@@ -7,6 +7,10 @@ settings:
 importers:
 
   .:
+    dependencies:
+      next:
+        specifier: 15.2.6
+        version: 15.2.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
     devDependencies:
       form-data:
         specifier: ^4.0.5
@@ -28,7 +32,7 @@ importers:
         version: 17.3.1
       myassist:
         specifier: file:../..
-        version: 'file:'
+        version: file:(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       proper-lockfile:
         specifier: ^4.1.2
         version: 4.1.2
@@ -7690,7 +7694,18 @@ snapshots:
 
   ms@2.1.3: {}
 
-  'myassist@file:': {}
+  myassist@file:(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4):
+    dependencies:
+      next: 15.2.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+    transitivePeerDependencies:
+      - '@babel/core'
+      - '@opentelemetry/api'
+      - '@playwright/test'
+      - babel-plugin-macros
+      - babel-plugin-react-compiler
+      - react
+      - react-dom
+      - sass
 
   mz@2.7.0:
     dependencies:
