@@ -48,8 +48,8 @@ Session protection is enforced in server components and API route handlers (no E
 The Vercel project **`web`** in your team should use this app as the deploy root:
 
 - **Git repository:** `patrickd12345/MyAssist`, branch `main`
-- **Root Directory:** `apps/web` (pnpm monorepo; includes workspace package `job-hunt-manager`). Vercel’s Next.js detector reads the **monorepo root** `package.json`, so it lists **`next`** there (same version as `apps/web`). The real compile uses **`vercel-build`** at the root → `pnpm --filter web run build`, so `next build` runs in **`apps/web`** (where `app/` lives), not at the repo root.
-- **Build:** `apps/web/vercel.json` runs `pnpm install` from the repo root, then `pnpm run build` in `apps/web`
+- **Monorepo root:** leave **Root Directory** empty in the Vercel dashboard (repo root). Deployment config lives in **`vercel.json`** at the repo root: install → `pnpm install`, build → **`pnpm run vercel-build`** (`pnpm --filter web run build`), **output** → **`apps/web/.next`** so Vercel finds the Next.js build output.
+- **Next.js detector:** the repo **root** `package.json` lists **`next`** (same version as `apps/web`) so Vercel recognizes the framework while the real app code stays under **`apps/web`**.
 - **Production env:** set at least `AUTH_SECRET` and `AUTH_URL` (public origin, e.g. `https://myassist.bookiji.com`). Mirror any Supabase / OAuth values from `apps/web/.env.example` so hosted mode matches local behavior. The CLI has no one-shot “import `.env`” command; use the dashboard **bulk paste** or run `scripts/push-env-to-vercel.ps1` from `apps/web` (see script header). Review keys before pushing—overwrite uses `vercel env add --force`.
 - **Custom domain:** assign `myassist.bookiji.com` to this project’s Production deployment in Vercel → Domains.
 
