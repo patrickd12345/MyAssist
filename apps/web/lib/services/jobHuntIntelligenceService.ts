@@ -14,6 +14,9 @@ const JOB_CONTEXT_RE =
 
 const RECRUITING_FROM_RE =
   /@(?:.*\.)?(?:greenhouse|lever|workday|icims|ashbyhq|jobs\.|careers\.)/i;
+const RECRUITER_DOMAIN_RE = /@(?:.*\.)?(?:talent|jobs|careers|recruiting|recruiter|hr)\./i;
+const OUTREACH_RE =
+  /\b(?:came\s+across\s+your\s+profile|we(?:')?re\s+hiring|open\s+role|reach(?:ing)?\s+out\s+regarding|interested\s+in\s+this\s+opportunity)\b/i;
 
 function combinedText(signal: Pick<GmailSignal, "from" | "subject" | "snippet">): string {
   return `${signal.from}\n${signal.subject}\n${signal.snippet}`.toLowerCase();
@@ -27,7 +30,7 @@ const COMPANY_HINT_RE =
   /\b(?:at|with|from)\s+([A-Z][a-zA-Z0-9&.,' -]{1,60}?)(?:\s+(?:for|about|on)\b|[.,;]|$)/;
 
 const ROLE_HINT_RE =
-  /\b(?:for|about|regarding)\s+(?:the\s+)?([A-Za-z][a-zA-Z0-9/+& -]{2,80}?(?:engineer|developer|manager|analyst|designer|consultant|specialist|administrator|architect|coordinator|lead|intern|director|officer|scientist|role|position))\b/i;
+  /\b(?:for|about|regarding|position(?:\s+of)?|role(?:\s+of)?)\s+(?:the\s+)?([A-Za-z][a-zA-Z0-9/+& -]{2,80}?(?:engineer|developer|manager|analyst|designer|consultant|specialist|administrator|architect|coordinator|lead|intern|director|officer|scientist))\b/i;
 
 type Rule = { re: RegExp; signal: JobHuntSignal; weight: number };
 
@@ -63,7 +66,12 @@ const RULES: Rule[] = [
     weight: 0.34,
   },
   {
-    re: /\b(?:application\s+(?:received|confirmed)|thank\s+you\s+for\s+applying|we\s+received\s+your\s+application|your\s+application\s+has\s+been\s+received)\b/i,
+    re: OUTREACH_RE,
+    signal: "follow_up",
+    weight: 0.34,
+  },
+  {
+    re: /\b(?:application\s+(?:received|confirmed|submitted)|thank(?:s| you)\s+for\s+applying|we\s+received\s+your\s+application|your\s+application\s+has\s+been\s+received|we(?:')?ll\s+review\s+your\s+application)\b/i,
     signal: "application_confirmation",
     weight: 0.38,
   },
@@ -142,6 +150,72 @@ function cleanIdentityValue(value: string | undefined): string | undefined {
   return v || undefined;
 }
 
+function stripTrailingIdentityClauses(value: string): string {
+  return value
+    .replace(/\b(?:is|was|were|will\s+be)\s+(?:confirmed|scheduled|booked|set|arranged)\b.*$/i, "")
+    .replace(/\b(?:for|about|on)\s+(?:the\s+)?(?:role|position)\b.*$/i, "")
+    .trim();
+}
+
+/** Job title tail used for bounded extraction after stripping application / screening phrases. */
+const TITLE_TAIL_RE =
+  /[A-Za-z][a-zA-Z0-9/+& -]{0,72}?(?:engineer|developer|manager|analyst|designer|consultant|specialist|administrator|architect|coordinator|lead|intern|director|officer|scientist)\b/i;
+
+function looksLikeSentenceFragmentRole(value: string): boolean {
+  const v = value.trim();
+  if (v.length > 90) return true;
+  if (/\b(?:applying|apply)\s+to\b/i.test(v)) return true;
+  if (/\b(?:we|you|they|i)\s+(?:would|will|'d|have)\b/i.test(v)) return true;
+  return false;
+}
+
+function sanitizeRoleValue(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  let cleaned = stripTrailingIdentityClauses(value)
+    .replace(/^(?:a|an|the)\s+(?:screening\s+)?call\s+for\s+(?:the\s+)?/i, "")
+    .replace(/^(?:a|an|the)\s+(?:screening\s+call|interview)\s+for\s+/i, "")
+    .replace(/^applying\s+to\s+(?:the\s+)?/i, "")
+    .replace(/^apply\s+to\s+(?:the\s+)?/i, "")
+    .replace(/^the\s+/i, "")
+    .replace(/\s+role(?:\s+at\b|\s+for\b)?[\s\S]*$/i, "")
+    .replace(/\b(?:role|position)\b$/i, "")
+    .trim();
+
+  const titlePick = cleaned.match(TITLE_TAIL_RE);
+  if (titlePick && looksLikeSentenceFragmentRole(cleaned)) {
+    cleaned = titlePick[0].trim();
+  } else if (looksLikeSentenceFragmentRole(cleaned)) {
+    return undefined;
+  }
+
+  return cleanIdentityValue(cleaned);
+}
+
+function sanitizeCompanyValue(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  return cleanIdentityValue(stripTrailingIdentityClauses(value));
+}
+
+function companyFromDomain(from: string): string | undefined {
+  const emailMatch = from.match(/@([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+  if (!emailMatch?.[1]) return undefined;
+  const domain = emailMatch[1].toLowerCase();
+  const parts = domain.split(".").filter(Boolean);
+  if (parts.length < 2) return undefined;
+  const labels = parts.slice(0, -1);
+  const generic = new Set(["gmail", "outlook", "hotmail", "yahoo", "icloud", "talent", "jobs", "careers", "recruiting"]);
+  const selected = labels.find((label) => !generic.has(label)) ?? labels[labels.length - 1];
+  if (!selected || generic.has(selected)) return undefined;
+  return selected
+    .split(/[-_]/)
+    .map((p) => (p ? `${p[0]?.toUpperCase() ?? ""}${p.slice(1)}` : ""))
+    .join(" ")
+    .trim();
+}
+
+const APPLYING_TO_TITLE_RE =
+  /\bapplying\s+to\s+(?:the\s+)?([A-Za-z][a-zA-Z0-9/+& -]{0,72}?(?:engineer|developer|manager|analyst|designer|consultant|specialist|administrator|architect|coordinator|lead|intern|director|officer|scientist))\b/i;
+
 export function extractJobIdentity(signal: Pick<GmailSignal, "id" | "threadId" | "from" | "subject" | "snippet">): JobHuntNormalizedIdentity {
   const from = signal.from ?? "";
   const subject = signal.subject ?? "";
@@ -149,23 +223,16 @@ export function extractJobIdentity(signal: Pick<GmailSignal, "id" | "threadId" |
   const combined = `${subject}\n${snippet}`;
   const fromName = from.replace(/<[^>]*>/g, "").replace(/["]/g, "").trim();
   const recruiterName = fromName && !fromName.includes("@") ? fromName : undefined;
-  const companyFromFrom = (() => {
-    const emailMatch = from.match(/@([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
-    if (!emailMatch?.[1]) return undefined;
-    const domain = emailMatch[1].toLowerCase();
-    const core = domain.split(".")[0] ?? "";
-    if (!core || ["gmail", "outlook", "hotmail", "yahoo", "icloud"].includes(core)) return undefined;
-    return core
-      .split(/[-_]/)
-      .map((p) => (p ? `${p[0]?.toUpperCase() ?? ""}${p.slice(1)}` : ""))
-      .join(" ")
-      .trim();
-  })();
+  const companyFromFrom = companyFromDomain(from);
   const companyFromText = combined.match(COMPANY_HINT_RE)?.[1];
-  const roleFromText = combined.match(ROLE_HINT_RE)?.[1];
+  let roleFromText = combined.match(ROLE_HINT_RE)?.[1];
+  const applyingTitle = combined.match(APPLYING_TO_TITLE_RE)?.[1];
+  if (applyingTitle) {
+    roleFromText = applyingTitle;
+  }
   return {
-    company: cleanIdentityValue(companyFromText) ?? cleanIdentityValue(companyFromFrom),
-    role: cleanIdentityValue(roleFromText),
+    company: sanitizeCompanyValue(companyFromText) ?? sanitizeCompanyValue(companyFromFrom),
+    role: sanitizeRoleValue(roleFromText),
     recruiterName: cleanIdentityValue(recruiterName),
     threadId: cleanIdentityValue(signal.threadId ?? undefined),
     messageId: cleanIdentityValue(signal.id ?? undefined),
@@ -178,15 +245,38 @@ function confidenceFromHits(rawScore: number, signalCount: number, jobBoost: boo
   return Math.round(c * 100) / 100;
 }
 
+/** When technical_interview matches, drop interview_request hits to avoid duplicate interview-family signals. */
+function dropInterviewRequestWhenTechnicalPresent(
+  hits: { signal: JobHuntSignal; weight: number }[],
+): { signal: JobHuntSignal; weight: number }[] {
+  if (!hits.some((h) => h.signal === "technical_interview") || !hits.some((h) => h.signal === "interview_request")) {
+    return hits;
+  }
+  return hits.filter((h) => h.signal !== "interview_request");
+}
+
+function identityWithSuppressedFields(
+  identity: JobHuntNormalizedIdentity,
+): Pick<JobHuntNormalizedIdentity, "threadId" | "messageId"> {
+  return {
+    threadId: identity.threadId,
+    messageId: identity.messageId,
+  };
+}
+
 /**
  * Lightweight heuristic analysis of a single Gmail signal (subject/snippet/from only).
  * Conservative: returns empty signals when the text does not look job-related.
  */
 export function analyzeEmail(signal: Pick<GmailSignal, "id" | "threadId" | "from" | "subject" | "snippet">): JobHuntAnalysis {
   const text = combinedText(signal);
-  const normalizedIdentity = extractJobIdentity(signal);
+  const identityFull = extractJobIdentity(signal);
+  const emptyIdentity = (): JobHuntNormalizedIdentity => ({
+    ...identityWithSuppressedFields(identityFull),
+  });
+
   if (text.trim().length < 12) {
-    return { signals: [], confidence: 0, suggestedActions: [], normalizedIdentity };
+    return { signals: [], confidence: 0, suggestedActions: [], normalizedIdentity: emptyIdentity() };
   }
 
   const jobOk = hasJobContext(text);
@@ -199,7 +289,7 @@ export function analyzeEmail(signal: Pick<GmailSignal, "id" | "threadId" | "from
   }
 
   if (hits.length === 0) {
-    return { signals: [], confidence: 0, suggestedActions: [], normalizedIdentity };
+    return { signals: [], confidence: 0, suggestedActions: [], normalizedIdentity: emptyIdentity() };
   }
 
   const strongInterview =
@@ -207,7 +297,8 @@ export function analyzeEmail(signal: Pick<GmailSignal, "id" | "threadId" | "from
     (jobOk || /\binterview\b/i.test(text));
 
   const strongFollowUp =
-    hits.some((h) => h.signal === "follow_up") && (jobOk || /\b(?:role|position|application|recruit)\b/i.test(text));
+    hits.some((h) => h.signal === "follow_up") &&
+    (jobOk || /\b(?:role|position|application|recruit)\b/i.test(text) || (OUTREACH_RE.test(text) && RECRUITER_DOMAIN_RE.test(text)));
 
   const strongAppConfirm =
     hits.some((h) => h.signal === "application_confirmation") && (jobOk || /\bapplication\b/i.test(text));
@@ -229,8 +320,10 @@ export function analyzeEmail(signal: Pick<GmailSignal, "id" | "threadId" | "from
     );
   }
 
+  filtered = dropInterviewRequestWhenTechnicalPresent(filtered);
+
   if (filtered.length === 0) {
-    return { signals: [], confidence: 0, suggestedActions: [], normalizedIdentity };
+    return { signals: [], confidence: 0, suggestedActions: [], normalizedIdentity: emptyIdentity() };
   }
 
   const signalList = uniqueSignals(filtered.map((h) => h.signal));
@@ -238,7 +331,7 @@ export function analyzeEmail(signal: Pick<GmailSignal, "id" | "threadId" | "from
   const confidence = confidenceFromHits(rawScore, signalList.length, jobOk);
 
   if (confidence < 0.35) {
-    return { signals: [], confidence: 0, suggestedActions: [], normalizedIdentity };
+    return { signals: [], confidence: 0, suggestedActions: [], normalizedIdentity: emptyIdentity() };
   }
   const stageAlias = stageAliasForSignals(signalList);
 
@@ -248,7 +341,7 @@ export function analyzeEmail(signal: Pick<GmailSignal, "id" | "threadId" | "from
     suggestedActions: suggestedActionsFor(signalList),
     stageAlias,
     stageHintManager: managerStageHintForAlias(stageAlias),
-    normalizedIdentity,
+    normalizedIdentity: identityFull,
   };
 }
 

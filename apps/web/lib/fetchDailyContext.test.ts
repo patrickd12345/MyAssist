@@ -4,6 +4,7 @@ import {
   prioritizeGmailSignalsWithAi,
   resolveGmailSubject,
 } from "./fetchDailyContext";
+import * as jobHuntEmailSignals from "./jobHuntEmailSignals";
 import { integrationService } from "./integrations/service";
 
 const validPayload = {
@@ -166,6 +167,41 @@ describe("fetchDailyContextFromN8n", () => {
     );
 
     await expect(fetchDailyContextFromN8n()).rejects.toThrow(/does not match/);
+  });
+
+  it("posts job-hunt signals only after job-hunt analysis enrichment", async () => {
+    process.env.MYASSIST_N8N_WEBHOOK_URL = "https://example.com/webhook";
+    setNodeEnv("production");
+
+    const postSpy = vi.spyOn(jobHuntEmailSignals, "postJobHuntEmailSignals").mockResolvedValue([]);
+
+    const payload = {
+      ...validPayload,
+      gmail_signals: [
+        {
+          id: "g1",
+          threadId: "t1",
+          from: "recruiter@company.com",
+          subject: "Interview next steps",
+          snippet:
+            "We would like to schedule an interview for the software engineer role at our company.",
+          date: "2026-03-25T12:00:00.000Z",
+        },
+      ],
+    };
+
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify(payload), { status: 200, headers: { "Content-Type": "application/json" } }),
+    );
+
+    await fetchDailyContextFromN8n();
+
+    expect(postSpy).toHaveBeenCalled();
+    const posted = postSpy.mock.calls[0]?.[0];
+    expect(posted?.[0]?.job_hunt_analysis).toBeDefined();
+    expect(posted?.[0]?.job_hunt_analysis?.normalizedIdentity).toBeDefined();
+
+    postSpy.mockRestore();
   });
 });
 

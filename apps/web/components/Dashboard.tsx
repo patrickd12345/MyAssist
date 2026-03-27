@@ -11,6 +11,7 @@ import {
 import type {
   MyAssistDailyContext,
   GmailSignal,
+  JobHuntCalendarOpportunityLink,
   JobHuntEmailMatch,
   JobHuntSignal,
   SituationBrief,
@@ -193,6 +194,22 @@ function jobHuntReasonCopy(signal: JobHuntSignal): string {
     default:
       return "";
   }
+}
+
+function buildJobHuntHrefFromOpportunityLinkage(link: JobHuntCalendarOpportunityLink): string {
+  const p = new URLSearchParams();
+  const ni = link.normalizedIdentity;
+  if (ni?.company) p.set("company", ni.company);
+  if (ni?.role) p.set("role", ni.role);
+  if (ni?.recruiterName) p.set("recruiter", ni.recruiterName);
+  if (ni?.threadId || link.sourceThreadId) {
+    p.set("threadId", ni?.threadId ?? String(link.sourceThreadId ?? ""));
+  }
+  p.set("messageId", link.sourceMessageId);
+  p.set("eventId", link.calendarEventId);
+  if (link.stageAlias) p.set("stage", link.stageAlias);
+  p.set("tab", "pipeline");
+  return `/job-hunt?${p.toString()}`;
 }
 
 function buildJobHuntHref(signal: GmailSignal): string {
@@ -425,6 +442,11 @@ export function Dashboard({
   const [pendingCrossActionKeys, setPendingCrossActionKeys] = useState<string[]>([]);
   const [ignoredJobHuntMessageIds, setIgnoredJobHuntMessageIds] = useState<string[]>([]);
   const [taskActionError, setTaskActionError] = useState<string | null>(null);
+  const [integrationActionNotice, setIntegrationActionNotice] = useState<{
+    message: string;
+    href?: string;
+    reusedTargets?: Array<{ id: string; label: string; href?: string | null }>;
+  } | null>(null);
   const [theme, setTheme] = useState<ThemeKey>("light");
   const [themeMenuOpen, setThemeMenuOpen] = useState(false);
   const [headline, setHeadline] = useState<string>(
@@ -775,6 +797,7 @@ export function Dashboard({
       if (!trimmed) return;
       const key = `${action}:${trimmed}`;
       setTaskActionError(null);
+      setIntegrationActionNotice(null);
       setPendingCrossActionKeys((current) => [...new Set([...current, key])]);
       try {
         const response = await fetch("/api/actions", {
@@ -785,6 +808,14 @@ export function Dashboard({
         const body = (await response.json()) as {
           ok?: boolean;
           error?: string;
+          action?: string;
+          dedupe?: {
+            deduped?: boolean;
+            message?: string;
+            reusedTargetIds?: string[];
+            reusedTargetSummaries?: Array<{ id?: string; label?: string; href?: string | null }>;
+          };
+          opportunityLinkage?: JobHuntCalendarOpportunityLink;
           refreshHints?: { providers?: unknown };
         };
         if (!response.ok) {
@@ -792,6 +823,41 @@ export function Dashboard({
         }
         if (body.ok === false) {
           throw new Error(typeof body.error === "string" ? body.error : "Action failed.");
+        }
+        if (body.dedupe?.deduped && typeof body.dedupe.message === "string") {
+          const explicitSummaries: Array<{ id: string; label: string; href?: string | null }> = [];
+          if (Array.isArray(body.dedupe.reusedTargetSummaries)) {
+            for (const item of body.dedupe.reusedTargetSummaries) {
+              const id = typeof item?.id === "string" ? item.id.trim() : "";
+              if (!id) continue;
+              const label = typeof item?.label === "string" && item.label.trim() ? item.label.trim() : id;
+              explicitSummaries.push({
+                id,
+                label,
+                href: typeof item?.href === "string" ? item.href : null,
+              });
+            }
+          }
+          const fallbackSummaries =
+            explicitSummaries.length > 0
+              ? explicitSummaries
+              : Array.isArray(body.dedupe.reusedTargetIds)
+                ? body.dedupe.reusedTargetIds
+                    .map((id) => (typeof id === "string" && id.trim() ? { id: id.trim(), label: id.trim() } : null))
+                    .filter((item): item is { id: string; label: string } => Boolean(item))
+                : [];
+          setIntegrationActionNotice({
+            message: body.dedupe.message,
+            href: body.opportunityLinkage ? buildJobHuntHrefFromOpportunityLinkage(body.opportunityLinkage) : undefined,
+            reusedTargets: fallbackSummaries,
+          });
+        } else if (body.opportunityLinkage) {
+          setIntegrationActionNotice({
+            message: "Calendar event linked for Job Hunt follow-up.",
+            href: buildJobHuntHrefFromOpportunityLinkage(body.opportunityLinkage),
+          });
+        } else {
+          setIntegrationActionNotice(null);
         }
         const rawProviders = body.refreshHints?.providers;
         const providers = (
@@ -1431,6 +1497,46 @@ export function Dashboard({
         <div role="alert" className="glass-panel mb-6 rounded-[24px] border-red-500/30 p-5 text-sm text-red-300">
           <p className="font-semibold">Integration action failed.</p>
           <p className="mt-2 text-xs leading-6 opacity-90">{taskActionError}</p>
+        </div>
+      )}
+
+      {integrationActionNotice && !error && !taskActionError && (
+        <div
+          role="status"
+          className="glass-panel mb-6 rounded-[24px] border-emerald-500/35 bg-emerald-500/10 p-5 text-sm text-emerald-100"
+        >
+          <p className="font-semibold text-emerald-50">Integration</p>
+          <p className="mt-2 text-xs leading-6 opacity-95">{integrationActionNotice.message}</p>
+          {integrationActionNotice.reusedTargets && integrationActionNotice.reusedTargets.length > 0 ? (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {integrationActionNotice.reusedTargets.map((target) =>
+                target.href ? (
+                  <a
+                    key={target.id}
+                    href={target.href}
+                    className="rounded-full border border-emerald-300/35 bg-emerald-400/10 px-3 py-1 text-[11px] font-medium text-emerald-50"
+                  >
+                    {target.label}
+                  </a>
+                ) : (
+                  <span
+                    key={target.id}
+                    className="rounded-full border border-emerald-300/35 bg-emerald-400/10 px-3 py-1 text-[11px] font-medium text-emerald-50"
+                  >
+                    {target.label}
+                  </span>
+                ),
+              )}
+            </div>
+          ) : null}
+          {integrationActionNotice.href ? (
+            <Link
+              href={integrationActionNotice.href}
+              className="theme-button-secondary mt-3 inline-flex rounded-full px-4 py-2 text-xs font-semibold transition"
+            >
+              Open Job Hunt
+            </Link>
+          ) : null}
         </div>
       )}
 

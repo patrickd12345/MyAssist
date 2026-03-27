@@ -121,9 +121,10 @@ function mockAssistantFetch() {
 }
 
 describe("Dashboard", () => {
-  const mockFetch = mockAssistantFetch();
+  const mockFetch = vi.fn();
 
   beforeEach(() => {
+    mockFetch.mockImplementation(mockAssistantFetch());
     vi.stubGlobal("fetch", mockFetch);
   });
 
@@ -228,6 +229,46 @@ describe("Dashboard", () => {
     await waitFor(() => {
       expect(within(emailSection as HTMLElement).queryByText(subject)).not.toBeInTheDocument();
     });
+  });
+
+  it("shows integration notice when actions API returns dedupe metadata", async () => {
+    const user = userEvent.setup();
+    const delegate = mockAssistantFetch();
+    mockFetch.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+      if (url.includes("/api/actions")) {
+        return new Response(
+          JSON.stringify({
+            ok: true,
+            action: "job_hunt_prep_tasks",
+            sourceEmailId: "g2",
+            dedupe: {
+              deduped: true,
+              message: "Prep tasks were already created recently for this thread.",
+              reusedTargetIds: ["tp1"],
+              reusedTargetSummaries: [{ id: "tp1", label: "[Job prep] Research company" }],
+            },
+            taskSummaries: [],
+            refreshHints: { providers: ["gmail", "todoist"], sourceIds: ["g2"], targetIds: ["tp1"] },
+          }),
+          { status: 200 },
+        );
+      }
+      return delegate(input, init);
+    });
+
+    render(<Dashboard initialData={sampleContext} initialError={null} initialSource="n8n" />);
+
+    await user.click(screen.getAllByRole("button", { name: "Inbox" })[0]);
+    await waitFor(() => {
+      expect(screen.getByRole("region", { name: "Job hunt suggestions" })).toBeInTheDocument();
+    });
+    await user.click(screen.getByRole("button", { name: "Create prep tasks" }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Prep tasks were already created recently/i)).toBeInTheDocument();
+    });
+    expect(screen.getByText("[Job prep] Research company")).toBeInTheDocument();
   });
 
   it("shows job hunt suggestion panel and can run prep tasks action", async () => {

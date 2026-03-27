@@ -94,16 +94,17 @@ export async function fetchDailyContextFromN8n(
   const flattened = flattenGmailSignals(parsed);
   const prioritized = await prioritizeContextEmails(flattened, userIdForEmailRanking ?? undefined);
   const oauthEnriched = await enrichWithOAuthReads(prioritized, userIdForEmailRanking ?? null);
-  const job_hunt_email_matches = await postJobHuntEmailSignals(oauthEnriched.gmail_signals);
+  const withJobHuntAnalysis = enrichGmailSignalsWithJobHuntAnalysis(oauthEnriched);
+  const job_hunt_email_matches = await postJobHuntEmailSignals(withJobHuntAnalysis.gmail_signals);
   if (userIdForEmailRanking && job_hunt_email_matches.length > 0) {
     await syncContactsFromJobHuntEmailMatches(userIdForEmailRanking, job_hunt_email_matches);
   }
 
   return {
-    context: enrichGmailSignalsWithJobHuntAnalysis({
-      ...oauthEnriched,
+    context: {
+      ...withJobHuntAnalysis,
       ...(job_hunt_email_matches.length > 0 ? { job_hunt_email_matches } : {}),
-    }),
+    },
     source: "n8n",
   };
 }

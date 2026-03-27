@@ -7,6 +7,8 @@ import { createCalendarAdapter } from "@/lib/adapters/calendarAdapter";
 import type { GmailMessage } from "@/lib/adapters/gmailAdapter";
 import { createGmailAdapter } from "@/lib/adapters/gmailAdapter";
 import { createTodoistAdapter } from "@/lib/adapters/todoistAdapter";
+import type { JobHuntCalendarOpportunityLink } from "@/lib/types";
+import { analyzeEmail } from "@/lib/services/jobHuntIntelligenceService";
 
 export type ActionName =
   | "email_to_task"
@@ -74,11 +76,25 @@ export type TaskSummary = {
   url: string | null;
 };
 
+export type ReusedTargetSummary = {
+  id: string;
+  label: string;
+  href?: string | null;
+};
+
 export type EventSummary = {
   id: string;
   summary: string;
   start: string | undefined;
   end: string | undefined;
+};
+
+/** User-visible dedupe feedback; only set when a recent equivalent action was reused. */
+export type ActionDedupeInfo = {
+  deduped: true;
+  message: string;
+  reusedTargetIds: string[];
+  reusedTargetSummaries?: ReusedTargetSummary[];
 };
 
 export type CalendarSuggestionDraft = {
@@ -96,6 +112,7 @@ export type CrossSystemActionResult =
       sourceEmailId: string;
       taskSummary: TaskSummary;
       refreshHints: RefreshHints;
+      dedupe?: ActionDedupeInfo;
     }
   | {
       ok: true;
@@ -104,6 +121,8 @@ export type CrossSystemActionResult =
       outcome: "created";
       eventSummary: EventSummary;
       refreshHints: RefreshHints;
+      dedupe?: ActionDedupeInfo;
+      opportunityLinkage?: JobHuntCalendarOpportunityLink;
     }
   | {
       ok: true;
@@ -151,6 +170,7 @@ export type CrossSystemActionResult =
       sourceEmailId: string;
       taskSummaries: TaskSummary[];
       refreshHints: RefreshHints;
+      dedupe?: ActionDedupeInfo;
     }
   | {
       ok: false;
@@ -340,6 +360,27 @@ function eventSummaryFromCalendarEvent(ev: { id: string; summary: string; start:
   };
 }
 
+const DEDUPE_MSG_EMAIL_TO_TASK = "Follow-up task was already created recently from this thread.";
+const DEDUPE_MSG_PREP_TASKS = "Prep tasks were already created recently for this thread.";
+const DEDUPE_MSG_EMAIL_TO_EVENT = "Calendar event was already created recently for this thread.";
+
+function opportunityLinkageFromEmail(email: GmailMessage, calendarEventId: string): JobHuntCalendarOpportunityLink {
+  const analysis = analyzeEmail({
+    id: email.id,
+    threadId: email.threadId,
+    from: email.from,
+    subject: email.subject,
+    snippet: email.snippet,
+  });
+  return {
+    sourceMessageId: email.id,
+    sourceThreadId: email.threadId,
+    calendarEventId,
+    normalizedIdentity: analysis.normalizedIdentity,
+    stageAlias: analysis.stageAlias,
+  };
+}
+
 export class CrossSystemActionService {
   private readonly gmail;
   private readonly calendar;
@@ -390,6 +431,12 @@ export class CrossSystemActionService {
           sourceEmailId: sourceId,
           taskSummary: { id: taskId, content, url: null },
           refreshHints: { ...refreshFull, targetIds: recent.targetIds },
+          dedupe: {
+            deduped: true,
+            message: DEDUPE_MSG_EMAIL_TO_TASK,
+            reusedTargetIds: recent.targetIds,
+            reusedTargetSummaries: recent.targetIds.map((id) => ({ id, label: content })),
+          },
         };
       }
       const task = await this.todoist.create({
@@ -478,6 +525,15 @@ export class CrossSystemActionService {
             url: null,
           })),
           refreshHints: { ...refreshFull, targetIds: recent.targetIds },
+          dedupe: {
+            deduped: true,
+            message: DEDUPE_MSG_PREP_TASKS,
+            reusedTargetIds: recent.targetIds,
+            reusedTargetSummaries: recent.targetIds.map((id, idx) => ({
+              id,
+              label: `[Job prep] ${JOB_PREP_TASK_CONTENTS[idx] ?? "Task"}`,
+            })),
+          },
         };
       }
       const taskSummaries: TaskSummary[] = [];
@@ -629,6 +685,13 @@ export class CrossSystemActionService {
           outcome: "created",
           eventSummary: { id: existingId, summary, start: startIso, end: endIso },
           refreshHints: { ...refreshOnWrite, targetIds: recent.targetIds },
+          dedupe: {
+            deduped: true,
+            message: DEDUPE_MSG_EMAIL_TO_EVENT,
+            reusedTargetIds: recent.targetIds,
+            reusedTargetSummaries: recent.targetIds.map((id) => ({ id, label: summary })),
+          },
+          opportunityLinkage: opportunityLinkageFromEmail(email, existingId),
         };
       }
 
@@ -657,6 +720,7 @@ export class CrossSystemActionService {
         outcome: "created",
         eventSummary: eventSummaryFromCalendarEvent(event),
         refreshHints: { ...refreshOnWrite, targetIds },
+        opportunityLinkage: opportunityLinkageFromEmail(email, event.id),
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : "email_to_event_failed";

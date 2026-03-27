@@ -225,6 +225,10 @@ describe("CrossSystemActionService", () => {
     if (!result.ok || result.action !== "job_hunt_prep_tasks") return;
     expect(todoistAdapterMock.create).not.toHaveBeenCalled();
     expect(result.taskSummaries).toHaveLength(5);
+    expect(result.dedupe?.deduped).toBe(true);
+    expect(result.dedupe?.message).toContain("Prep tasks");
+    expect(result.dedupe?.reusedTargetIds).toEqual(["tp1", "tp2", "tp3", "tp4", "tp5"]);
+    expect(result.dedupe?.reusedTargetSummaries?.[0]?.label).toContain("[Job prep]");
   });
 
   it("dedupes email_to_task within 15 minutes", async () => {
@@ -245,6 +249,9 @@ describe("CrossSystemActionService", () => {
     if (!result.ok || result.action !== "email_to_task") return;
     expect(todoistAdapterMock.create).not.toHaveBeenCalled();
     expect(result.taskSummary.id).toBe("t-old");
+    expect(result.dedupe?.message).toContain("Follow-up task");
+    expect(result.dedupe?.reusedTargetIds).toEqual(["t-old"]);
+    expect(result.dedupe?.reusedTargetSummaries?.[0]?.label).toBe("Follow up");
   });
 
   it("dedupes email_to_event within 15 minutes", async () => {
@@ -265,6 +272,20 @@ describe("CrossSystemActionService", () => {
     if (!result.ok || result.action !== "email_to_event" || result.outcome !== "created") return;
     expect(calendarAdapterMock.create).not.toHaveBeenCalled();
     expect(result.eventSummary.id).toBe("e-old");
+    expect(result.dedupe?.message).toContain("Calendar event");
+    expect(result.dedupe?.reusedTargetSummaries?.[0]?.label).toBe("Follow up");
+    expect(result.opportunityLinkage?.calendarEventId).toBe("e-old");
+    expect(result.opportunityLinkage?.sourceMessageId).toBe("m1");
+  });
+
+  it("returns opportunity linkage on new email_to_event create", async () => {
+    const service = createCrossSystemActionService("user-1");
+    const result = await service.emailToEvent("m1");
+    expect(result.ok).toBe(true);
+    if (!result.ok || result.action !== "email_to_event" || result.outcome !== "created") return;
+    expect(result.opportunityLinkage?.calendarEventId).toBe("e1");
+    expect(result.opportunityLinkage?.sourceMessageId).toBe("m1");
+    expect(result.dedupe).toBeUndefined();
   });
 
   it("archives email with direct provider write", async () => {

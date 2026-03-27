@@ -7,10 +7,13 @@ import { resolveJobCandidatesInIndex } from "../core/resolve-job.js";
 import { annotateTrackGuess } from "../core/track-classifier.js";
 import { computeSigningProbability } from "../core/probability.js";
 import {
+  compareMatchTieBreak,
   extractJobIdFromMyAssistTag,
   inferStageFromEmailText,
   matchEmailToJob,
+  roleTokenOverlapForJob,
   signalFingerprint,
+  subjectTokenOverlapForJob,
   shouldAdvanceStage,
 } from "../core/email-job-match.js";
 import { extractTranscriptSignals } from "../core/transcript-signals.js";
@@ -585,6 +588,34 @@ export class HuntService {
         if (!hit) continue;
         if (!best || hit.score > best.score) {
           best = { jobId, job, score: hit.score, reason: hit.reason };
+          continue;
+        }
+        if (best && hit.score === best.score) {
+          const signalThreadId = signal.threadId ?? signal.normalizedIdentity?.threadId ?? "";
+          const threadExactFor = (candidateJobId: string): boolean => {
+            if (!signalThreadId) return false;
+            const existingTouchpoints = state.touchpoints[candidateJobId] ?? [];
+            return existingTouchpoints.some(
+              (tp) => tp.signal_meta?.threadId && tp.signal_meta.threadId === signalThreadId,
+            );
+          };
+          const better = compareMatchTieBreak(
+            {
+              threadIdExact: threadExactFor(jobId),
+              roleOverlap: roleTokenOverlapForJob(signal, job),
+              subjectOverlap: subjectTokenOverlapForJob(signal, job),
+              jobId,
+            },
+            {
+              threadIdExact: threadExactFor(best.jobId),
+              roleOverlap: roleTokenOverlapForJob(signal, best.job),
+              subjectOverlap: subjectTokenOverlapForJob(signal, best.job),
+              jobId: best.jobId,
+            },
+          );
+          if (better > 0) {
+            best = { jobId, job, score: hit.score, reason: hit.reason };
+          }
         }
       }
       }

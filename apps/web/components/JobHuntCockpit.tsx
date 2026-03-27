@@ -92,6 +92,7 @@ export function JobHuntCockpit() {
   const handoffStage = searchParams.get("stage")?.trim() ?? "";
   const handoffThreadId = searchParams.get("threadId")?.trim() ?? "";
   const handoffMessageId = searchParams.get("messageId")?.trim() ?? "";
+  const handoffEventId = searchParams.get("eventId")?.trim() ?? "";
   const handoffRecruiter = searchParams.get("recruiter")?.trim() ?? "";
   const [activeTab, setActiveTab] = useState<TabId>("discovery");
   const [loading, setLoading] = useState(true);
@@ -700,7 +701,12 @@ export function JobHuntCockpit() {
             </ul>
           </div>
         ) : null}
-        {(handoffCompany || handoffRole || handoffStage || handoffThreadId || handoffMessageId) ? (
+        {(handoffCompany ||
+          handoffRole ||
+          handoffStage ||
+          handoffThreadId ||
+          handoffMessageId ||
+          handoffEventId) ? (
           <div
             className="mt-4 rounded-[22px] border border-sky-500/35 bg-sky-500/10 px-4 py-3 text-xs leading-6 text-sky-100"
             role="status"
@@ -710,7 +716,12 @@ export function JobHuntCockpit() {
               {[handoffCompany, handoffRole, handoffStage].filter(Boolean).join(" · ") || "Job context attached"}
             </p>
             <p className="opacity-90">
-              {[handoffRecruiter ? `Recruiter: ${handoffRecruiter}` : "", handoffThreadId ? `Thread: ${handoffThreadId}` : "", handoffMessageId ? `Message: ${handoffMessageId}` : ""]
+              {[
+                handoffRecruiter ? `Recruiter: ${handoffRecruiter}` : "",
+                handoffThreadId ? `Thread: ${handoffThreadId}` : "",
+                handoffMessageId ? `Message: ${handoffMessageId}` : "",
+                handoffEventId ? `Calendar event: ${handoffEventId}` : "",
+              ]
                 .filter(Boolean)
                 .join(" · ")}
             </p>

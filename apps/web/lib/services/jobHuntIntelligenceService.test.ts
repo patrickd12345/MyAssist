@@ -87,6 +87,29 @@ describe("jobHuntIntelligenceService", () => {
     expect(a.signals).toContain("application_confirmation");
   });
 
+  it("detects S01-style application receipt language", () => {
+    const a = analyzeEmail(
+      signal({
+        from: "Greenhouse <no-reply@greenhouse.io>",
+        subject: "Your application to Acme Corp was received",
+        snippet: "Thanks for applying. We'll review your application and get back to you.",
+      }),
+    );
+    expect(a.signals).toContain("application_confirmation");
+    expect(a.stageAlias).toBe("applied");
+  });
+
+  it("detects S02-style recruiter outreach language with recruiter domain", () => {
+    const a = analyzeEmail(
+      signal({
+        from: "Sara Kim <sara@talent.contoso.com>",
+        subject: "Senior Frontend Engineer opportunity at Contoso",
+        snippet: "I came across your profile and wanted to reach out regarding an open role.",
+      }),
+    );
+    expect(a.signals).toContain("follow_up");
+  });
+
   it("does not treat unrelated follow-up marketing as job follow_up", () => {
     const a = analyzeEmail(
       signal({
@@ -149,5 +172,90 @@ describe("jobHuntIntelligenceService", () => {
   it("uses multi-signal precedence with rejection highest", () => {
     const alias = stageAliasForSignals(["application_confirmation", "offer", "rejection"]);
     expect(alias).toBe("rejected");
+  });
+
+  it("extracts stable company across reply subject variants for continuity", () => {
+    const a = extractJobIdentity(
+      signal({
+        from: "recruiter@contoso.com",
+        subject: "Re: Interview — Software Engineer",
+        snippet: "We would like to schedule an interview at Contoso for the engineering role.",
+      }),
+    );
+    const b = extractJobIdentity(
+      signal({
+        from: "recruiter@contoso.com",
+        subject: "Fwd: Interview — Software Engineer",
+        snippet: "Following up on the Contoso application.",
+      }),
+    );
+    expect(a.company).toBe("Contoso");
+    expect(b.company).toBe("Contoso");
+  });
+
+  it("sanitizes company and role identity fragments", () => {
+    const identity = extractJobIdentity(
+      signal({
+        from: "Ava Lin <ava@talent.fabrikam.com>",
+        subject: "Fwd: interview availability",
+        snippet:
+          "Can you share availability for a screening call for the Senior Frontend Engineer role? Interview at Fabrikam is confirmed.",
+      }),
+    );
+    expect(identity.company).toBe("Fabrikam");
+    expect(identity.role).toBe("Senior Frontend Engineer");
+  });
+
+  it("cleans application-confirmation role titles (S01-style)", () => {
+    const identity = extractJobIdentity(
+      signal({
+        from: "Greenhouse <no-reply@greenhouse.io>",
+        subject: "Your application to Acme Corp was received",
+        snippet:
+          "Thanks for applying to the Product Manager role at Acme Corp. We will review your application shortly.",
+      }),
+    );
+    expect(identity.role).toBe("Product Manager");
+  });
+
+  it("dedupes interview-family signals when technical_interview is present (S04-style)", () => {
+    const a = analyzeEmail(
+      signal({
+        from: "Nina Patel <nina@adatum.com>",
+        subject: "Technical interview invite",
+        snippet:
+          "We'd like to move you to a technical interview for the Backend Engineer role at Adatum.",
+      }),
+    );
+    expect(a.signals).toContain("technical_interview");
+    expect(a.signals).not.toContain("interview_request");
+    expect(a.stageAlias).toBe("technical");
+  });
+
+  it("suppresses company/role/recruiter on analyzeEmail when non-job (S08/S14-style)", () => {
+    const startupDigest = analyzeEmail(
+      signal({
+        from: "News <news@startupdigest.com>",
+        subject: "Next steps to grow your startup",
+        snippet: "A practical guide for founders. Schedule your strategy call today.",
+      }),
+    );
+    expect(startupDigest.signals.length).toBe(0);
+    expect(startupDigest.confidence).toBe(0);
+    expect(startupDigest.normalizedIdentity?.company).toBeUndefined();
+    expect(startupDigest.normalizedIdentity?.role).toBeUndefined();
+    expect(startupDigest.normalizedIdentity?.recruiterName).toBeUndefined();
+    expect(startupDigest.normalizedIdentity?.threadId).toBe("th1");
+
+    const meetup = analyzeEmail(
+      signal({
+        from: "Community <events@meetup.com>",
+        subject: "Let's meet this weekend",
+        snippet: "Join our social meetup for coffee and networking.",
+      }),
+    );
+    expect(meetup.signals.length).toBe(0);
+    expect(meetup.normalizedIdentity?.company).toBeUndefined();
+    expect(meetup.normalizedIdentity?.recruiterName).toBeUndefined();
   });
 });

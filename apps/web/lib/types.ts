@@ -37,6 +37,15 @@ export type JobHuntNormalizedIdentity = {
   messageId?: string;
 };
 
+/** Lightweight linkage for calendar events created from job-hunt email flows (no calendar mirroring). */
+export type JobHuntCalendarOpportunityLink = {
+  sourceMessageId: string;
+  sourceThreadId?: string | null;
+  calendarEventId: string;
+  normalizedIdentity?: JobHuntNormalizedIdentity;
+  stageAlias?: JobHuntStageAlias;
+};
+
 export type JobHuntAnalysis = {
   signals: JobHuntSignal[];
   confidence: number;
