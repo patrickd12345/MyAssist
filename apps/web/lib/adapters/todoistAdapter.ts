@@ -145,6 +145,19 @@ export class TodoistAdapter
     const token = await todoistToken(this.userId);
     await fetchTodoist<Record<string, unknown>>(token, `/tasks/${encodeURIComponent(taskId)}/close`, { method: "POST" });
   }
+
+  /** Permanently delete a task (used for undoing MyAssist-created tasks). */
+  async delete(id: string): Promise<void> {
+    const taskId = id.trim();
+    if (!taskId) throw new Error("todoist_invalid_task_id");
+    const token = await todoistToken(this.userId);
+    const res = await fetch(`${TODOIST_BASE_URL}/tasks/${encodeURIComponent(taskId)}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
+    if (!res.ok) throw new Error(`todoist_request_failed_${res.status}`);
+  }
 }
 
 export function createTodoistAdapter(userId: string): TodoistAdapter {

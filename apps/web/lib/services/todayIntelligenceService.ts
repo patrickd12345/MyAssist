@@ -78,7 +78,7 @@ function overlaps(a: { startMs: number; endMs: number }, b: { startMs: number; e
   return a.startMs < b.endMs && b.startMs < a.endMs;
 }
 
-function isInterviewLikeEvent(ev: CalendarEvent): boolean {
+export function isInterviewLikeCalendarEvent(ev: CalendarEvent): boolean {
   return INTERVIEW_KW.test(ev.summary || "");
 }
 
@@ -167,7 +167,7 @@ export function buildTodayInsights(context: MyAssistDailyContext): TodayInsights
   const now = Date.now();
 
   for (const ev of context.calendar_today) {
-    if (!isInterviewLikeEvent(ev) || !ev.start) continue;
+    if (!isInterviewLikeCalendarEvent(ev) || !ev.start) continue;
     const localStartDay = formatLocalDateInToronto(ev.start);
     if (localStartDay !== runDate) continue;
 

@@ -53,7 +53,7 @@ export type RefreshHints = {
   targetIds: string[];
 };
 
-type ActionLogEntry = {
+export type StoredActionLogEntry = {
   action: ActionName;
   status: ActionStatus;
   timestamp: string;
@@ -66,6 +66,8 @@ type ActionLogEntry = {
   sourceThreadId?: string;
   deduped?: boolean;
 };
+
+type ActionLogEntry = StoredActionLogEntry;
 
 const DEFAULT_FOCUS_BLOCK_MINUTES = 30;
 const ACTION_DEDUPE_WINDOW_MS = 15 * 60 * 1000;
@@ -196,7 +198,7 @@ async function logAction(userId: string, entry: ActionLogEntry): Promise<void> {
   await appendFile(target, `${JSON.stringify(entry)}\n`, "utf8");
 }
 
-async function readRecentActionEntries(userId: string, maxLines = ACTION_LOG_TAIL_LINES): Promise<ActionLogEntry[]> {
+export async function readActionLogEntries(userId: string, maxLines = ACTION_LOG_TAIL_LINES): Promise<StoredActionLogEntry[]> {
   const target = actionLogPath(userId);
   try {
     const raw = await readFile(target, "utf8");
@@ -415,7 +417,7 @@ export class CrossSystemActionService {
         content,
       ]);
       const recent = latestSuccessfulEntryInWindow(
-        await readRecentActionEntries(this.userId),
+        await readActionLogEntries(this.userId),
         action,
         dedupeKey,
       );
@@ -506,7 +508,7 @@ export class CrossSystemActionService {
         "prep_bundle_v1",
       ]);
       const recent = latestSuccessfulEntryInWindow(
-        await readRecentActionEntries(this.userId),
+        await readActionLogEntries(this.userId),
         action,
         dedupeKey,
       );
@@ -668,7 +670,7 @@ export class CrossSystemActionService {
         endIso,
       ]);
       const recent = latestSuccessfulEntryInWindow(
-        await readRecentActionEntries(this.userId),
+        await readActionLogEntries(this.userId),
         action,
         dedupeKey,
       );

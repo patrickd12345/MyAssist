@@ -19,6 +19,10 @@ import type {
   TodoistTask,
 } from "@/lib/types";
 import type { SavedJobRow } from "@/lib/jobHuntUiTypes";
+import {
+  buildFeedbackFromActionResponse,
+  type UnifiedActionFeedback,
+} from "@/lib/actionResultModel";
 import { buildDailySynthesis } from "@/lib/services/dailySynthesisService";
 import { buildJobHuntExpansion } from "@/lib/services/jobHuntExpansionService";
 import type { FollowUpTimingStatus } from "@/lib/services/jobHuntExpansionService";
@@ -30,6 +34,10 @@ import {
 } from "@/lib/services/insightActionService";
 import type { SuggestedAction } from "@/lib/services/insightActionService";
 import type { Insight } from "@/lib/services/todayIntelligenceService";
+import type {
+  MorningBriefing,
+  ProactiveChange,
+} from "@/lib/services/proactiveIntelligenceService";
 import { buildTodayInsights } from "@/lib/services/todayIntelligenceService";
 import { AssistantConsole } from "./AssistantConsole";
 import { TaskList } from "./TaskList";
@@ -87,6 +95,30 @@ function insightSeverityClass(severity: Insight["severity"]): string {
     return "border-amber-400/35 bg-amber-500/12 text-amber-50";
   }
   return "border-zinc-500/25 bg-zinc-500/10 text-zinc-200";
+}
+
+function integrationFeedbackPanelClass(outcome: UnifiedActionFeedback["outcome"]): string {
+  if (outcome === "failed") {
+    return "border-red-500/35 bg-red-500/10 text-red-100";
+  }
+  if (outcome === "deduped") {
+    return "border-amber-500/35 bg-amber-500/10 text-amber-50";
+  }
+  if (outcome === "partial") {
+    return "border-sky-500/35 bg-sky-500/10 text-sky-50";
+  }
+  return "border-emerald-500/35 bg-emerald-500/10 text-emerald-100";
+}
+
+function formatActionHistoryTime(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return new Intl.DateTimeFormat("en-CA", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(d);
 }
 
 function followUpTimingStatusClass(status: FollowUpTimingStatus): string {
@@ -535,11 +567,23 @@ export function Dashboard({
   const [pendingCrossActionKeys, setPendingCrossActionKeys] = useState<string[]>([]);
   const [ignoredJobHuntMessageIds, setIgnoredJobHuntMessageIds] = useState<string[]>([]);
   const [taskActionError, setTaskActionError] = useState<string | null>(null);
-  const [integrationActionNotice, setIntegrationActionNotice] = useState<{
-    message: string;
-    href?: string;
-    reusedTargets?: Array<{ id: string; label: string; href?: string | null }>;
-  } | null>(null);
+  const [integrationFeedback, setIntegrationFeedback] = useState<UnifiedActionFeedback | null>(null);
+  const [actionHistoryRows, setActionHistoryRows] = useState<
+    Array<{
+      id: string;
+      action: string;
+      actionLabel: string;
+      status: string;
+      outcome: string;
+      timestamp: string;
+      sourceIds: string[];
+      targetIds: string[];
+      error?: string;
+      recoverableTargets: Array<{ kind: "calendar" | "todoist"; id: string }>;
+    }>
+  >([]);
+  const [actionHistoryLoading, setActionHistoryLoading] = useState(false);
+  const [recoveringKey, setRecoveringKey] = useState<string | null>(null);
   const [theme, setTheme] = useState<ThemeKey>("light");
   const [themeMenuOpen, setThemeMenuOpen] = useState(false);
   const [headline, setHeadline] = useState<string>(
@@ -564,6 +608,14 @@ export function Dashboard({
   const [assignError, setAssignError] = useState<string | null>(null);
   const [integrationStatuses, setIntegrationStatuses] = useState<IntegrationStatusRow[]>([]);
   const lastHeadlineKeyRef = useRef<string | null>(initialData?.generated_at ?? null);
+  const [proactiveIntel, setProactiveIntel] = useState<{
+    morningBriefing: MorningBriefing;
+    changesSinceLastVisit: ProactiveChange[];
+    recommendedActions: string[];
+  } | null>(null);
+  const [proactiveLoading, setProactiveLoading] = useState(false);
+  const [proactiveError, setProactiveError] = useState<string | null>(null);
+  const proactiveFetchKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
     const storedTheme =
@@ -887,6 +939,72 @@ export function Dashboard({
     [],
   );
 
+  const loadActionHistory = useCallback(async () => {
+    setActionHistoryLoading(true);
+    try {
+      const res = await fetch("/api/actions/history", { cache: "no-store" });
+      if (!res.ok) return;
+      const data = (await res.json()) as {
+        ok?: boolean;
+        rows?: Array<{
+          id: string;
+          action: string;
+          actionLabel: string;
+          status: string;
+          outcome: string;
+          timestamp: string;
+          sourceIds: string[];
+          targetIds: string[];
+          error?: string;
+          recoverableTargets: Array<{ kind: "calendar" | "todoist"; id: string }>;
+        }>;
+      };
+      if (data.ok && Array.isArray(data.rows)) {
+        setActionHistoryRows(data.rows);
+      }
+    } catch {
+      setActionHistoryRows([]);
+    } finally {
+      setActionHistoryLoading(false);
+    }
+  }, []);
+
+  const recoverCreatedTarget = useCallback(
+    async (targetId: string, kind: "calendar" | "todoist") => {
+      const rk = `${kind}:${targetId}`;
+      setRecoveringKey(rk);
+      try {
+        const res = await fetch("/api/actions/recover", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ targetId, kind }),
+        });
+        const json = (await res.json()) as { ok?: boolean; error?: string };
+        if (!res.ok) {
+          throw new Error(typeof json.error === "string" ? json.error : `HTTP ${res.status}`);
+        }
+        await refreshProviderSlice(kind === "calendar" ? "google_calendar" : "todoist");
+        void loadActionHistory();
+        setIntegrationFeedback({
+          outcome: "success",
+          title: "Recovery",
+          message: "Removed the linked item MyAssist had created.",
+          dismissible: true,
+        });
+      } catch (cause) {
+        setIntegrationFeedback({
+          outcome: "failed",
+          title: "Recovery failed",
+          message: cause instanceof Error ? cause.message : "Could not remove item.",
+          dismissible: true,
+        });
+      } finally {
+        setRecoveringKey(null);
+      }
+    },
+    [loadActionHistory, refreshProviderSlice],
+  );
+
   type ActionApiResponseBody = {
     ok?: boolean;
     error?: string;
@@ -906,40 +1024,18 @@ export function Dashboard({
       if (body.ok === false) {
         throw new Error(typeof body.error === "string" ? body.error : "Action failed.");
       }
-      if (body.dedupe?.deduped && typeof body.dedupe.message === "string") {
-        const explicitSummaries: Array<{ id: string; label: string; href?: string | null }> = [];
-        if (Array.isArray(body.dedupe.reusedTargetSummaries)) {
-          for (const item of body.dedupe.reusedTargetSummaries) {
-            const id = typeof item?.id === "string" ? item.id.trim() : "";
-            if (!id) continue;
-            const label = typeof item?.label === "string" && item.label.trim() ? item.label.trim() : id;
-            explicitSummaries.push({
-              id,
-              label,
-              href: typeof item?.href === "string" ? item.href : null,
-            });
-          }
+      const feedback = buildFeedbackFromActionResponse(body as Record<string, unknown>);
+      if (feedback) {
+        let merged = feedback;
+        if (body.opportunityLinkage) {
+          merged = {
+            ...feedback,
+            href: buildJobHuntHrefFromOpportunityLinkage(body.opportunityLinkage),
+          };
         }
-        const fallbackSummaries =
-          explicitSummaries.length > 0
-            ? explicitSummaries
-            : Array.isArray(body.dedupe.reusedTargetIds)
-              ? body.dedupe.reusedTargetIds
-                  .map((id) => (typeof id === "string" && id.trim() ? { id: id.trim(), label: id.trim() } : null))
-                  .filter((item): item is { id: string; label: string } => Boolean(item))
-              : [];
-        setIntegrationActionNotice({
-          message: body.dedupe.message,
-          href: body.opportunityLinkage ? buildJobHuntHrefFromOpportunityLinkage(body.opportunityLinkage) : undefined,
-          reusedTargets: fallbackSummaries,
-        });
-      } else if (body.opportunityLinkage) {
-        setIntegrationActionNotice({
-          message: "Calendar event linked for Job Hunt follow-up.",
-          href: buildJobHuntHrefFromOpportunityLinkage(body.opportunityLinkage),
-        });
+        setIntegrationFeedback(merged);
       } else {
-        setIntegrationActionNotice(null);
+        setIntegrationFeedback(null);
       }
       const rawProviders = body.refreshHints?.providers;
       const providers = (
@@ -952,8 +1048,9 @@ export function Dashboard({
       ) as ProviderSlice[];
       const unique = [...new Set(providers)];
       await Promise.all(unique.map((provider) => refreshProviderSlice(provider)));
+      void loadActionHistory();
     },
-    [refreshProviderSlice],
+    [refreshProviderSlice, loadActionHistory],
   );
 
   const runCrossSystemAction = useCallback(
@@ -965,7 +1062,7 @@ export function Dashboard({
       if (!trimmed) return;
       const key = `${action}:${trimmed}`;
       setTaskActionError(null);
-      setIntegrationActionNotice(null);
+      setIntegrationFeedback(null);
       setPendingCrossActionKeys((current) => [...new Set([...current, key])]);
       try {
         const response = await fetch("/api/actions", {
@@ -979,7 +1076,12 @@ export function Dashboard({
         }
         await applyActionsResponseBody(body);
       } catch (cause) {
-        setTaskActionError(cause instanceof Error ? cause.message : "Action failed.");
+        setIntegrationFeedback({
+          outcome: "failed",
+          title: "Action failed",
+          message: cause instanceof Error ? cause.message : "Action failed.",
+          dismissible: true,
+        });
       } finally {
         setPendingCrossActionKeys((current) => current.filter((entry) => entry !== key));
       }
@@ -991,7 +1093,7 @@ export function Dashboard({
     async (insightId: string, action: SuggestedAction) => {
       const pendingKey = insightActionPendingKey(insightId, action);
       setTaskActionError(null);
-      setIntegrationActionNotice(null);
+      setIntegrationFeedback(null);
       setPendingInsightActionKeys((current) => [...new Set([...current, pendingKey])]);
       try {
         const result = await executeInsightAction(action);
@@ -1014,7 +1116,12 @@ export function Dashboard({
           return;
         }
       } catch (cause) {
-        setTaskActionError(cause instanceof Error ? cause.message : "Action failed.");
+        setIntegrationFeedback({
+          outcome: "failed",
+          title: "Action failed",
+          message: cause instanceof Error ? cause.message : "Action failed.",
+          dismissible: true,
+        });
       } finally {
         setPendingInsightActionKeys((current) => current.filter((entry) => entry !== pendingKey));
       }
@@ -1027,6 +1134,11 @@ export function Dashboard({
     if (initialError !== null) return;
     void loadCachedSnapshot();
   }, [initialData, initialError, loadCachedSnapshot]);
+
+  useEffect(() => {
+    if (!bootstrapped) return;
+    void loadActionHistory();
+  }, [bootstrapped, loadActionHistory]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1214,6 +1326,71 @@ export function Dashboard({
     if (!displayData || !todayInsights || !jobHuntExpansion) return null;
     return buildDailySynthesis(displayData, todayInsights, jobHuntExpansion);
   }, [displayData, todayInsights, jobHuntExpansion]);
+
+  useEffect(() => {
+    if (!bootstrapped || error || !displayData) return;
+    const key = [
+      displayData.run_date,
+      displayData.generated_at,
+      displayData.todoist_overdue.length,
+      displayData.todoist_due_today.length,
+      displayData.todoist_upcoming_high_priority.length,
+      displayData.gmail_signals.length,
+      displayData.calendar_today.length,
+    ].join("|");
+    if (proactiveFetchKeyRef.current === key) return;
+    proactiveFetchKeyRef.current = key;
+    let cancelled = false;
+    setProactiveLoading(true);
+    setProactiveError(null);
+    void (async () => {
+      try {
+        const res = await fetch("/api/proactive-intelligence", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ context: displayData }),
+        });
+        const body = (await res.json()) as {
+          ok?: boolean;
+          error?: string;
+          morningBriefing?: MorningBriefing;
+          changesSinceLastVisit?: ProactiveChange[];
+          recommendedActions?: string[];
+        };
+        if (cancelled) return;
+        if (!res.ok || body.ok === false) {
+          setProactiveError(typeof body.error === "string" ? body.error : `HTTP ${res.status}`);
+          setProactiveIntel(null);
+          return;
+        }
+        if (
+          body.morningBriefing &&
+          Array.isArray(body.changesSinceLastVisit) &&
+          Array.isArray(body.recommendedActions)
+        ) {
+          setProactiveIntel({
+            morningBriefing: body.morningBriefing,
+            changesSinceLastVisit: body.changesSinceLastVisit,
+            recommendedActions: body.recommendedActions,
+          });
+        } else {
+          setProactiveIntel(null);
+          setProactiveError("Invalid proactive response");
+        }
+      } catch (cause) {
+        if (!cancelled) {
+          setProactiveError(cause instanceof Error ? cause.message : "Proactive load failed");
+          setProactiveIntel(null);
+        }
+      } finally {
+        if (!cancelled) setProactiveLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [bootstrapped, error, displayData]);
+
   const showSkeleton = Boolean(loading && !data && !error);
   const needsFirstRefresh = Boolean(bootstrapped && !data && !error && !loading);
 
@@ -1654,33 +1831,44 @@ export function Dashboard({
 
       {taskActionError && !error && (
         <div role="alert" className="glass-panel mb-6 rounded-[24px] border-red-500/30 p-5 text-sm text-red-300">
-          <p className="font-semibold">Integration action failed.</p>
+          <p className="font-semibold">Action failed</p>
           <p className="mt-2 text-xs leading-6 opacity-90">{taskActionError}</p>
         </div>
       )}
 
-      {integrationActionNotice && !error && !taskActionError && (
+      {integrationFeedback && !error && (
         <div
           role="status"
-          className="glass-panel mb-6 rounded-[24px] border-emerald-500/35 bg-emerald-500/10 p-5 text-sm text-emerald-100"
+          className={`glass-panel mb-6 rounded-[24px] border p-5 text-sm ${integrationFeedbackPanelClass(integrationFeedback.outcome)}`}
         >
-          <p className="font-semibold text-emerald-50">Integration</p>
-          <p className="mt-2 text-xs leading-6 opacity-95">{integrationActionNotice.message}</p>
-          {integrationActionNotice.reusedTargets && integrationActionNotice.reusedTargets.length > 0 ? (
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <p className="font-semibold opacity-95">{integrationFeedback.title}</p>
+            {integrationFeedback.dismissible ? (
+              <button
+                type="button"
+                onClick={() => setIntegrationFeedback(null)}
+                className="rounded-full border border-white/20 px-3 py-1 text-[11px] font-semibold opacity-90 transition hover:opacity-100"
+              >
+                Dismiss
+              </button>
+            ) : null}
+          </div>
+          <p className="mt-2 text-xs leading-6 opacity-95">{integrationFeedback.message}</p>
+          {integrationFeedback.createdTargets && integrationFeedback.createdTargets.length > 0 ? (
             <div className="mt-3 flex flex-wrap gap-2">
-              {integrationActionNotice.reusedTargets.map((target) =>
+              {integrationFeedback.createdTargets.map((target) =>
                 target.href ? (
                   <a
                     key={target.id}
                     href={target.href}
-                    className="rounded-full border border-emerald-300/35 bg-emerald-400/10 px-3 py-1 text-[11px] font-medium text-emerald-50"
+                    className="rounded-full border border-white/25 bg-white/10 px-3 py-1 text-[11px] font-medium"
                   >
                     {target.label}
                   </a>
                 ) : (
                   <span
                     key={target.id}
-                    className="rounded-full border border-emerald-300/35 bg-emerald-400/10 px-3 py-1 text-[11px] font-medium text-emerald-50"
+                    className="rounded-full border border-white/25 bg-white/10 px-3 py-1 text-[11px] font-medium"
                   >
                     {target.label}
                   </span>
@@ -1688,15 +1876,110 @@ export function Dashboard({
               )}
             </div>
           ) : null}
-          {integrationActionNotice.href ? (
+          {integrationFeedback.reusedTargets && integrationFeedback.reusedTargets.length > 0 ? (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {integrationFeedback.reusedTargets.map((target) =>
+                target.href ? (
+                  <a
+                    key={target.id}
+                    href={target.href}
+                    className="rounded-full border border-white/25 bg-white/10 px-3 py-1 text-[11px] font-medium"
+                  >
+                    {target.label}
+                  </a>
+                ) : (
+                  <span
+                    key={target.id}
+                    className="rounded-full border border-white/25 bg-white/10 px-3 py-1 text-[11px] font-medium"
+                  >
+                    {target.label}
+                  </span>
+                ),
+              )}
+            </div>
+          ) : null}
+          {integrationFeedback.href ? (
             <Link
-              href={integrationActionNotice.href}
+              href={integrationFeedback.href}
               className="theme-button-secondary mt-3 inline-flex rounded-full px-4 py-2 text-xs font-semibold transition"
             >
               Open Job Hunt
             </Link>
           ) : null}
         </div>
+      )}
+
+      {bootstrapped && !error && (
+        <section
+          role="region"
+          className="glass-panel mb-6 rounded-[24px] border border-zinc-500/25 p-5 text-sm"
+          aria-label="Recent MyAssist actions"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="section-title text-xs font-semibold">Recent actions</p>
+            <button
+              type="button"
+              onClick={() => void loadActionHistory()}
+              className="theme-button-secondary rounded-full px-3 py-1 text-[11px] font-semibold"
+              disabled={actionHistoryLoading}
+            >
+              {actionHistoryLoading ? "Loading…" : "Refresh"}
+            </button>
+          </div>
+          {actionHistoryRows.length === 0 ? (
+            <p className="theme-muted mt-3 text-xs leading-6">
+              {actionHistoryLoading ? "Loading action log…" : "No logged actions yet. Run an automation from insights or inbox."}
+            </p>
+          ) : (
+            <ul className="mt-3 max-h-[320px] space-y-2 overflow-y-auto text-xs">
+              {actionHistoryRows.slice(0, 25).map((row) => (
+                <li
+                  key={row.id}
+                  className="list-card rounded-[14px] border border-zinc-500/20 px-3 py-2 leading-5"
+                >
+                  <div className="flex flex-wrap items-baseline justify-between gap-2">
+                    <span className="font-semibold text-zinc-100">{row.actionLabel}</span>
+                    <span className="theme-muted shrink-0">{formatActionHistoryTime(row.timestamp)}</span>
+                  </div>
+                  <p className="theme-muted mt-1">
+                    {row.outcome === "failed"
+                      ? `Failed${row.error ? `: ${row.error}` : ""}`
+                      : row.outcome === "deduped"
+                        ? "Deduped (reused existing)"
+                        : row.status === "success"
+                          ? "Succeeded"
+                          : row.status}
+                    {row.sourceIds[0] ? ` · source ${row.sourceIds[0].slice(0, 24)}${row.sourceIds[0].length > 24 ? "…" : ""}` : ""}
+                  </p>
+                  {row.targetIds.length > 0 ? (
+                    <p className="theme-muted mt-1 font-mono text-[10px] opacity-80">
+                      Targets: {row.targetIds.join(", ").slice(0, 120)}
+                      {row.targetIds.join(", ").length > 120 ? "…" : ""}
+                    </p>
+                  ) : null}
+                  {row.recoverableTargets.length > 0 ? (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {row.recoverableTargets.map((t) => {
+                        const busy = recoveringKey === `${t.kind}:${t.id}`;
+                        return (
+                          <button
+                            key={`${row.id}-${t.kind}-${t.id}`}
+                            type="button"
+                            disabled={busy}
+                            onClick={() => void recoverCreatedTarget(t.id, t.kind)}
+                            className="rounded-full border border-rose-400/40 bg-rose-500/15 px-2 py-1 text-[10px] font-semibold text-rose-100 disabled:opacity-50"
+                          >
+                            {busy ? "…" : t.kind === "calendar" ? "Remove calendar block" : "Remove task"}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
       )}
 
       {assignError && !error && (
@@ -1754,6 +2037,102 @@ export function Dashboard({
                   </span>
                 </div>
               </section>
+              ) : null}
+
+              {activeTab === "overview" && displayData && todayInsights ? (
+                <div className="space-y-6">
+                  <section
+                    role="region"
+                    className="glass-panel rounded-[30px] p-6"
+                    aria-label="Morning briefing"
+                  >
+                    <p className="section-title text-xs font-semibold">Morning briefing</p>
+                    <h2 className="theme-ink mt-2 text-xl font-semibold tracking-[-0.03em]">
+                      What matters right now
+                    </h2>
+                    {proactiveError && !proactiveIntel ? (
+                      <p className="theme-muted mt-2 text-xs leading-6" role="status">
+                        Briefing unavailable ({proactiveError}).
+                      </p>
+                    ) : null}
+                    {proactiveLoading && !proactiveIntel && !proactiveError ? (
+                      <p className="theme-muted mt-3 text-sm animate-pulse">Loading briefing…</p>
+                    ) : null}
+                    {proactiveIntel ? (
+                      <div className="mt-3 space-y-3 text-sm">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-sky-200/90">
+                          {proactiveIntel.morningBriefing.greetingLine}
+                        </p>
+                        <p className="theme-ink font-medium leading-6">
+                          {proactiveIntel.morningBriefing.leadLine}
+                        </p>
+                        {proactiveIntel.morningBriefing.bullets.length > 0 ? (
+                          <ul className="theme-muted list-inside list-disc text-xs leading-5">
+                            {proactiveIntel.morningBriefing.bullets.map((b) => (
+                              <li key={b}>{b}</li>
+                            ))}
+                          </ul>
+                        ) : null}
+                        {proactiveIntel.recommendedActions.length > 0 ? (
+                          <div>
+                            <p className="text-[11px] font-semibold text-emerald-200/90">Suggested next steps</p>
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              {proactiveIntel.recommendedActions.map((line) => (
+                                <span
+                                  key={line}
+                                  className="rounded-full border border-emerald-500/35 bg-emerald-500/10 px-3 py-1 text-[11px] font-medium text-emerald-100/95"
+                                >
+                                  {line}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </section>
+
+                  <section
+                    role="region"
+                    className="glass-panel rounded-[30px] p-6"
+                    aria-label="Since last visit"
+                  >
+                    <p className="section-title text-xs font-semibold">Since last visit</p>
+                    <h2 className="theme-ink mt-2 text-xl font-semibold tracking-[-0.03em]">
+                      What changed
+                    </h2>
+                    <p className="theme-muted mt-2 text-xs leading-6">
+                      Compared to the last time this dashboard synced proactive intel (no background jobs).
+                    </p>
+                    {proactiveLoading && !proactiveIntel ? (
+                      <p className="theme-muted mt-3 text-sm animate-pulse">Scanning for changes…</p>
+                    ) : null}
+                    {proactiveIntel ? (
+                      proactiveIntel.changesSinceLastVisit.length === 0 ? (
+                        <p className="theme-muted mt-3 text-sm leading-6">
+                          No structural changes detected since last visit.
+                        </p>
+                      ) : (
+                        <ul className="mt-4 space-y-2 text-xs">
+                          {proactiveIntel.changesSinceLastVisit.map((c) => (
+                            <li
+                              key={`${c.kind}-${c.title}`}
+                              className="list-card rounded-[14px] border border-zinc-500/20 px-3 py-2 leading-5"
+                            >
+                              <span className="font-mono text-[10px] uppercase tracking-wide text-zinc-400">
+                                {c.kind.replace(/_/g, " ")}
+                              </span>
+                              <p className="theme-ink mt-1 font-medium">{c.title}</p>
+                              {c.detail ? (
+                                <p className="theme-muted mt-1 text-[11px] leading-5">{c.detail}</p>
+                              ) : null}
+                            </li>
+                          ))}
+                        </ul>
+                      )
+                    ) : null}
+                  </section>
+                </div>
               ) : null}
 
               {activeTab === "overview" && todayInsights ? (

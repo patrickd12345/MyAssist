@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { JobHuntAction, MyAssistDailyContext } from "@/lib/types";
@@ -98,7 +98,47 @@ function mockAssistantFetch() {
       return new Response(JSON.stringify({ ok: true }), { status: 200 });
     }
 
-    if (url.includes("/api/actions")) {
+    if (url.includes("/api/proactive-intelligence")) {
+      return new Response(
+        JSON.stringify({
+          ok: true,
+          morningBriefing: {
+            greetingLine: "Good morning",
+            leadLine: "Synthetic proactive lead for test.",
+            bullets: ["Priority one", "Priority two"],
+          },
+          changesSinceLastVisit: [],
+          recommendedActions: ["Suggested step"],
+        }),
+        { status: 200 },
+      );
+    }
+
+    if (url.includes("/api/actions/history")) {
+      return new Response(
+        JSON.stringify({
+          ok: true,
+          rows: [
+            {
+              id: "ts-1",
+              action: "email_to_task",
+              actionLabel: "Email → task",
+              status: "success",
+              outcome: "success",
+              timestamp: "2026-03-25T12:00:00.000Z",
+              sourceIds: ["g2"],
+              targetIds: ["td-1"],
+              recoverableTargets: [{ kind: "todoist", id: "td-1" }],
+            },
+          ],
+        }),
+        { status: 200 },
+      );
+    }
+    if (url.includes("/api/actions/recover")) {
+      return new Response(JSON.stringify({ ok: true }), { status: 200 });
+    }
+    if (url.includes("/api/actions") && !url.includes("/history") && !url.includes("/recover")) {
       return new Response(
         JSON.stringify({
           ok: true,
@@ -137,6 +177,7 @@ describe("Dashboard", () => {
   });
 
   afterEach(() => {
+    cleanup();
     vi.unstubAllGlobals();
     mockFetch.mockClear();
   });
@@ -327,5 +368,115 @@ describe("Dashboard", () => {
 
     await user.click(screen.getAllByRole("button", { name: "Assistant" })[0]);
     expect(screen.getByRole("heading", { name: "Fast support when you need it" })).toBeInTheDocument();
+  });
+
+  it("loads morning briefing and since last visit from proactive intelligence API", async () => {
+    render(<Dashboard initialData={sampleContext} initialError={null} initialSource="live" />);
+
+    const briefing = await screen.findByRole("region", { name: "Morning briefing" });
+    await waitFor(() => {
+      expect(within(briefing).getByText("Synthetic proactive lead for test.")).toBeInTheDocument();
+    });
+
+    const since = await screen.findByRole("region", { name: "Since last visit" });
+    expect(
+      within(since).getByText(/No structural changes detected since last visit/i),
+    ).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(mockFetch).toHaveBeenCalledWith(
+        "/api/proactive-intelligence",
+        expect.objectContaining({ method: "POST" }),
+      );
+    });
+  });
+
+  it("renders recent action history from the actions log API", async () => {
+    render(<Dashboard initialData={sampleContext} initialError={null} initialSource="live" />);
+
+    const region = await screen.findByRole("region", { name: "Recent MyAssist actions" });
+    await waitFor(() => {
+      expect(within(region).getByText("Email → task")).toBeInTheDocument();
+    });
+    expect(within(region).getByText(/Succeeded/i)).toBeInTheDocument();
+    expect(mockFetch).toHaveBeenCalledWith("/api/actions/history", expect.any(Object));
+  });
+
+  it("shows success integration feedback when an action creates a linked task", async () => {
+    const user = userEvent.setup();
+    const delegate = mockAssistantFetch();
+    mockFetch.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+      if (url.includes("/api/actions") && !url.includes("/history") && !url.includes("/recover")) {
+        return new Response(
+          JSON.stringify({
+            ok: true,
+            action: "email_to_task",
+            sourceEmailId: "g2",
+            taskSummary: {
+              id: "td-new",
+              content: "Follow up on interview",
+              url: "https://todoist.com/app",
+            },
+            refreshHints: { providers: ["gmail", "todoist"], sourceIds: ["g2"], targetIds: ["td-new"] },
+          }),
+          { status: 200 },
+        );
+      }
+      return delegate(input, init);
+    });
+
+    render(<Dashboard initialData={sampleContext} initialError={null} initialSource="live" />);
+
+    await user.click(screen.getAllByRole("button", { name: "Inbox" })[0]);
+    const toTodoistButtons = await screen.findAllByRole("button", { name: "To Todoist" });
+    await user.click(toTodoistButtons[toTodoistButtons.length - 1]);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Created 1 linked item/i)).toBeInTheDocument();
+    });
+    expect(screen.getByText("Follow up on interview")).toBeInTheDocument();
+  });
+
+  it("posts to recover when removing a logged MyAssist-created task", async () => {
+    const user = userEvent.setup();
+    render(<Dashboard initialData={sampleContext} initialError={null} initialSource="live" />);
+
+    const region = await screen.findByRole("region", { name: "Recent MyAssist actions" });
+    const removeBtn = await within(region).findByRole("button", { name: "Remove task" });
+    await user.click(removeBtn);
+
+    await waitFor(() => {
+      expect(mockFetch).toHaveBeenCalledWith(
+        "/api/actions/recover",
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({ targetId: "td-1", kind: "todoist" }),
+        }),
+      );
+    });
+  });
+
+  it("shows failed integration feedback when the actions API reports ok false", async () => {
+    const user = userEvent.setup();
+    const delegate = mockAssistantFetch();
+    mockFetch.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+      if (url.includes("/api/actions") && !url.includes("/history") && !url.includes("/recover")) {
+        return new Response(JSON.stringify({ ok: false, error: "email_not_found" }), { status: 200 });
+      }
+      return delegate(input, init);
+    });
+
+    render(<Dashboard initialData={sampleContext} initialError={null} initialSource="live" />);
+
+    await user.click(screen.getAllByRole("button", { name: "Inbox" })[0]);
+    const toTodoistButtons = await screen.findAllByRole("button", { name: "To Todoist" });
+    await user.click(toTodoistButtons[toTodoistButtons.length - 1]);
+
+    await waitFor(() => {
+      expect(screen.getByText("Action failed")).toBeInTheDocument();
+    });
+    expect(screen.getByText(/email_not_found/i)).toBeInTheDocument();
   });
 });
