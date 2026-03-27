@@ -1,0 +1,111 @@
+{
+  "name": "job_hunt_pre_interview_research",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "job-hunt/prep-briefing",
+        "httpMethod": "POST",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "Webhook_Trigger",
+      "name": "Webhook - Interview Scheduled",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        240,
+        300
+      ],
+      "webhookId": "job-hunt-prep-briefing"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $json.body ?? {};\nconst company = String(body.company ?? '').trim();\nconst title = String(body.title ?? '').trim();\nconst jobId = String(body.job_id ?? '').trim();\nif (!company || !title || !jobId) {\n  throw new Error('Expected body.job_id, body.company, body.title');\n}\nconst query = `${company} ${title} interview prep latest news`; \nreturn [{ json: { company, title, job_id: jobId, query } }];"
+      },
+      "id": "Validate_Input",
+      "name": "Validate Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        520,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.MYASSIST_JOB_HUNT_PREP_URL || 'http://127.0.0.1:3000/api/job-hunt/saved/' + $json.job_id + '/notes'}}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { detail: 'Prep briefing requested for ' + $json.company + ' · ' + $json.title + '. Research query: ' + $json.query } }}",
+        "options": {}
+      },
+      "id": "Append_Prep_Note",
+      "name": "Append Prep Briefing Note",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        840,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, job_id: $json.job_id, query: $json.query, note_appended: true } }}",
+        "options": {}
+      },
+      "id": "Respond_OK",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1120,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook - Interview Scheduled": {
+      "main": [
+        [
+          {
+            "node": "Validate Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Payload": {
+      "main": [
+        [
+          {
+            "node": "Append Prep Briefing Note",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append Prep Briefing Note": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {},
+  "active": false,
+  "versionId": "97d79f95-8e53-4f47-98cb-6d41f1f21499",
+  "meta": {
+    "instanceId": "local"
+  },
+  "id": "job_hunt_pre_interview_research",
+  "tags": []
+}

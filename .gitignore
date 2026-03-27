@@ -1,0 +1,5 @@
+node_modules
+
+# Next.js build output (delete and rebuild if webpack chunk errors e.g. Cannot find module './432.js')
+apps/web/.next
+apps/web/tests/e2e/.playwright-users.json

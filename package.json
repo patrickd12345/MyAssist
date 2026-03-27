@@ -1,0 +1,27 @@
+{
+  "name": "myassist",
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix apps/web run dev",
+    "web:dev": "npm --prefix apps/web run dev",
+    "web:build": "npm --prefix apps/web run build",
+    "web:lint": "npm --prefix apps/web run lint",
+    "web:typecheck": "npm --prefix apps/web run typecheck",
+    "web:test": "npm --prefix apps/web run test",
+    "web:test:e2e": "npm --prefix apps/web run test:e2e",
+    "web:start": "npm --prefix apps/web run start",
+    "web:clean": "npm --prefix apps/web run clean",
+    "web:dev:fresh": "npm run web:clean && npm run web:dev",
+    "reminders:export:mac": "bash tools/export-reminders.sh",
+    "reminders:import": "node tools/import-apple-reminders-to-todoist.mjs",
+    "job-hunt:dev": "npm --prefix apps/job-hunt-manager run dev",
+    "job-hunt:digest:dev": "npm --prefix apps/job-hunt-manager run digest:dev",
+    "job-hunt:test": "npm --prefix apps/job-hunt-manager run test",
+    "job-hunt:typecheck": "npm --prefix apps/job-hunt-manager run typecheck"
+  },
+  "devDependencies": {
+    "form-data": "^4.0.5",
+    "sqlite3": "^5.1.7",
+    "zod": "3.25.76"
+  }
+}

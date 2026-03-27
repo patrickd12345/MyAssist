@@ -1,0 +1,36 @@
+{
+  "name": "job-hunt-manager",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./config/rss-sources": "./src/config/rss-sources.ts",
+    "./services/hunt-service": "./src/services/hunt-service.ts",
+    "./connectors/linkedin-job-view": "./src/connectors/linkedin-job-view.ts",
+    "./types/job": "./src/types/job.ts",
+    "./types/lifecycle": "./src/types/lifecycle.ts"
+  },
+  "scripts": {
+    "dev": "tsx src/server.ts",
+    "digest:dev": "tsx src/digest-server.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server.js",
+    "digest:start": "node dist/digest-server.js",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.28.0",
+    "dotenv": "^17.3.1",
+    "myassist": "file:../..",
+    "proper-lockfile": "^4.1.2",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.10",
+    "@types/proper-lockfile": "^4.1.4",
+    "tsx": "^4.20.5",
+    "typescript": "^5.7.2",
+    "vitest": "^4.0.3"
+  }
+}

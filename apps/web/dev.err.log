@@ -1,0 +1,4 @@
+ ⨯ [Error: Objects are not valid as a React child (found: object with keys {value, html, text}). If you meant to render a collection of children, use an array instead.] {
+  digest: '3213963243'
+}
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.

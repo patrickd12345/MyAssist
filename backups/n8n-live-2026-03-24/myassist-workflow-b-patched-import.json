@@ -1,0 +1,294 @@
+[
+  {
+    "createdAt": "2026-03-23T16:08:34.978Z",
+    "updatedAt": "2026-03-23T16:53:54.000Z",
+    "id": "myassist-workflow-b",
+    "name": "MyAssist - Daily Context (normalized JSON)",
+    "active": true,
+    "nodes": [
+      {
+        "parameters": {
+          "path": "myassist-daily-context",
+          "responseMode": "lastNode",
+          "options": {
+            "responseContentType": "application/json"
+          }
+        },
+        "id": "8143d19a-9cb4-458e-9430-ecd6314402b7",
+        "name": "Webhook - Fetch Daily Context",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2,
+        "position": [
+          -460,
+          160
+        ],
+        "webhookId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+        "notesInFlow": true,
+        "notes": "GET production URL: /webhook/myassist-daily-context when workflow is active. Respond: When Last Node Finishes, First Entry JSON. Same graph as Cron; use for MyAssist web app."
+      },
+      {
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "triggerAtHour": 1
+              }
+            ]
+          }
+        },
+        "id": "2f2486e0-997c-4b0c-99eb-9a63234821f7",
+        "name": "Cron - 01:00 Local",
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.2,
+        "position": [
+          -280,
+          160
+        ],
+        "notesInFlow": true,
+        "notes": "Runs each day at 01:00 local server time. Adjust in node settings if needed."
+      },
+      {
+        "parameters": {
+          "url": "https://api.todoist.com/api/v1/tasks",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "limit",
+                "value": "200"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Bearer 6cce6a2513d8a943d73a7e8def0cb007abeb918a"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "id": "21b74447-81ea-435b-abd6-0d89ba037e3b",
+        "name": "Todoist - Get Active Tasks",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          0,
+          0
+        ],
+        "notesInFlow": true,
+        "notes": "authentication=None + header only: avoids duplicate Authorization if a Bearer/Header credential was also attached. Token: $vars.TODOIST_API_TOKEN or attach Header Auth and clear this header in UI. Query limit=200 (API max per page)."
+      },
+      {
+        "parameters": {
+          "operation": "getAll",
+          "limit": 20,
+          "filters": {
+            "includeSpamTrash": false,
+            "q": "newer_than:14d",
+            "readStatus": "both"
+          }
+        },
+        "id": "4c751ed4-1b4a-4d11-a7c0-18d0aed8f946",
+        "name": "Gmail - Get Starred Signals",
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.1,
+        "position": [
+          0,
+          160
+        ],
+        "notesInFlow": true,
+        "webhookId": "2c032bd6-9b6e-4d01-8556-670fd5b372d6",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "LLuljZU8QOWlM86o",
+            "name": "Gmail account"
+          }
+        },
+        "notes": "Read both unread and read mail. Query now targets recent mail using newer_than:14d."
+      },
+      {
+        "parameters": {
+          "operation": "getAll",
+          "calendar": {
+            "__rl": true,
+            "mode": "id",
+            "value": "pilotmontreal@gmail.com"
+          },
+          "options": {
+            "orderBy": "startTime"
+          }
+        },
+        "id": "638a1e22-e737-49fc-ba81-2b1272509eb0",
+        "name": "Google Calendar - Today Events",
+        "type": "n8n-nodes-base.googleCalendar",
+        "typeVersion": 1.3,
+        "position": [
+          0,
+          320
+        ],
+        "notesInFlow": true,
+        "credentials": {
+          "googleCalendarOAuth2Api": {
+            "id": "sDZKM7LxIdXux2Ka",
+            "name": "Google Calendar account"
+          }
+        },
+        "notes": "Calendar ID set by email (not primary) so re-import keeps the correct calendar. Change value if the account differs."
+      },
+      {
+        "parameters": {},
+        "id": "03e7f23a-d7ee-4654-8a15-944403c53139",
+        "name": "Merge Todoist + Gmail",
+        "type": "n8n-nodes-base.merge",
+        "typeVersion": 3,
+        "position": [
+          260,
+          80
+        ],
+        "notesInFlow": true,
+        "notes": "Append mode: concat streams so 0 Gmail messages does not drop the Todoist branch (combineAll would output 0 items)."
+      },
+      {
+        "parameters": {},
+        "id": "3255cbeb-89e1-4375-aa39-e0c2b4f9fc13",
+        "name": "Merge With Calendar",
+        "type": "n8n-nodes-base.merge",
+        "typeVersion": 3,
+        "position": [
+          400,
+          200
+        ],
+        "notesInFlow": true,
+        "notes": "Append: fan-in Calendar with prior branch; empty calendar still passes prior items."
+      },
+      {
+        "parameters": {
+          "jsCode": "const todoistPayload = $items('Todoist - Get Active Tasks', 0, 0)[0]?.json;\nconst todoistRaw = Array.isArray(todoistPayload)\n  ? todoistPayload\n  : (Array.isArray(todoistPayload?.results)\n    ? todoistPayload.results\n    : (Array.isArray(todoistPayload?.items) ? todoistPayload.items : []));\nconst gmailRaw = $items('Gmail - Get Starred Signals', 0, 0).map(i => i.json);\nconst calRaw = $items('Google Calendar - Today Events', 0, 0).map(i => i.json);\n\nconst today = new Date();\nconst y = today.getFullYear();\nconst m = String(today.getMonth() + 1).padStart(2, '0');\nconst d = String(today.getDate()).padStart(2, '0');\nconst todayStr = `${y}-${m}-${d}`;\n\nconst tasks = todoistRaw;\nconst overdue = [];\nconst dueToday = [];\nconst upcomingHigh = [];\n\nfor (const t of tasks) {\n  const due = t?.due?.date || null;\n  const p = Number(t?.priority || 4);\n  if (due && due < todayStr) overdue.push(t);\n  else if (due === todayStr) dueToday.push(t);\n  else if (!due && p <= 2) upcomingHigh.push(t);\n}\n\nconst gmailSignals = gmailRaw.map(g => ({\n  id: g.id || null,\n  threadId: g.threadId || null,\n  from: g.from || g.payload?.headers?.find(h => String(h.name).toLowerCase() === 'from')?.value || '',\n  subject: g.subject || g.payload?.headers?.find(h => String(h.name).toLowerCase() === 'subject')?.value || '',\n  snippet: g.snippet || '',\n  date: g.internalDate || g.date || ''\n}));\n\nconst calendarToday = calRaw.map(e => ({\n  id: e.id || null,\n  summary: e.summary || '(no title)',\n  start: e.start?.dateTime || e.start?.date || null,\n  end: e.end?.dateTime || e.end?.date || null,\n  location: e.location || null\n}));\n\nreturn [{\n  json: {\n    generated_at: new Date().toISOString(),\n    run_date: todayStr,\n    todoist_overdue: overdue,\n    todoist_due_today: dueToday,\n    todoist_upcoming_high_priority: upcomingHigh.slice(0, 10),\n    gmail_signals: gmailSignals,\n    calendar_today: calendarToday\n  }\n}];"
+        },
+        "id": "2d930aa3-6ba2-4122-a4ec-27bce79bc14d",
+        "name": "Normalize Aggregated Data",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          520,
+          160
+        ],
+        "notesInFlow": true,
+        "notes": "Terminal output: normalized JSON for Custom GPT (MyAssist Operator). No in-n8n LLM."
+      }
+    ],
+    "connections": {
+      "Webhook - Fetch Daily Context": {
+        "main": [
+          [
+            {
+              "node": "Todoist - Get Active Tasks",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Gmail - Get Starred Signals",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Google Calendar - Today Events",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Cron - 01:00 Local": {
+        "main": [
+          [
+            {
+              "node": "Todoist - Get Active Tasks",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Gmail - Get Starred Signals",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Google Calendar - Today Events",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Todoist - Get Active Tasks": {
+        "main": [
+          [
+            {
+              "node": "Merge Todoist + Gmail",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Gmail - Get Starred Signals": {
+        "main": [
+          [
+            {
+              "node": "Merge Todoist + Gmail",
+              "type": "main",
+              "index": 1
+            }
+          ]
+        ]
+      },
+      "Merge Todoist + Gmail": {
+        "main": [
+          [
+            {
+              "node": "Merge With Calendar",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Google Calendar - Today Events": {
+        "main": [
+          [
+            {
+              "node": "Merge With Calendar",
+              "type": "main",
+              "index": 1
+            }
+          ]
+        ]
+      },
+      "Merge With Calendar": {
+        "main": [
+          [
+            {
+              "node": "Normalize Aggregated Data",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "settings": {
+      "executionOrder": "v1"
+    },
+    "staticData": null,
+    "meta": {
+      "templateCredsSetupCompleted": true
+    },
+    "pinData": {},
+    "versionId": "4d905ee4-81a3-4fd4-a84a-88ca2d1dd8c8",
+    "triggerCount": 2,
+    "tags": []
+  }
+]

@@ -1,0 +1,115 @@
+const todoistPayload = $items('Todoist - Get Active Tasks', 0, 0)[0]?.json;
+const todoistRaw = Array.isArray(todoistPayload)
+  ? todoistPayload
+  : (Array.isArray(todoistPayload?.results)
+    ? todoistPayload.results
+    : (Array.isArray(todoistPayload?.items) ? todoistPayload.items : []));
+const gmailRaw = $items('Gmail', 0, 0).map(i => i.json);
+const calRaw = $items('Google Calendar - Moi', 0, 0).map(i => i.json);
+
+const today = new Date();
+const y = today.getFullYear();
+const m = String(today.getMonth() + 1).padStart(2, '0');
+const d = String(today.getDate()).padStart(2, '0');
+const todayStr = `${y}-${m}-${d}`;
+
+const tasks = todoistRaw;
+const overdue = [];
+const dueToday = [];
+const upcomingHigh = [];
+
+for (const t of tasks) {
+  const due = t?.due?.date || null;
+  const p = Number(t?.priority || 4);
+  if (due && due < todayStr) overdue.push(t);
+  else if (due === todayStr) dueToday.push(t);
+  else if (!due && p <= 2) upcomingHigh.push(t);
+}
+
+const cleanText = (value) => String(value ?? '')
+  .replace(/[\u200B-\u200D\uFEFF]/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim();
+
+const collectHeaders = (g) => {
+  const out = [];
+  const visit = (payload) => {
+    if (!payload || typeof payload !== 'object') return;
+    if (Array.isArray(payload.headers)) {
+      for (const h of payload.headers) {
+        if (h && (h.name != null) && ('value' in h || h.value != null)) {
+          out.push({ name: String(h.name), value: String(h.value ?? '') });
+        }
+      }
+    }
+    if (Array.isArray(payload.parts)) {
+      for (const p of payload.parts) visit(p);
+    }
+  };
+  if (g && typeof g === 'object') {
+    visit(g.payload);
+    if (Array.isArray(g.headers)) {
+      for (const h of g.headers) {
+        if (h && h.name != null) out.push({ name: String(h.name), value: String(h.value ?? '') });
+      }
+    }
+    if (g.headers && typeof g.headers === 'object' && !Array.isArray(g.headers)) {
+      for (const k of Object.keys(g.headers)) {
+        out.push({ name: k, value: String(g.headers[k] ?? '') });
+      }
+    }
+  }
+  return out;
+};
+
+const readHeader = (g, name) => {
+  const want = String(name).toLowerCase();
+  const headers = collectHeaders(g);
+  const found = headers.find(h => String(h.name || '').toLowerCase() === want);
+  return found ? String(found.value || '').trim() : '';
+};
+
+const subjectFromSnippet = (snippet) => {
+  const s = cleanText(snippet);
+  if (!s) return '';
+  const line = s.split(/[\r\n]+/)[0].trim();
+  if (!line) return '';
+  return line.length > 120 ? `${line.slice(0, 117)}...` : line;
+};
+
+const gmailSignals = gmailRaw.map(g => {
+  const snippet = cleanText(g.snippet || g.Snippet || '');
+  const from = cleanText(g.from || g.From || readHeader(g, 'from') || '');
+  let subject = cleanText(g.subject || g.Subject || readHeader(g, 'subject'));
+  if (!subject) subject = subjectFromSnippet(snippet);
+  if (!subject) subject = '(no subject)';
+
+  return {
+    id: g.id || null,
+    threadId: g.threadId || null,
+    from,
+    subject,
+    snippet,
+    date: g.internalDate || g.date || ''
+  };
+});
+
+const calendarToday = calRaw.map(e => ({
+  id: e.id || null,
+  summary: e.summary || '(no title)',
+  start: e.start?.dateTime || e.start?.date || null,
+  end: e.end?.dateTime || e.end?.date || null,
+  location: e.location || null
+}));
+
+return [{
+  json: {
+    generated_at: new Date().toISOString(),
+    run_date: todayStr,
+    todoist_overdue: overdue,
+    todoist_due_today: dueToday,
+    todoist_upcoming_high_priority: upcomingHigh.slice(0, 10),
+    gmail_signals: gmailSignals,
+    calendar_today: calendarToday
+  }
+}];

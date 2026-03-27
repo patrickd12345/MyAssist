@@ -1,0 +1,15 @@
+---
+description: After MyAssist n8n workflow changes, verify via MCP when available.
+globs:
+  - n8n/**/*.json
+---
+
+# MyAssist n8n verification
+
+When editing `n8n/*.json` or workflow-related docs, if the **user-n8n-mcp** server is available in Cursor:
+
+1. Call `search_workflows` (query `MyAssist`) then `execute_workflow` on the digest workflow (manual mode).
+2. If status is not success, call `get_workflow_details` and check **two** Merge nodes: **Merge Todoist + Gmail** (inputs 0/1), **Merge With Calendar** (first merge + Calendar on 0/1).
+3. On failure, report the MCP error string and the connection fix.
+
+If MCP is unavailable or not configured, say so and rely on the README + manual Test workflow in n8n.

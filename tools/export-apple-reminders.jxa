@@ -1,0 +1,113 @@
+/*
+Run on macOS:
+  osascript -l JavaScript tools/export-apple-reminders.jxa ~/Desktop/apple-reminders-export.json
+
+Optional:
+  --include-completed
+  --list "List Name"
+*/
+
+ObjC.import("Foundation");
+
+function toIsoOrNull(dateValue) {
+  if (!dateValue) return null;
+  try {
+    const d = new Date(dateValue.toString());
+    if (Number.isNaN(d.getTime())) return null;
+    return d.toISOString();
+  } catch {
+    return null;
+  }
+}
+
+function toStringOrEmpty(v) {
+  if (v === null || v === undefined) return "";
+  return String(v);
+}
+
+function parseArgs(argv) {
+  const args = argv.map((v) => String(v));
+  let outputPath = "~/Desktop/apple-reminders-export.json";
+  let includeCompleted = false;
+  let listName = null;
+
+  if (args.length && !String(args[0]).startsWith("--")) {
+    outputPath = args.shift();
+  }
+  while (args.length) {
+    const a = String(args.shift());
+    if (a === "--include-completed") {
+      includeCompleted = true;
+    } else if (a === "--list") {
+      const next = args.shift();
+      if (!next) {
+        throw new Error("--list requires a list name");
+      }
+      listName = String(next);
+    } else {
+      throw new Error(`Unknown argument: ${a}`);
+    }
+  }
+  return { outputPath, includeCompleted, listName };
+}
+
+function main(argv) {
+  const opts = parseArgs(argv);
+
+  const reminders = Application("Reminders");
+  reminders.includeStandardAdditions = true;
+
+  const lists = reminders.lists();
+  const out = [];
+
+  const toProcess = [];
+  if (opts.listName !== null) {
+    for (let i = 0; i < lists.length; i += 1) {
+      const list = lists[i];
+      if (toStringOrEmpty(list.name()) === opts.listName) {
+        toProcess.push(list);
+        break;
+      }
+    }
+    if (toProcess.length === 0) {
+      throw new Error(`No list named "${opts.listName}"`);
+    }
+  } else {
+    for (let i = 0; i < lists.length; i += 1) {
+      toProcess.push(lists[i]);
+    }
+  }
+
+  for (let li = 0; li < toProcess.length; li += 1) {
+    const list = toProcess[li];
+    const listName = toStringOrEmpty(list.name());
+    const items = list.reminders();
+
+    for (let j = 0; j < items.length; j += 1) {
+      const r = items[j];
+      const completed = Boolean(r.completed());
+      if (!opts.includeCompleted && completed) continue;
+
+      out.push({
+        id: toStringOrEmpty(r.id()),
+        title: toStringOrEmpty(r.name()),
+        notes: toStringOrEmpty(r.body()),
+        list: listName,
+        completed,
+        dueDate: toIsoOrNull(r.dueDate()),
+        priority: Number(r.priority()),
+      });
+    }
+  }
+
+  const json = JSON.stringify(out, null, 2);
+  const path = $(opts.outputPath).stringByExpandingTildeInPath.js;
+  const ok = $(json).writeToFileAtomicallyEncodingError(path, true, $.NSUTF8StringEncoding, null);
+  if (!ok) {
+    throw new Error(`Could not write export file: ${path}`);
+  }
+
+  console.log(`Exported ${out.length} reminders to ${path}`);
+}
+
+main(ObjC.deepUnwrap($.NSProcessInfo.processInfo.arguments).slice(4));
