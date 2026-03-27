@@ -19,6 +19,41 @@ function gmailMessageIsUnread(g: GmailSignal): boolean {
   return ids.includes("UNREAD");
 }
 
+function MailUnreadGlyph({ className }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className={className}
+      aria-hidden
+    >
+      <path d="M1.5 8.67v8.58a3 3 0 0 0 3 3h15a3 3 0 0 0 3-3V8.67l-8.928 5.493a3 3 0 0 1-3.144 0L1.5 8.67Z" />
+      <path d="M22.5 6.908V6.75a3 3 0 0 0-3-3h-15a3 3 0 0 0-3 3v.158l9.714 5.978a1.5 1.5 0 0 0 1.572 0L22.5 6.908Z" />
+    </svg>
+  );
+}
+
+function MailReadGlyph({ className }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth={1.5}
+      stroke="currentColor"
+      className={className}
+      aria-hidden
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M21.75 9v-.375a2.25 2.25 0 0 0-2.25-2.25H4.5A2.25 2.25 0 0 0 2.25 8.625V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9m-18 4.5h18M5.25 9h13.5m-16.5 4.5 7.72-4.492a.75.75 0 0 1 .78 0l7.72 4.492"
+      />
+    </svg>
+  );
+}
+
 function formatJobHuntSignals(signals: JobHuntSignal[]): string {
   if (signals.length === 0) return "";
   const labels: Record<JobHuntSignal, string> = {
@@ -118,7 +153,6 @@ export function InboxEmailRow({
 }: InboxEmailRowProps) {
   const subject = g.subject || "(no subject)";
   const itemTooltip = [subject, g.snippet].filter(Boolean).join("\n\n");
-  const hasDetailsTooltip = itemTooltip.trim().length > 0;
   const importanceReason = typeof g.importance_reason === "string" ? g.importance_reason.trim() : "";
   const importanceScore =
     typeof g.importance_score === "number" ? Math.round(g.importance_score) : null;
@@ -145,25 +179,40 @@ export function InboxEmailRow({
       }`}
     >
       <div className="flex items-start justify-between gap-3">
-        <p className="theme-ink line-clamp-2 text-sm font-semibold leading-6" title={itemTooltip}>
-          {subject}
-        </p>
+        <div className="flex min-w-0 flex-1 items-start gap-2">
+          <span
+            className={`mt-0.5 shrink-0 ${isGmailUnread ? "text-sky-400/95" : "text-zinc-500/80"}`}
+            title={isGmailUnread ? "Unread in Gmail" : "Read in Gmail"}
+            aria-label={isGmailUnread ? "Unread message" : "Read message"}
+          >
+            {isGmailUnread ? (
+              <MailUnreadGlyph className="h-4 w-4" />
+            ) : (
+              <MailReadGlyph className="h-4 w-4" />
+            )}
+          </span>
+          <p
+            className={`theme-ink line-clamp-2 text-sm leading-6 ${isGmailUnread ? "font-semibold" : "font-medium opacity-90"}`}
+            title={itemTooltip}
+          >
+            {subject}
+          </p>
+        </div>
         <div className="flex shrink-0 items-center gap-1">
+          {isGmailUnread ? (
+            <span
+              className="signal-pill shrink-0 rounded-full bg-sky-500/20 px-2 py-0.5 text-[10px] font-semibold text-sky-200/95 ring-1 ring-sky-400/35"
+              title="Unread in Gmail"
+            >
+              New
+            </span>
+          ) : null}
           {badge ? (
             <span
               className="signal-pill rounded-full px-2 py-0.5 text-[10px] font-semibold"
               title={badge === "Signals" ? "Job hunt or priority signal" : "High triage score"}
             >
               {badge}
-            </span>
-          ) : null}
-          {hasDetailsTooltip ? (
-            <span
-              className="signal-pill shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold"
-              title="Hover on title to get more context"
-              aria-label="Has details tooltip"
-            >
-              i
             </span>
           ) : null}
         </div>
