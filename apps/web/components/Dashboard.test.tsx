@@ -58,6 +58,26 @@ const sampleContext: MyAssistDailyContext = {
   calendar_today: [],
 };
 
+/** Single non-priority message (no job_hunt_analysis, no importance_score). */
+const onlyRecentEmailContext: MyAssistDailyContext = {
+  ...sampleContext,
+  gmail_signals: [
+    {
+      id: "g-only",
+      threadId: "th-only",
+      from: "News <news@example.com>",
+      subject: "Weekly digest",
+      snippet: "Stories for you.",
+      date: "2026-03-25T10:00:00.000Z",
+    },
+  ],
+};
+
+const emptyGmailContext: MyAssistDailyContext = {
+  ...sampleContext,
+  gmail_signals: [],
+};
+
 function mockAssistantFetch() {
   return vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
@@ -246,15 +266,17 @@ describe("Dashboard", () => {
     await user.click(screen.getAllByRole("button", { name: "Inbox" })[0]);
 
     const subject = "Your trial is ending soon, you will be automatically charged";
-    const emailHeading = screen.getAllByRole("heading", { name: "In this pull" }).at(-1);
+    const emailHeading = screen.getAllByRole("heading", { name: "Email in this pull" }).at(-1);
     const emailSection = emailHeading?.closest("section");
     expect(emailSection).toBeTruthy();
     await waitFor(() => {
       expect(within(emailSection as HTMLElement).getAllByText(subject).length).toBeGreaterThanOrEqual(1);
     });
 
-    const handledButtons = within(emailSection as HTMLElement).getAllByRole("button", { name: "Handled" });
-    await user.click(handledButtons[0]);
+    const recentBlock = screen.getByRole("heading", { name: "Recent in this pull" }).parentElement;
+    expect(recentBlock).toBeTruthy();
+    const handledInRecent = within(recentBlock as HTMLElement).getByRole("button", { name: "Handled" });
+    await user.click(handledInRecent);
 
     await waitFor(() => {
       expect(mockFetch).toHaveBeenCalledWith(
@@ -278,6 +300,39 @@ describe("Dashboard", () => {
     await waitFor(() => {
       expect(within(emailSection as HTMLElement).queryByText(subject)).not.toBeInTheDocument();
     });
+  });
+
+  it("Inbox splits priority vs recent and does not use misleading signal-query empty copy", async () => {
+    const user = userEvent.setup();
+    render(<Dashboard initialData={sampleContext} initialError={null} initialSource="live" />);
+    await user.click(screen.getAllByRole("button", { name: "Inbox" })[0]);
+
+    expect(screen.getByRole("heading", { name: "Priority and signals" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Recent in this pull" })).toBeInTheDocument();
+    expect(screen.getByText("Schedule your interview for the engineer role")).toBeInTheDocument();
+    expect(
+      screen.getByText("Your trial is ending soon, you will be automatically charged"),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/No messages matched the current signal query/i)).not.toBeInTheDocument();
+  });
+
+  it("Inbox shows recent mail when nothing qualifies as priority", async () => {
+    const user = userEvent.setup();
+    render(<Dashboard initialData={onlyRecentEmailContext} initialError={null} initialSource="live" />);
+    await user.click(screen.getAllByRole("button", { name: "Inbox" })[0]);
+
+    expect(screen.getByText("No priority signals right now.")).toBeInTheDocument();
+    expect(screen.getByText("Weekly digest")).toBeInTheDocument();
+    expect(screen.queryByText(/No messages matched the current signal query/i)).not.toBeInTheDocument();
+  });
+
+  it("Inbox empty state does not mention signal query", async () => {
+    const user = userEvent.setup();
+    render(<Dashboard initialData={emptyGmailContext} initialError={null} initialSource="live" />);
+    await user.click(screen.getAllByRole("button", { name: "Inbox" })[0]);
+
+    expect(screen.getByText("No messages in this pull.")).toBeInTheDocument();
+    expect(screen.queryByText(/signal query/i)).not.toBeInTheDocument();
   });
 
   it("shows integration notice when actions API returns dedupe metadata", async () => {

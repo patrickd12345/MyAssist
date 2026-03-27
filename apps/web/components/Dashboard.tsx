@@ -19,7 +19,6 @@ import type {
   GmailSignal,
   JobHuntCalendarOpportunityLink,
   JobHuntEmailMatch,
-  JobHuntSignal,
   SituationBrief,
   TodoistTask,
 } from "@/lib/types";
@@ -44,8 +43,11 @@ import type {
   MorningBriefing,
   ProactiveChange,
 } from "@/lib/services/proactiveIntelligenceService";
+import { splitInboxEmails } from "@/lib/inboxEmailSections";
 import { buildTodayInsights, isInterviewLikeCalendarEvent } from "@/lib/services/todayIntelligenceService";
+import { CommunicationDraftToolbar } from "./CommunicationDraftToolbar";
 import { AssistantConsole, type CommunicationDraftInjectPayload } from "./AssistantConsole";
+import { InboxEmailRow } from "./InboxEmailRow";
 import { TaskList } from "./TaskList";
 
 type ThemeKey = "light" | "neon" | "kpop-demon-hunters" | "zara-larsson";
@@ -110,67 +112,6 @@ function firstMessageIdFromInsightActions(actions: SuggestedAction[]): string | 
     if (id) return id;
   }
   return null;
-}
-
-function CommunicationDraftToolbar({
-  defaultDraftType,
-  lang,
-  onLangChange,
-  onInject,
-}: {
-  defaultDraftType: CommunicationDraftType;
-  lang: DraftLanguage;
-  onLangChange: (next: DraftLanguage) => void;
-  onInject: (type: CommunicationDraftType) => void;
-}) {
-  const [draftType, setDraftType] = useState<CommunicationDraftType>(defaultDraftType);
-  return (
-    <div className="mt-2 flex flex-col gap-2 rounded-[14px] border border-white/10 bg-black/25 px-2 py-2">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="theme-muted text-[10px] font-semibold uppercase tracking-[0.14em]">
-          Reply draft
-        </span>
-        <div className="flex gap-1">
-          <button
-            type="button"
-            onClick={() => onLangChange("en")}
-            className={`rounded-full px-2 py-1 text-[10px] font-semibold transition ${
-              lang === "en" ? "theme-button-primary" : "theme-chip"
-            }`}
-          >
-            EN
-          </button>
-          <button
-            type="button"
-            onClick={() => onLangChange("fr")}
-            className={`rounded-full px-2 py-1 text-[10px] font-semibold transition ${
-              lang === "fr" ? "theme-button-primary" : "theme-chip"
-            }`}
-          >
-            FR
-          </button>
-        </div>
-        <select
-          value={draftType}
-          onChange={(e) => setDraftType(e.target.value as CommunicationDraftType)}
-          className="rounded-lg border border-white/10 bg-black/40 px-2 py-1 text-[11px] text-zinc-100"
-          aria-label="Draft type"
-        >
-          <option value="follow_up">Follow-up</option>
-          <option value="interview_accept">Interview accept</option>
-          <option value="interview_reschedule">Reschedule</option>
-          <option value="thank_you">Thank you</option>
-        </select>
-      </div>
-      <button
-        type="button"
-        onClick={() => onInject(draftType)}
-        className="theme-button-secondary w-fit rounded-full px-3 py-1.5 text-[11px] font-semibold"
-      >
-        Draft reply
-      </button>
-    </div>
-  );
 }
 
 function insightSeverityClass(severity: Insight["severity"]): string {
@@ -376,40 +317,6 @@ function itemCountLabel(items: string[]): string {
   return items.length === 1 ? "1 item" : `${items.length} items`;
 }
 
-const JOB_HUNT_PANEL_MIN_CONFIDENCE = 0.4;
-
-function formatJobHuntSignals(signals: JobHuntSignal[]): string {
-  if (signals.length === 0) return "";
-  const labels: Record<JobHuntSignal, string> = {
-    interview_request: "Interview request",
-    technical_interview: "Technical interview",
-    follow_up: "Follow-up",
-    offer: "Offer",
-    rejection: "Rejection",
-    application_confirmation: "Application confirmation",
-  };
-  return signals.map((s) => labels[s] ?? s).join(" · ");
-}
-
-function jobHuntReasonCopy(signal: JobHuntSignal): string {
-  switch (signal) {
-    case "interview_request":
-      return "Scheduling language detected — add prep and protect time.";
-    case "technical_interview":
-      return "Technical interview language detected — prep matters.";
-    case "follow_up":
-      return "Follow-up language detected — capture a next step.";
-    case "offer":
-      return "Offer language detected — track negotiation and decisions.";
-    case "rejection":
-      return "Closure language detected — update pipeline when ready.";
-    case "application_confirmation":
-      return "Application acknowledgment detected — track the pipeline.";
-    default:
-      return "";
-  }
-}
-
 function buildJobHuntHrefFromOpportunityLinkage(link: JobHuntCalendarOpportunityLink): string {
   const p = new URLSearchParams();
   const ni = link.normalizedIdentity;
@@ -424,21 +331,6 @@ function buildJobHuntHrefFromOpportunityLinkage(link: JobHuntCalendarOpportunity
   if (link.stageAlias) p.set("stage", link.stageAlias);
   p.set("tab", "pipeline");
   return `/job-hunt?${p.toString()}`;
-}
-
-function buildJobHuntHref(signal: GmailSignal): string {
-  const p = new URLSearchParams();
-  const identity = signal.job_hunt_analysis?.normalizedIdentity;
-  const stageAlias = signal.job_hunt_analysis?.stageAlias;
-  if (identity?.company) p.set("company", identity.company);
-  if (identity?.role) p.set("role", identity.role);
-  if (identity?.recruiterName) p.set("recruiter", identity.recruiterName);
-  if (identity?.threadId || signal.threadId) p.set("threadId", identity?.threadId ?? String(signal.threadId));
-  if (identity?.messageId || signal.id) p.set("messageId", identity?.messageId ?? String(signal.id));
-  if (stageAlias) p.set("stage", stageAlias);
-  p.set("tab", "pipeline");
-  const q = p.toString();
-  return q ? `/job-hunt?${q}` : "/job-hunt";
 }
 
 function MetricValue({
@@ -1432,6 +1324,10 @@ export function Dashboard({
     () => (data ? { ...data, gmail_signals: visibleEmailSignals } : null),
     [data, visibleEmailSignals],
   );
+  const inboxSplit = useMemo(
+    () => splitInboxEmails(displayData?.gmail_signals ?? []),
+    [displayData?.gmail_signals],
+  );
   displayDataRef.current = displayData;
   const nextAction = useMemo(() => (displayData ? buildNextAction(displayData) : null), [displayData]);
   const todayInsights = useMemo(
@@ -1864,7 +1760,7 @@ export function Dashboard({
               </p>
             </div>
             <div className="metric-chip rounded-[22px] px-4 py-4">
-              <p className="theme-accent text-[11px] uppercase tracking-[0.18em]">Inbox signals</p>
+              <p className="theme-accent text-[11px] uppercase tracking-[0.18em]">Email in pull</p>
               <MetricValue
                 value={displayData.gmail_signals.length}
                 href="#important-emails"
@@ -2844,10 +2740,13 @@ export function Dashboard({
                 <section id="important-emails" className="glass-panel scroll-mt-6 rounded-[30px] p-5">
                   <div className="flex items-center justify-between gap-3">
                     <div>
-                      <p className="section-title text-xs font-semibold">Important emails</p>
+                      <p className="section-title text-xs font-semibold">Inbox</p>
                       <h2 className="theme-ink mt-2 text-xl font-semibold tracking-[-0.03em]">
-                        In this pull
+                        Email in this pull
                       </h2>
+                      <p className="theme-muted mt-1 max-w-xl text-xs leading-5">
+                        Primary inbox, last 10 days — priority rows are highlighted; everything else stays visible below.
+                      </p>
                     </div>
                     <span className="signal-pill rounded-full px-3 py-1 text-[11px] font-semibold">
                       {displayData.gmail_signals.length}
@@ -2855,238 +2754,87 @@ export function Dashboard({
                   </div>
                   {displayData.gmail_signals.length === 0 ? (
                     <p className="theme-empty mt-4 rounded-[20px] px-4 py-5 text-sm">
-                      No messages matched the current signal query.
+                      No messages in this pull.
                     </p>
                   ) : (
-                    <ul className="mt-4 max-h-[22rem] space-y-3 overflow-auto pr-1">
-                      {displayData.gmail_signals.map((g) => {
-                        const subject = g.subject || "(no subject)";
-                        const itemTooltip = [subject, g.snippet].filter(Boolean).join("\n\n");
-                        const hasDetailsTooltip = itemTooltip.trim().length > 0;
-                        const importanceReason = typeof g.importance_reason === "string" ? g.importance_reason.trim() : "";
-                        const importanceScore =
-                          typeof g.importance_score === "number" ? Math.round(g.importance_score) : null;
-                        const messageId =
-                          g.id !== undefined && g.id !== null && String(g.id).trim() !== ""
-                            ? String(g.id).trim()
-                            : "";
-                        const emailToTaskKey = `email_to_task:${messageId}`;
-                        const emailToEventKey = `email_to_event:${messageId}`;
-                        const crossEmailBusy =
-                          pendingCrossActionKeys.includes(emailToTaskKey) ||
-                          pendingCrossActionKeys.includes(emailToEventKey);
-                        const memoryBusy = pendingResolvedTexts.includes(subject);
-                        return (
-                        <li key={g.id ?? g.threadId ?? g.subject} className="list-card rounded-[22px] px-4 py-4">
-                          <div className="flex items-start justify-between gap-3">
-                            <p
-                              className="theme-ink line-clamp-2 text-sm font-semibold leading-6"
-                              title={itemTooltip}
-                            >
-                              {subject}
-                            </p>
-                            {hasDetailsTooltip ? (
-                              <span
-                                className="signal-pill shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold"
-                                title="Hover on title to get more context"
-                                aria-label="Has details tooltip"
-                              >
-                                i
-                              </span>
-                            ) : null}
-                          </div>
-                          <p className="theme-accent mt-2 text-[11px] uppercase tracking-[0.14em]">
-                            {firstName(g.from)}
+                    <div className="mt-4 space-y-8">
+                      <div>
+                        <h3 className="theme-ink text-sm font-semibold tracking-[-0.02em]">
+                          Priority and signals
+                        </h3>
+                        {inboxSplit.priority.length === 0 ? (
+                          <p className="theme-muted mt-2 text-sm leading-6">
+                            {inboxSplit.recent.length > 0
+                              ? "No priority signals right now."
+                              : "No messages in this section."}
                           </p>
-                          {importanceReason ? (
-                            <p className="theme-muted mt-2 text-[11px] leading-5">
-                              Triage intent: {importanceReason}
-                              {importanceScore !== null ? ` (${importanceScore}/100)` : ""}
-                            </p>
-                          ) : (
-                            <p className="theme-muted mt-2 text-[11px] leading-5 opacity-60">
-                              Triage intent: Ranking timed out or omitted by model
-                            </p>
-                          )}
-                          {g.snippet ? (
-                            <p
-                              className="theme-muted mt-2 line-clamp-2 text-sm leading-6"
-                              title={g.snippet}
-                            >
-                              {g.snippet}
-                            </p>
-                          ) : null}
-                          {messageId &&
-                          g.job_hunt_analysis &&
-                          g.job_hunt_analysis.confidence >= JOB_HUNT_PANEL_MIN_CONFIDENCE &&
-                          g.job_hunt_analysis.signals.length > 0 &&
-                          !ignoredJobHuntMessageIds.includes(messageId) ? (
-                            <div
-                              className="mt-3 rounded-[20px] border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-left"
-                              role="region"
-                              aria-label="Job hunt suggestions"
-                            >
-                              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-amber-200/90">
-                                Job hunt
-                              </p>
-                              <p className="theme-ink mt-1 text-sm font-medium leading-6">
-                                {formatJobHuntSignals(g.job_hunt_analysis.signals)}
-                              </p>
-                              <p className="theme-muted mt-1 text-xs leading-5">
-                                {jobHuntReasonCopy(g.job_hunt_analysis.signals[0] ?? "interview_request")}
-                              </p>
-                              <div className="mt-3 flex flex-wrap gap-2">
-                                {g.job_hunt_analysis.suggestedActions.includes("create_prep_task") ? (
-                                  <button
-                                    type="button"
-                                    disabled={
-                                      crossEmailBusy ||
-                                      memoryBusy ||
-                                      pendingCrossActionKeys.includes(`job_hunt_prep_tasks:${messageId}`)
-                                    }
-                                    onClick={() => void runCrossSystemAction("job_hunt_prep_tasks", messageId)}
-                                    className="theme-button-primary rounded-full px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50"
-                                  >
-                                    {pendingCrossActionKeys.includes(`job_hunt_prep_tasks:${messageId}`)
-                                      ? "Prep tasks…"
-                                      : "Create prep tasks"}
-                                  </button>
-                                ) : null}
-                                {g.job_hunt_analysis.suggestedActions.includes("suggest_calendar_block") ||
-                                g.job_hunt_analysis.suggestedActions.includes("create_interview_event") ? (
-                                  <button
-                                    type="button"
-                                    disabled={!messageId || crossEmailBusy || memoryBusy}
-                                    onClick={() => void runCrossSystemAction("email_to_event", messageId)}
-                                    className="theme-button-secondary rounded-full px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50"
-                                  >
-                                    {pendingCrossActionKeys.includes(emailToEventKey) ? "Calendar…" : "Add to calendar"}
-                                  </button>
-                                ) : null}
-                                {g.job_hunt_analysis.suggestedActions.includes("create_followup_task") ? (
-                                  <button
-                                    type="button"
-                                    disabled={!messageId || crossEmailBusy || memoryBusy}
-                                    onClick={() => void runCrossSystemAction("email_to_task", messageId)}
-                                    className="theme-button-secondary rounded-full px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50"
-                                  >
-                                    {pendingCrossActionKeys.includes(emailToTaskKey) ? "Task…" : "Follow-up task"}
-                                  </button>
-                                ) : null}
-                                {g.job_hunt_analysis.suggestedActions.includes("update_pipeline") ? (
-                                  <Link
-                                    href={buildJobHuntHref(g)}
-                                    className="theme-button-secondary inline-flex items-center rounded-full px-3 py-2 text-xs font-semibold transition"
-                                  >
-                                    Update pipeline
-                                  </Link>
-                                ) : null}
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    setIgnoredJobHuntMessageIds((current) =>
-                                      current.includes(messageId) ? current : [...current, messageId],
-                                    )
-                                  }
-                                  className="theme-button-secondary rounded-full px-3 py-2 text-xs font-semibold transition"
-                                >
-                                  Ignore
-                                </button>
-                              </div>
-                              <CommunicationDraftToolbar
-                                defaultDraftType="follow_up"
-                                lang={communicationDraftLang}
-                                onLangChange={setCommunicationDraftLang}
-                                onInject={(type) =>
-                                  injectCommunicationDraft(type, g, subject)
+                        ) : (
+                          <ul className="mt-3 max-h-[22rem] space-y-3 overflow-auto pr-1">
+                            {inboxSplit.priority.map((g) => (
+                              <InboxEmailRow
+                                key={g.id ?? g.threadId ?? g.subject}
+                                g={g}
+                                emphasis
+                                pendingCrossActionKeys={pendingCrossActionKeys}
+                                ignoredJobHuntMessageIds={ignoredJobHuntMessageIds}
+                                onIgnoreJobHunt={(messageId) =>
+                                  setIgnoredJobHuntMessageIds((current) =>
+                                    current.includes(messageId) ? current : [...current, messageId],
+                                  )
                                 }
+                                runCrossSystemAction={runCrossSystemAction}
+                                communicationDraftLang={communicationDraftLang}
+                                setCommunicationDraftLang={setCommunicationDraftLang}
+                                injectCommunicationDraft={injectCommunicationDraft}
+                                savedJobsForAssign={savedJobsForAssign}
+                                assignBusyKey={assignBusyKey}
+                                assignEmailToJob={assignEmailToJob}
+                                resolveMemoryItem={resolveMemoryItem}
+                                pendingResolvedTexts={pendingResolvedTexts}
                               />
-                            </div>
-                          ) : null}
-                          <div className="mt-3">
-                            <label className="theme-muted text-[11px]">Assign to saved job</label>
-                            <select
-                              className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-zinc-100"
-                              defaultValue=""
-                              disabled={assignBusyKey !== null || savedJobsForAssign.length === 0}
-                              onChange={(e) => {
-                                const v = e.target.value;
-                                e.target.value = "";
-                                if (v) void assignEmailToJob(g, v);
-                              }}
-                            >
-                              <option value="">
-                                {savedJobsForAssign.length === 0
-                                  ? "No saved jobs found"
-                                  : assignBusyKey
-                                    ? "Assigning..."
-                                    : "Select a saved job..."}
-                              </option>
-                              {savedJobsForAssign.map((row) => {
-                                const jid = row.saved.job_id;
-                                const label = row.job?.company
-                                  ? `${row.job.company} · ${row.job.title} (${row.lifecycle.stage})`
-                                  : `${jid} (${row.lifecycle.stage})`;
-                                return (
-                                  <option key={jid} value={jid}>
-                                    {label}
-                                  </option>
-                                );
-                              })}
-                            </select>
-                          </div>
-                          <div className="mt-4 flex flex-wrap justify-end gap-2">
-                            <button
-                              type="button"
-                              disabled={!messageId || crossEmailBusy || memoryBusy}
-                              onClick={() => void runCrossSystemAction("email_to_task", messageId)}
-                              className="theme-button-secondary rounded-full px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50"
-                              title="Create a Todoist task from this message (live Gmail read)"
-                            >
-                              {pendingCrossActionKeys.includes(emailToTaskKey) ? "Task…" : "To Todoist"}
-                            </button>
-                            <button
-                              type="button"
-                              disabled={!messageId || crossEmailBusy || memoryBusy}
-                              onClick={() => void runCrossSystemAction("email_to_event", messageId)}
-                              className="theme-button-secondary rounded-full px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50"
-                              title="Add a calendar block when a reliable time is available"
-                            >
-                              {pendingCrossActionKeys.includes(emailToEventKey) ? "Event…" : "To Calendar"}
-                            </button>
-                            <button
-                              type="button"
-                              disabled={pendingResolvedTexts.includes(subject)}
-                              onClick={() =>
-                                void resolveMemoryItem(subject, "email", "useful_action", {
-                                  id: g.id,
-                                  threadId: g.threadId,
-                                })
-                              }
-                              className="theme-button-secondary rounded-full px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50"
-                              title="Real work — teach the AI this kind of mail matters"
-                            >
-                              {pendingResolvedTexts.includes(subject) ? "Saving..." : "Handled"}
-                            </button>
-                            <button
-                              type="button"
-                              disabled={pendingResolvedTexts.includes(subject)}
-                              onClick={() =>
-                                void resolveMemoryItem(subject, "email", "junk", {
-                                  id: g.id,
-                                  threadId: g.threadId,
-                                })
-                              }
-                              className="theme-button-secondary rounded-full px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50"
-                              title="Not important — teach the AI to deprioritize similar mail"
-                            >
-                              {pendingResolvedTexts.includes(subject) ? "Saving..." : "Junk"}
-                            </button>
-                          </div>
-                        </li>
-                        );
-                      })}
-                    </ul>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                      <div>
+                        <h3 className="theme-ink text-sm font-semibold tracking-[-0.02em]">
+                          Recent in this pull
+                        </h3>
+                        {inboxSplit.recent.length === 0 ? (
+                          <p className="theme-muted mt-2 text-sm leading-6">
+                            {inboxSplit.priority.length > 0
+                              ? "No additional messages beyond the priority list."
+                              : "No messages in this section."}
+                          </p>
+                        ) : (
+                          <ul className="mt-3 max-h-[22rem] space-y-3 overflow-auto pr-1">
+                            {inboxSplit.recent.map((g) => (
+                              <InboxEmailRow
+                                key={g.id ?? g.threadId ?? g.subject}
+                                g={g}
+                                emphasis={false}
+                                pendingCrossActionKeys={pendingCrossActionKeys}
+                                ignoredJobHuntMessageIds={ignoredJobHuntMessageIds}
+                                onIgnoreJobHunt={(messageId) =>
+                                  setIgnoredJobHuntMessageIds((current) =>
+                                    current.includes(messageId) ? current : [...current, messageId],
+                                  )
+                                }
+                                runCrossSystemAction={runCrossSystemAction}
+                                communicationDraftLang={communicationDraftLang}
+                                setCommunicationDraftLang={setCommunicationDraftLang}
+                                injectCommunicationDraft={injectCommunicationDraft}
+                                savedJobsForAssign={savedJobsForAssign}
+                                assignBusyKey={assignBusyKey}
+                                assignEmailToJob={assignEmailToJob}
+                                resolveMemoryItem={resolveMemoryItem}
+                                pendingResolvedTexts={pendingResolvedTexts}
+                              />
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    </div>
                   )}
                 </section>
               ) : null}
