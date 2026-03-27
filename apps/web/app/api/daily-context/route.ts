@@ -4,7 +4,7 @@ import { fetchDailyContextLive, MYASSIST_CONTEXT_SOURCE_HEADER } from "@/lib/fet
 import { integrationService } from "@/lib/integrations/service";
 import { getTaskNudges } from "@/lib/memoryStore";
 import { getSessionUserId } from "@/lib/session";
-import { resolveTodoistApiToken } from "@/lib/todoistToken";
+import { fetchTodoistTaskRecordsForUser } from "@/lib/todoistApiTasks";
 import { bucketTodoistTasksFromApi, todayCalendarDateInTaskZone } from "@/lib/todoistTaskBuckets";
 import type { MyAssistDailyContext } from "@/lib/types";
 
@@ -51,19 +51,8 @@ async function fetchTodoistSlices(userId: string): Promise<Pick<
   MyAssistDailyContext,
   "todoist_overdue" | "todoist_due_today" | "todoist_upcoming_high_priority"
 > | null> {
-  const token = await resolveTodoistApiToken(userId);
-  if (!token) return null;
-  const res = await fetch("https://api.todoist.com/api/v1/tasks?limit=200", {
-    headers: { Authorization: `Bearer ${token}` },
-    cache: "no-store",
-  });
-  if (!res.ok) return null;
-  const json = (await res.json()) as unknown;
-  if (!Array.isArray(json)) return null;
-  const tasks = json.filter(
-    (item): item is Record<string, unknown> => Boolean(item && typeof item === "object"),
-  );
-
+  const tasks = await fetchTodoistTaskRecordsForUser(userId);
+  if (tasks === null) return null;
   return bucketTodoistTasksFromApi(tasks);
 }
 

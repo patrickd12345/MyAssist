@@ -59,7 +59,16 @@ async function fetchTodoist<T>(token: string, path: string, init?: RequestInit):
   });
   if (!res.ok) throw new Error(`todoist_request_failed_${res.status}`);
   if (res.status === 204) return {} as T;
-  return (await res.json()) as T;
+  const json = (await res.json()) as unknown;
+  if (
+    json &&
+    typeof json === "object" &&
+    "results" in json &&
+    Array.isArray((json as { results: unknown }).results)
+  ) {
+    return (json as { results: T }).results as T;
+  }
+  return json as T;
 }
 
 export class TodoistAdapter
