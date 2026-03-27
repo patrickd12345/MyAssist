@@ -5,6 +5,7 @@ import { integrationService } from "@/lib/integrations/service";
 import { getTaskNudges } from "@/lib/memoryStore";
 import { getSessionUserId } from "@/lib/session";
 import { resolveTodoistApiToken } from "@/lib/todoistToken";
+import { bucketTodoistTasksFromApi, todayCalendarDateInTaskZone } from "@/lib/todoistTaskBuckets";
 import type { MyAssistDailyContext } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -46,35 +47,6 @@ function mapOAuthGmailSignals(raw: Array<Record<string, unknown>>): MyAssistDail
   }));
 }
 
-function dateOnly(value: Date): string {
-  return value.toISOString().slice(0, 10);
-}
-
-function getTaskDueDate(task: Record<string, unknown>): string | null {
-  const due = task.due as Record<string, unknown> | undefined;
-  if (!due || typeof due !== "object") return null;
-  if (typeof due.date === "string" && due.date.trim()) return due.date.trim();
-  if (typeof due.datetime === "string" && due.datetime.trim()) {
-    const parsed = new Date(due.datetime);
-    if (!Number.isNaN(parsed.getTime())) return dateOnly(parsed);
-  }
-  return null;
-}
-
-function getTaskPriority(task: Record<string, unknown>): number {
-  return typeof task.priority === "number" ? task.priority : 1;
-}
-
-function compareTasks(a: Record<string, unknown>, b: Record<string, unknown>): number {
-  const dueA = getTaskDueDate(a) ?? "9999-12-31";
-  const dueB = getTaskDueDate(b) ?? "9999-12-31";
-  if (dueA !== dueB) return dueA.localeCompare(dueB);
-  const priorityA = getTaskPriority(a);
-  const priorityB = getTaskPriority(b);
-  if (priorityA !== priorityB) return priorityB - priorityA;
-  return String(a.id ?? "").localeCompare(String(b.id ?? ""));
-}
-
 async function fetchTodoistSlices(userId: string): Promise<Pick<
   MyAssistDailyContext,
   "todoist_overdue" | "todoist_due_today" | "todoist_upcoming_high_priority"
@@ -92,35 +64,7 @@ async function fetchTodoistSlices(userId: string): Promise<Pick<
     (item): item is Record<string, unknown> => Boolean(item && typeof item === "object"),
   );
 
-  const today = dateOnly(new Date());
-  const todoist_overdue: Record<string, unknown>[] = [];
-  const todoist_due_today: Record<string, unknown>[] = [];
-  const todoist_upcoming_high_priority: Record<string, unknown>[] = [];
-
-  for (const task of tasks) {
-    const dueDate = getTaskDueDate(task);
-    if (dueDate && dueDate < today) {
-      todoist_overdue.push(task);
-      continue;
-    }
-    if (dueDate && dueDate === today) {
-      todoist_due_today.push(task);
-      continue;
-    }
-    if (getTaskPriority(task) >= 3) {
-      todoist_upcoming_high_priority.push(task);
-    }
-  }
-
-  todoist_overdue.sort(compareTasks);
-  todoist_due_today.sort(compareTasks);
-  todoist_upcoming_high_priority.sort(compareTasks);
-
-  return {
-    todoist_overdue: todoist_overdue.slice(0, 50),
-    todoist_due_today: todoist_due_today.slice(0, 50),
-    todoist_upcoming_high_priority: todoist_upcoming_high_priority.slice(0, 50),
-  };
+  return bucketTodoistTasksFromApi(tasks);
 }
 
 async function buildProviderSliceResponse(
@@ -128,7 +72,7 @@ async function buildProviderSliceResponse(
   userId: string,
 ): Promise<Response> {
   const cached = await readLastDailyContext(userId);
-  const fallbackRunDate = cached?.run_date ?? dateOnly(new Date());
+  const fallbackRunDate = cached?.run_date ?? todayCalendarDateInTaskZone(new Date());
   const fallbackGeneratedAt = cached?.generated_at ?? new Date().toISOString();
 
   if (provider === "gmail") {
