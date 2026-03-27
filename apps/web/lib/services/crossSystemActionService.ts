@@ -7,9 +7,10 @@ import { createCalendarAdapter } from "@/lib/adapters/calendarAdapter";
 import type { GmailMessage } from "@/lib/adapters/gmailAdapter";
 import { createGmailAdapter } from "@/lib/adapters/gmailAdapter";
 import { createTodoistAdapter } from "@/lib/adapters/todoistAdapter";
-import type { JobHuntCalendarOpportunityLink } from "@/lib/types";
+import type { JobHuntAnalysis, JobHuntCalendarOpportunityLink } from "@/lib/types";
 import { buildFollowUpTaskContent, buildFollowUpTaskDescription } from "@/lib/services/followUpDraftService";
 import { analyzeEmail } from "@/lib/services/jobHuntIntelligenceService";
+import { logServerEvent } from "@/lib/serverLog";
 
 export type ActionName =
   | "email_to_task"
@@ -142,6 +143,7 @@ export type CrossSystemActionResult =
       outcome: "created";
       eventSummary: EventSummary;
       refreshHints: RefreshHints;
+      dedupe?: ActionDedupeInfo;
     }
   | {
       ok: true;
@@ -186,6 +188,13 @@ function sanitizeUserId(userId: string): string {
   const trimmed = userId.trim();
   if (!trimmed) return "_anonymous";
   return trimmed.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 120);
+}
+
+/** Coalesces concurrent job_hunt_prep_tasks for the same user + message (best-effort, single process). */
+const jobPrepInFlight = new Map<string, Promise<CrossSystemActionResult>>();
+
+function jobPrepInflightKey(userId: string, sourceId: string): string {
+  return `${sanitizeUserId(userId)}|${sourceId.trim()}`;
 }
 
 function actionLogPath(userId: string): string {
@@ -366,15 +375,17 @@ function eventSummaryFromCalendarEvent(ev: { id: string; summary: string; start:
 const DEDUPE_MSG_EMAIL_TO_TASK = "Follow-up task was already created recently from this thread.";
 const DEDUPE_MSG_PREP_TASKS = "Prep tasks were already created recently for this thread.";
 const DEDUPE_MSG_EMAIL_TO_EVENT = "Calendar event was already created recently for this thread.";
+const DEDUPE_MSG_TASK_CAL_BLOCK =
+  "Focus block was already created recently for this task time window.";
 
-function opportunityLinkageFromEmail(email: GmailMessage, calendarEventId: string): JobHuntCalendarOpportunityLink {
-  const analysis = analyzeEmail({
-    id: email.id,
-    threadId: email.threadId,
-    from: email.from,
-    subject: email.subject,
-    snippet: email.snippet,
-  });
+/** Dedupe segment for email_to_task: stable across template copy changes (pairs with thread id). */
+const EMAIL_TO_TASK_DEDUPE_VERSION = "followup_v1";
+
+function opportunityLinkageFromEmail(
+  email: GmailMessage,
+  calendarEventId: string,
+  analysis: Pick<JobHuntAnalysis, "normalizedIdentity" | "stageAlias">,
+): JobHuntCalendarOpportunityLink {
   return {
     sourceMessageId: email.id,
     sourceThreadId: email.threadId,
@@ -388,11 +399,31 @@ export class CrossSystemActionService {
   private readonly gmail;
   private readonly calendar;
   private readonly todoist;
+  /** Request-scoped cache of JSONL tail to avoid repeated disk reads per action. */
+  private logEntriesCache: StoredActionLogEntry[] | null = null;
 
   constructor(private readonly userId: string) {
     this.gmail = createGmailAdapter(userId);
     this.calendar = createCalendarAdapter(userId);
     this.todoist = createTodoistAdapter(userId);
+  }
+
+  private invalidateActionLogCache(): void {
+    this.logEntriesCache = null;
+  }
+
+  private async getActionLogEntries(): Promise<StoredActionLogEntry[]> {
+    if (this.logEntriesCache !== null) {
+      return this.logEntriesCache;
+    }
+    const entries = await readActionLogEntries(this.userId);
+    this.logEntriesCache = entries;
+    return entries;
+  }
+
+  private async appendActionLog(entry: ActionLogEntry): Promise<void> {
+    await logAction(this.userId, entry);
+    this.invalidateActionLogCache();
   }
 
   async emailToTask(emailId: string): Promise<CrossSystemActionResult> {
@@ -414,16 +445,16 @@ export class CrossSystemActionService {
       const dedupeKey = buildDedupeKey([
         action,
         email.threadId ?? sourceId,
-        content,
+        EMAIL_TO_TASK_DEDUPE_VERSION,
       ]);
       const recent = latestSuccessfulEntryInWindow(
-        await readActionLogEntries(this.userId),
+        await this.getActionLogEntries(),
         action,
         dedupeKey,
       );
       if (recent && recent.targetIds.length > 0) {
         const taskId = recent.targetIds[0] ?? "";
-        await logAction(this.userId, {
+        await this.appendActionLog( {
           action,
           status: "success",
           timestamp: new Date().toISOString(),
@@ -456,7 +487,7 @@ export class CrossSystemActionService {
         dueLang: "en",
       });
       const targetIds = [task.id];
-      await logAction(this.userId, {
+      await this.appendActionLog( {
         action,
         status: "success",
         timestamp: new Date().toISOString(),
@@ -476,7 +507,12 @@ export class CrossSystemActionService {
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : "email_to_task_failed";
-      await logAction(this.userId, {
+      logServerEvent("error", "cross_system_action_failed", {
+        action: "email_to_task",
+        sourceId: sourceId.slice(0, 64),
+        error: message.slice(0, 200),
+      });
+      await this.appendActionLog( {
         action,
         status: "failed",
         timestamp: new Date().toISOString(),
@@ -495,8 +531,25 @@ export class CrossSystemActionService {
   }
 
   async jobHuntPrepTasks(emailId: string): Promise<CrossSystemActionResult> {
-    const action: ActionName = "job_hunt_prep_tasks";
     const sourceId = emailId.trim();
+    const inflightKey = jobPrepInflightKey(this.userId, sourceId);
+    const existing = jobPrepInFlight.get(inflightKey);
+    if (existing) {
+      logServerEvent("info", "job_hunt_prep_tasks_inflight_join", {
+        sourceId: sourceId.slice(0, 64),
+      });
+      return existing;
+    }
+    const promise = this.jobHuntPrepTasksInner(sourceId);
+    jobPrepInFlight.set(inflightKey, promise);
+    void promise.finally(() => {
+      jobPrepInFlight.delete(inflightKey);
+    });
+    return promise;
+  }
+
+  private async jobHuntPrepTasksInner(sourceId: string): Promise<CrossSystemActionResult> {
+    const action: ActionName = "job_hunt_prep_tasks";
     const refreshFull: RefreshHints = { providers: ["gmail", "todoist"], sourceIds: [sourceId], targetIds: [] };
     try {
       const email = await this.gmail.getById(sourceId);
@@ -508,12 +561,12 @@ export class CrossSystemActionService {
         "prep_bundle_v1",
       ]);
       const recent = latestSuccessfulEntryInWindow(
-        await readActionLogEntries(this.userId),
+        await this.getActionLogEntries(),
         action,
         dedupeKey,
       );
       if (recent && recent.targetIds.length > 0) {
-        await logAction(this.userId, {
+        await this.appendActionLog( {
           action,
           status: "success",
           timestamp: new Date().toISOString(),
@@ -558,7 +611,7 @@ export class CrossSystemActionService {
         taskSummaries.push({ id: task.id, content: task.content, url: task.url });
       }
       const targetIds = taskSummaries.map((t) => t.id);
-      await logAction(this.userId, {
+      await this.appendActionLog( {
         action,
         status: "success",
         timestamp: new Date().toISOString(),
@@ -578,7 +631,12 @@ export class CrossSystemActionService {
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : "job_hunt_prep_tasks_failed";
-      await logAction(this.userId, {
+      logServerEvent("error", "cross_system_action_failed", {
+        action: "job_hunt_prep_tasks",
+        sourceId: sourceId.slice(0, 64),
+        error: message.slice(0, 200),
+      });
+      await this.appendActionLog( {
         action,
         status: "failed",
         timestamp: new Date().toISOString(),
@@ -607,6 +665,13 @@ export class CrossSystemActionService {
     try {
       const email = await this.gmail.getById(sourceId);
       if (!email) throw new Error("email_not_found");
+      const analysis = analyzeEmail({
+        id: email.id,
+        threadId: email.threadId ?? email.id,
+        from: email.from,
+        subject: email.subject,
+        snippet: email.snippet,
+      });
       const startIso = reliableEventStartIsoFromEmail(email);
       const summary = email.subject?.trim() ? titleFromEmailSubject(email.subject) : "Email follow-up";
       const description = emailBodyForDescription(email);
@@ -617,7 +682,7 @@ export class CrossSystemActionService {
           description,
           reason: "insufficient_datetime",
         };
-        await logAction(this.userId, {
+        await this.appendActionLog( {
           action,
           status: "success",
           timestamp: new Date().toISOString(),
@@ -645,7 +710,7 @@ export class CrossSystemActionService {
           proposedEnd: endIso,
           reason: "calendar_slot_busy",
         };
-        await logAction(this.userId, {
+        await this.appendActionLog( {
           action,
           status: "success",
           timestamp: new Date().toISOString(),
@@ -670,13 +735,17 @@ export class CrossSystemActionService {
         endIso,
       ]);
       const recent = latestSuccessfulEntryInWindow(
-        await readActionLogEntries(this.userId),
+        await this.getActionLogEntries(),
         action,
         dedupeKey,
       );
       if (recent && recent.targetIds.length > 0) {
         const existingId = recent.targetIds[0] ?? "";
-        await logAction(this.userId, {
+        logServerEvent("info", "cross_system_action_deduped", {
+          action: "email_to_event",
+          sourceId: sourceId.slice(0, 64),
+        });
+        await this.appendActionLog( {
           action,
           status: "success",
           timestamp: new Date().toISOString(),
@@ -701,7 +770,7 @@ export class CrossSystemActionService {
             reusedTargetIds: recent.targetIds,
             reusedTargetSummaries: recent.targetIds.map((id) => ({ id, label: summary })),
           },
-          opportunityLinkage: opportunityLinkageFromEmail(email, existingId),
+          opportunityLinkage: opportunityLinkageFromEmail(email, existingId, analysis),
         };
       }
 
@@ -712,7 +781,7 @@ export class CrossSystemActionService {
         end: { dateTime: endIso },
       });
       const targetIds = [event.id];
-      await logAction(this.userId, {
+      await this.appendActionLog( {
         action,
         status: "success",
         timestamp: new Date().toISOString(),
@@ -730,11 +799,16 @@ export class CrossSystemActionService {
         outcome: "created",
         eventSummary: eventSummaryFromCalendarEvent(event),
         refreshHints: { ...refreshOnWrite, targetIds },
-        opportunityLinkage: opportunityLinkageFromEmail(email, event.id),
+        opportunityLinkage: opportunityLinkageFromEmail(email, event.id, analysis),
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : "email_to_event_failed";
-      await logAction(this.userId, {
+      logServerEvent("error", "cross_system_action_failed", {
+        action: "email_to_event",
+        sourceId: sourceId.slice(0, 64),
+        error: message.slice(0, 200),
+      });
+      await this.appendActionLog( {
         action,
         status: "failed",
         timestamp: new Date().toISOString(),
@@ -777,7 +851,7 @@ export class CrossSystemActionService {
             .join("\n\n"),
           reason: "insufficient_scheduling",
         };
-        await logAction(this.userId, {
+        await this.appendActionLog( {
           action,
           status: "success",
           timestamp: new Date().toISOString(),
@@ -807,7 +881,7 @@ export class CrossSystemActionService {
           proposedEnd: endIso,
           reason: "calendar_slot_busy",
         };
-        await logAction(this.userId, {
+        await this.appendActionLog( {
           action,
           status: "success",
           timestamp: new Date().toISOString(),
@@ -825,22 +899,68 @@ export class CrossSystemActionService {
         };
       }
 
+      const blockSummary = `Focus block: ${task.content}`;
+      const blockDescription = [task.description?.trim() || "Created from Todoist task", task.url ? `Todoist: ${task.url}` : ""]
+        .filter(Boolean)
+        .join("\n\n");
+      const dedupeKey = buildDedupeKey([action, sourceId, startIso, endIso]);
+      const recent = latestSuccessfulEntryInWindow(
+        await this.getActionLogEntries(),
+        action,
+        dedupeKey,
+      );
+      if (recent && recent.targetIds.length > 0) {
+        const existingId = recent.targetIds[0] ?? "";
+        logServerEvent("info", "cross_system_action_deduped", {
+          action: "task_to_calendar_block",
+          sourceId: sourceId.slice(0, 64),
+        });
+        await this.appendActionLog( {
+          action,
+          status: "success",
+          timestamp: new Date().toISOString(),
+          sourceIds: [sourceId],
+          targetIds: recent.targetIds,
+          providers: ["todoist", "google_calendar"],
+          dedupeKey,
+          deduped: true,
+        });
+        return {
+          ok: true,
+          action,
+          sourceTaskId: sourceId,
+          outcome: "created",
+          eventSummary: {
+            id: existingId,
+            summary: blockSummary,
+            start: startIso,
+            end: endIso,
+          },
+          refreshHints: { ...refreshOnWrite, targetIds: recent.targetIds },
+          dedupe: {
+            deduped: true,
+            message: DEDUPE_MSG_TASK_CAL_BLOCK,
+            reusedTargetIds: recent.targetIds,
+            reusedTargetSummaries: recent.targetIds.map((id) => ({ id, label: blockSummary })),
+          },
+        };
+      }
+
       const event = await this.calendar.create({
-        summary: `Focus block: ${task.content}`,
-        description: [task.description?.trim() || "Created from Todoist task", task.url ? `Todoist: ${task.url}` : ""]
-          .filter(Boolean)
-          .join("\n\n"),
+        summary: blockSummary,
+        description: blockDescription,
         start: { dateTime: startIso },
         end: { dateTime: endIso },
       });
       const targetIds = [event.id];
-      await logAction(this.userId, {
+      await this.appendActionLog( {
         action,
         status: "success",
         timestamp: new Date().toISOString(),
         sourceIds: [sourceId],
         targetIds,
         providers: ["todoist", "google_calendar"],
+        dedupeKey,
       });
       return {
         ok: true,
@@ -852,7 +972,12 @@ export class CrossSystemActionService {
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : "task_to_calendar_block_failed";
-      await logAction(this.userId, {
+      logServerEvent("error", "cross_system_action_failed", {
+        action: "task_to_calendar_block",
+        sourceId: sourceId.slice(0, 64),
+        error: message.slice(0, 200),
+      });
+      await this.appendActionLog( {
         action,
         status: "failed",
         timestamp: new Date().toISOString(),
@@ -896,7 +1021,7 @@ export class CrossSystemActionService {
       }
       const overlaps = await proposedBlockOverlapsExisting(this.calendar, startIso, endIso);
       if (overlaps) {
-        await logAction(this.userId, {
+        await this.appendActionLog( {
           action,
           status: "failed",
           timestamp: new Date().toISOString(),
@@ -919,7 +1044,7 @@ export class CrossSystemActionService {
         end: { dateTime: endIso },
       });
       const targetIds = [event.id];
-      await logAction(this.userId, {
+      await this.appendActionLog( {
         action,
         status: "success",
         timestamp: new Date().toISOString(),
@@ -935,7 +1060,7 @@ export class CrossSystemActionService {
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : "calendar_create_manual_failed";
-      await logAction(this.userId, {
+      await this.appendActionLog( {
         action,
         status: "failed",
         timestamp: new Date().toISOString(),
@@ -958,7 +1083,7 @@ export class CrossSystemActionService {
     const sourceId = taskId.trim();
     try {
       await this.todoist.complete(sourceId);
-      await logAction(this.userId, {
+      await this.appendActionLog( {
         action,
         status: "success",
         timestamp: new Date().toISOString(),
@@ -973,7 +1098,7 @@ export class CrossSystemActionService {
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : "complete_task_failed";
-      await logAction(this.userId, {
+      await this.appendActionLog( {
         action,
         status: "failed",
         timestamp: new Date().toISOString(),
@@ -996,7 +1121,7 @@ export class CrossSystemActionService {
     const sourceId = emailId.trim();
     try {
       await this.gmail.archive(sourceId);
-      await logAction(this.userId, {
+      await this.appendActionLog( {
         action,
         status: "success",
         timestamp: new Date().toISOString(),
@@ -1011,7 +1136,7 @@ export class CrossSystemActionService {
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : "archive_email_failed";
-      await logAction(this.userId, {
+      await this.appendActionLog( {
         action,
         status: "failed",
         timestamp: new Date().toISOString(),

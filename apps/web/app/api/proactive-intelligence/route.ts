@@ -4,6 +4,7 @@ import { buildJobHuntExpansion } from "@/lib/services/jobHuntExpansionService";
 import { buildProactiveIntelligence } from "@/lib/services/proactiveIntelligenceService";
 import { buildTodayInsights } from "@/lib/services/todayIntelligenceService";
 import { readLastDashboardVisit, writeLastDashboardVisit } from "@/lib/proactiveVisitStore";
+import { logServerEvent } from "@/lib/serverLog";
 import { getSessionUserId } from "@/lib/session";
 import type { MyAssistDailyContext } from "@/lib/types";
 import { isMyAssistDailyContext } from "@/lib/validateContext";
@@ -29,6 +30,7 @@ export async function POST(request: NextRequest) {
 
   const ctx = (body as Record<string, unknown>).context ?? body;
   if (!isMyAssistDailyContext(ctx)) {
+    logServerEvent("warn", "proactive_intelligence_invalid_context", {});
     return NextResponse.json({ ok: false, error: "invalid_context" }, { status: 400 });
   }
 
@@ -50,7 +52,20 @@ export async function POST(request: NextRequest) {
     jobHunt,
   });
 
-  await writeLastDashboardVisit(userId, currentContext);
+  let persistWarning: string | undefined;
+  try {
+    await writeLastDashboardVisit(userId, currentContext);
+  } catch (cause) {
+    const message = cause instanceof Error ? cause.message : "visit_snapshot_write_failed";
+    persistWarning = message;
+    logServerEvent("warn", "proactive_visit_persist_failed", {
+      error: message.slice(0, 200),
+    });
+  }
 
-  return NextResponse.json({ ok: true, ...result });
+  return NextResponse.json({
+    ok: true,
+    ...result,
+    ...(persistWarning ? { persistWarning } : {}),
+  });
 }

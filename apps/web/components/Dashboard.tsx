@@ -3,8 +3,13 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { buildHeadlineFallback } from "@/lib/assistant";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  buildCommunicationDraft,
+  buildHeadlineFallback,
+  type CommunicationDraftType,
+  type DraftLanguage,
+} from "@/lib/assistant";
 import {
   MYASSIST_CONTEXT_SOURCE_HEADER,
   type DailyContextSource,
@@ -31,6 +36,7 @@ import {
   insightActionButtonLabel,
   insightActionPendingKey,
   insightActionsToRender,
+  isInsightAutomationAction,
 } from "@/lib/services/insightActionService";
 import type { SuggestedAction } from "@/lib/services/insightActionService";
 import type { Insight } from "@/lib/services/todayIntelligenceService";
@@ -38,8 +44,8 @@ import type {
   MorningBriefing,
   ProactiveChange,
 } from "@/lib/services/proactiveIntelligenceService";
-import { buildTodayInsights } from "@/lib/services/todayIntelligenceService";
-import { AssistantConsole } from "./AssistantConsole";
+import { buildTodayInsights, isInterviewLikeCalendarEvent } from "@/lib/services/todayIntelligenceService";
+import { AssistantConsole, type CommunicationDraftInjectPayload } from "./AssistantConsole";
 import { TaskList } from "./TaskList";
 
 type ThemeKey = "light" | "neon" | "kpop-demon-hunters" | "zara-larsson";
@@ -85,6 +91,86 @@ function formatWhen(iso: string | null): string {
 function firstName(from: string): string {
   const cleaned = from.replace(/".*?"/g, "").replace(/<.*?>/g, "").trim();
   return cleaned || from;
+}
+
+function findGmailSignalByMessageId(
+  ctx: MyAssistDailyContext | null,
+  messageId: string,
+): GmailSignal | undefined {
+  if (!ctx) return undefined;
+  const mid = messageId.trim();
+  if (!mid) return undefined;
+  return ctx.gmail_signals.find((g) => String(g.id ?? "").trim() === mid);
+}
+
+function firstMessageIdFromInsightActions(actions: SuggestedAction[]): string | null {
+  for (const a of actions) {
+    if ("kind" in a) continue;
+    const id = a.payload?.messageId?.trim();
+    if (id) return id;
+  }
+  return null;
+}
+
+function CommunicationDraftToolbar({
+  defaultDraftType,
+  lang,
+  onLangChange,
+  onInject,
+}: {
+  defaultDraftType: CommunicationDraftType;
+  lang: DraftLanguage;
+  onLangChange: (next: DraftLanguage) => void;
+  onInject: (type: CommunicationDraftType) => void;
+}) {
+  const [draftType, setDraftType] = useState<CommunicationDraftType>(defaultDraftType);
+  return (
+    <div className="mt-2 flex flex-col gap-2 rounded-[14px] border border-white/10 bg-black/25 px-2 py-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="theme-muted text-[10px] font-semibold uppercase tracking-[0.14em]">
+          Reply draft
+        </span>
+        <div className="flex gap-1">
+          <button
+            type="button"
+            onClick={() => onLangChange("en")}
+            className={`rounded-full px-2 py-1 text-[10px] font-semibold transition ${
+              lang === "en" ? "theme-button-primary" : "theme-chip"
+            }`}
+          >
+            EN
+          </button>
+          <button
+            type="button"
+            onClick={() => onLangChange("fr")}
+            className={`rounded-full px-2 py-1 text-[10px] font-semibold transition ${
+              lang === "fr" ? "theme-button-primary" : "theme-chip"
+            }`}
+          >
+            FR
+          </button>
+        </div>
+        <select
+          value={draftType}
+          onChange={(e) => setDraftType(e.target.value as CommunicationDraftType)}
+          className="rounded-lg border border-white/10 bg-black/40 px-2 py-1 text-[11px] text-zinc-100"
+          aria-label="Draft type"
+        >
+          <option value="follow_up">Follow-up</option>
+          <option value="interview_accept">Interview accept</option>
+          <option value="interview_reschedule">Reschedule</option>
+          <option value="thank_you">Thank you</option>
+        </select>
+      </div>
+      <button
+        type="button"
+        onClick={() => onInject(draftType)}
+        className="theme-button-secondary w-fit rounded-full px-3 py-1.5 text-[11px] font-semibold"
+      >
+        Draft reply
+      </button>
+    </div>
+  );
 }
 
 function insightSeverityClass(severity: Insight["severity"]): string {
@@ -135,10 +221,12 @@ function TodayInsightList({
   items,
   onAction,
   pendingKeys,
+  renderAfterActions,
 }: {
   items: Insight[];
   onAction: (insightId: string, action: SuggestedAction) => void | Promise<void>;
   pendingKeys: ReadonlySet<string>;
+  renderAfterActions?: (insight: Insight, actions: SuggestedAction[]) => ReactNode;
 }) {
   if (items.length === 0) {
     return <p className="theme-muted mt-3 text-sm">Nothing flagged</p>;
@@ -184,6 +272,7 @@ function TodayInsightList({
                 })}
               </div>
             ) : null}
+            {renderAfterActions ? renderAfterActions(insight, actions) : null}
           </li>
         );
       })}
@@ -615,7 +704,14 @@ export function Dashboard({
   } | null>(null);
   const [proactiveLoading, setProactiveLoading] = useState(false);
   const [proactiveError, setProactiveError] = useState<string | null>(null);
-  const proactiveFetchKeyRef = useRef<string | null>(null);
+  /** Set only after a successful proactive API parse — avoids Strict Mode skipping the real fetch. */
+  const proactiveLastSuccessKeyRef = useRef<string | null>(null);
+  const [communicationDraftLang, setCommunicationDraftLang] = useState<DraftLanguage>("en");
+  const [communicationDraftInject, setCommunicationDraftInject] =
+    useState<CommunicationDraftInjectPayload | null>(null);
+  const communicationDraftInjectKeyRef = useRef(0);
+  const lastCommunicationDraftFingerprintRef = useRef<string | null>(null);
+  const displayDataRef = useRef<MyAssistDailyContext | null>(null);
 
   useEffect(() => {
     const storedTheme =
@@ -1098,6 +1194,35 @@ export function Dashboard({
       try {
         const result = await executeInsightAction(action);
         if (result.outcome === "navigate_tab") {
+          if (
+            result.tab === "assistant" &&
+            isInsightAutomationAction(action) &&
+            action.type === "draft_followup"
+          ) {
+            const mid = action.payload?.messageId?.trim() ?? "";
+            const ctx = displayDataRef.current;
+            const signal = mid && ctx ? findGmailSignalByMessageId(ctx, mid) : undefined;
+            const draftFingerprint = [
+              "follow_up",
+              communicationDraftLang,
+              signal?.id != null ? String(signal.id).trim() : "",
+              "",
+            ].join("\u001f");
+            if (lastCommunicationDraftFingerprintRef.current !== draftFingerprint) {
+              lastCommunicationDraftFingerprintRef.current = draftFingerprint;
+              communicationDraftInjectKeyRef.current += 1;
+              setCommunicationDraftInject({
+                key: communicationDraftInjectKeyRef.current,
+                draft: buildCommunicationDraft({
+                  type: "follow_up",
+                  signal,
+                  language: communicationDraftLang,
+                }),
+                draftType: "follow_up",
+                sourceHint: "Today insight",
+              });
+            }
+          }
           setActiveTab(result.tab);
           return;
         }
@@ -1126,7 +1251,7 @@ export function Dashboard({
         setPendingInsightActionKeys((current) => current.filter((entry) => entry !== pendingKey));
       }
     },
-    [applyActionsResponseBody, router],
+    [applyActionsResponseBody, router, communicationDraftLang],
   );
 
   useEffect(() => {
@@ -1307,6 +1432,7 @@ export function Dashboard({
     () => (data ? { ...data, gmail_signals: visibleEmailSignals } : null),
     [data, visibleEmailSignals],
   );
+  displayDataRef.current = displayData;
   const nextAction = useMemo(() => (displayData ? buildNextAction(displayData) : null), [displayData]);
   const todayInsights = useMemo(
     () => (displayData ? buildTodayInsights(displayData) : null),
@@ -1327,6 +1453,47 @@ export function Dashboard({
     return buildDailySynthesis(displayData, todayInsights, jobHuntExpansion);
   }, [displayData, todayInsights, jobHuntExpansion]);
 
+  const injectCommunicationDraft = useCallback(
+    (
+      type: CommunicationDraftType,
+      signal: GmailSignal | undefined,
+      sourceHint?: string,
+      interviewStartIso?: string | null,
+    ) => {
+      const fingerprint = [
+        type,
+        communicationDraftLang,
+        signal?.id != null ? String(signal.id).trim() : "",
+        interviewStartIso?.trim() ?? "",
+      ].join("\u001f");
+      if (lastCommunicationDraftFingerprintRef.current === fingerprint) {
+        setActiveTab("assistant");
+        return;
+      }
+      lastCommunicationDraftFingerprintRef.current = fingerprint;
+      const draft = buildCommunicationDraft({
+        type,
+        signal,
+        language: communicationDraftLang,
+        interviewStartIso: interviewStartIso ?? undefined,
+      });
+      communicationDraftInjectKeyRef.current += 1;
+      setCommunicationDraftInject({
+        key: communicationDraftInjectKeyRef.current,
+        draft,
+        draftType: type,
+        sourceHint: sourceHint?.trim() || undefined,
+      });
+      setActiveTab("assistant");
+    },
+    [communicationDraftLang],
+  );
+
+  const clearCommunicationDraftInject = useCallback(() => {
+    setCommunicationDraftInject(null);
+    lastCommunicationDraftFingerprintRef.current = null;
+  }, []);
+
   useEffect(() => {
     if (!bootstrapped || error || !displayData) return;
     const key = [
@@ -1338,8 +1505,7 @@ export function Dashboard({
       displayData.gmail_signals.length,
       displayData.calendar_today.length,
     ].join("|");
-    if (proactiveFetchKeyRef.current === key) return;
-    proactiveFetchKeyRef.current = key;
+    if (proactiveLastSuccessKeyRef.current === key) return;
     let cancelled = false;
     setProactiveLoading(true);
     setProactiveError(null);
@@ -1368,6 +1534,7 @@ export function Dashboard({
           Array.isArray(body.changesSinceLastVisit) &&
           Array.isArray(body.recommendedActions)
         ) {
+          proactiveLastSuccessKeyRef.current = key;
           setProactiveIntel({
             morningBriefing: body.morningBriefing,
             changesSinceLastVisit: body.changesSinceLastVisit,
@@ -2209,6 +2376,21 @@ export function Dashboard({
                         items={todayInsights.followUps}
                         onAction={runInsightAction}
                         pendingKeys={pendingInsightKeySet}
+                        renderAfterActions={(insight, actions) => {
+                          const mid = firstMessageIdFromInsightActions(actions);
+                          if (!mid) return null;
+                          const sig = findGmailSignalByMessageId(displayData, mid);
+                          return (
+                            <CommunicationDraftToolbar
+                              defaultDraftType="follow_up"
+                              lang={communicationDraftLang}
+                              onLangChange={setCommunicationDraftLang}
+                              onInject={(type) =>
+                                injectCommunicationDraft(type, sig, insight.title)
+                              }
+                            />
+                          );
+                        }}
                       />
                     </div>
                   </div>
@@ -2261,31 +2443,45 @@ export function Dashboard({
                                     payload: { messageId: mid },
                                   };
                                   return (
-                                    <div className="mt-2 flex flex-wrap gap-2">
-                                      <button
-                                        type="button"
-                                        disabled={pendingInsightKeySet.has(
-                                          insightActionPendingKey(rowId, prepAction),
-                                        )}
-                                        onClick={() => void runInsightAction(rowId, prepAction)}
-                                        className="theme-button-secondary rounded-full px-3 py-1.5 text-[11px] font-semibold disabled:opacity-60"
-                                      >
-                                        {pendingInsightKeySet.has(insightActionPendingKey(rowId, prepAction))
-                                          ? "…"
-                                          : insightActionButtonLabel(prepAction)}
-                                      </button>
-                                      <button
-                                        type="button"
-                                        disabled={pendingInsightKeySet.has(
-                                          insightActionPendingKey(rowId, blockAction),
-                                        )}
-                                        onClick={() => void runInsightAction(rowId, blockAction)}
-                                        className="theme-button-secondary rounded-full px-3 py-1.5 text-[11px] font-semibold disabled:opacity-60"
-                                      >
-                                        {pendingInsightKeySet.has(insightActionPendingKey(rowId, blockAction))
-                                          ? "…"
-                                          : insightActionButtonLabel(blockAction)}
-                                      </button>
+                                    <div className="mt-2 space-y-2">
+                                      <div className="flex flex-wrap gap-2">
+                                        <button
+                                          type="button"
+                                          disabled={pendingInsightKeySet.has(
+                                            insightActionPendingKey(rowId, prepAction),
+                                          )}
+                                          onClick={() => void runInsightAction(rowId, prepAction)}
+                                          className="theme-button-secondary rounded-full px-3 py-1.5 text-[11px] font-semibold disabled:opacity-60"
+                                        >
+                                          {pendingInsightKeySet.has(insightActionPendingKey(rowId, prepAction))
+                                            ? "…"
+                                            : insightActionButtonLabel(prepAction)}
+                                        </button>
+                                        <button
+                                          type="button"
+                                          disabled={pendingInsightKeySet.has(
+                                            insightActionPendingKey(rowId, blockAction),
+                                          )}
+                                          onClick={() => void runInsightAction(rowId, blockAction)}
+                                          className="theme-button-secondary rounded-full px-3 py-1.5 text-[11px] font-semibold disabled:opacity-60"
+                                        >
+                                          {pendingInsightKeySet.has(insightActionPendingKey(rowId, blockAction))
+                                            ? "…"
+                                            : insightActionButtonLabel(blockAction)}
+                                        </button>
+                                      </div>
+                                      <CommunicationDraftToolbar
+                                        defaultDraftType="thank_you"
+                                        lang={communicationDraftLang}
+                                        onLangChange={setCommunicationDraftLang}
+                                        onInject={(type) =>
+                                          injectCommunicationDraft(
+                                            type,
+                                            findGmailSignalByMessageId(displayData, mid),
+                                            p.contextLabel,
+                                          )
+                                        }
+                                      />
                                     </div>
                                   );
                                 }
@@ -2348,22 +2544,36 @@ export function Dashboard({
                                     payload: { messageId: mid },
                                   };
                                   return (
-                                    <div className="mt-2 flex flex-wrap gap-2">
-                                      {[prepAction, followAction, blockAction].map((action) => (
-                                        <button
-                                          key={insightActionPendingKey(rowId, action)}
-                                          type="button"
-                                          disabled={pendingInsightKeySet.has(
-                                            insightActionPendingKey(rowId, action),
-                                          )}
-                                          onClick={() => void runInsightAction(rowId, action)}
-                                          className="theme-button-secondary rounded-full px-3 py-1.5 text-[11px] font-semibold disabled:opacity-60"
-                                        >
-                                          {pendingInsightKeySet.has(insightActionPendingKey(rowId, action))
-                                            ? "…"
-                                            : insightActionButtonLabel(action)}
-                                        </button>
-                                      ))}
+                                    <div className="mt-2 space-y-2">
+                                      <div className="flex flex-wrap gap-2">
+                                        {[prepAction, followAction, blockAction].map((action) => (
+                                          <button
+                                            key={insightActionPendingKey(rowId, action)}
+                                            type="button"
+                                            disabled={pendingInsightKeySet.has(
+                                              insightActionPendingKey(rowId, action),
+                                            )}
+                                            onClick={() => void runInsightAction(rowId, action)}
+                                            className="theme-button-secondary rounded-full px-3 py-1.5 text-[11px] font-semibold disabled:opacity-60"
+                                          >
+                                            {pendingInsightKeySet.has(insightActionPendingKey(rowId, action))
+                                              ? "…"
+                                              : insightActionButtonLabel(action)}
+                                          </button>
+                                        ))}
+                                      </div>
+                                      <CommunicationDraftToolbar
+                                        defaultDraftType="follow_up"
+                                        lang={communicationDraftLang}
+                                        onLangChange={setCommunicationDraftLang}
+                                        onInject={(type) =>
+                                          injectCommunicationDraft(
+                                            type,
+                                            findGmailSignalByMessageId(displayData, mid),
+                                            f.subject,
+                                          )
+                                        }
+                                      />
                                     </div>
                                   );
                                 }
@@ -2783,6 +2993,14 @@ export function Dashboard({
                                   Ignore
                                 </button>
                               </div>
+                              <CommunicationDraftToolbar
+                                defaultDraftType="follow_up"
+                                lang={communicationDraftLang}
+                                onLangChange={setCommunicationDraftLang}
+                                onInject={(type) =>
+                                  injectCommunicationDraft(type, g, subject)
+                                }
+                              />
                             </div>
                           ) : null}
                           <div className="mt-3">
@@ -2916,6 +3134,21 @@ export function Dashboard({
                           {ev.location}
                         </p>
                       ) : null}
+                      {isInterviewLikeCalendarEvent(ev) ? (
+                        <CommunicationDraftToolbar
+                          defaultDraftType="interview_accept"
+                          lang={communicationDraftLang}
+                          onLangChange={setCommunicationDraftLang}
+                          onInject={(type) =>
+                            injectCommunicationDraft(
+                              type,
+                              undefined,
+                              ev.summary ?? "Interview",
+                              ev.start ?? null,
+                            )
+                          }
+                        />
+                      ) : null}
                     </li>
                   ))}
                 </ul>
@@ -2933,7 +3166,12 @@ export function Dashboard({
                 Chat, draft tasks, and challenge the plan without taking over the page.
               </p>
               <div className="mt-4">
-                <AssistantConsole context={displayData} compact />
+                <AssistantConsole
+                  context={displayData}
+                  compact
+                  communicationDraftInject={communicationDraftInject}
+                  onCommunicationDraftConsumed={clearCommunicationDraftInject}
+                />
               </div>
                 </section>
               ) : null}

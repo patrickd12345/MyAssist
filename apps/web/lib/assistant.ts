@@ -1,5 +1,39 @@
 import { buildDailySynthesisFromContext } from "./services/dailySynthesisService";
+import type { CommunicationDraftType } from "./services/communicationDraftService";
 import type { MyAssistDailyContext, SituationBrief, TodoistTask } from "./types";
+
+export type { CommunicationDraftType } from "./services/communicationDraftService";
+export type { CommunicationDraftResult, DraftLanguage } from "./services/communicationDraftService";
+export { buildCommunicationDraft } from "./services/communicationDraftService";
+
+/** Short assistant line when a deterministic comms draft is injected (not sent). */
+export function buildCommunicationDraftAssistantIntro(
+  draftType: CommunicationDraftType,
+  lang: "en" | "fr",
+  sourceHint?: string,
+): string {
+  const hint = sourceHint?.trim() ? ` (${sourceHint.trim()})` : "";
+  if (lang === "fr") {
+    const typeFr =
+      draftType === "follow_up"
+        ? "relance"
+        : draftType === "interview_accept"
+          ? "confirmation d'entrevue"
+          : draftType === "interview_reschedule"
+            ? "report d'entrevue"
+            : "remerciement";
+    return `Brouillon (${typeFr}) — rien n'a été envoyé.${hint} Copiez le sujet et le corps dans Gmail quand vous êtes prêt.`;
+  }
+  const typeEn =
+    draftType === "follow_up"
+      ? "follow-up"
+      : draftType === "interview_accept"
+        ? "interview confirmation"
+        : draftType === "interview_reschedule"
+          ? "reschedule request"
+          : "thank-you";
+  return `Draft (${typeEn}) — nothing was sent.${hint} Copy subject and body into Gmail when ready.`;
+}
 
 export type AssistantMode = "ollama" | "fallback";
 

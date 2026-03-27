@@ -161,6 +161,31 @@ describe("CrossSystemActionService", () => {
     expect(result.refreshHints.providers).toEqual(["todoist", "google_calendar"]);
   });
 
+  it("dedupes task_to_calendar_block within 15 minutes", async () => {
+    readFileMock.mockResolvedValueOnce(
+      `${JSON.stringify({
+        action: "task_to_calendar_block",
+        status: "success",
+        timestamp: new Date().toISOString(),
+        sourceIds: ["t2"],
+        targetIds: ["e-existing"],
+        providers: ["todoist", "google_calendar"],
+        dedupeKey:
+          "task_to_calendar_block|t2|2026-03-26t14:00:00.000z|2026-03-26t14:30:00.000z",
+      })}\n`,
+    );
+    const service = createCrossSystemActionService("user-1");
+    const result = await service.taskToCalendarBlock("t2");
+    expect(result.ok).toBe(true);
+    if (!result.ok || result.action !== "task_to_calendar_block") return;
+    expect(result.outcome).toBe("created");
+    if (result.outcome !== "created") return;
+    expect(calendarAdapterMock.create).not.toHaveBeenCalled();
+    expect(result.eventSummary.id).toBe("e-existing");
+    expect(result.dedupe?.deduped).toBe(true);
+    expect(result.dedupe?.message).toContain("Focus block");
+  });
+
   it("returns suggestion when task has no due datetime", async () => {
     todoistAdapterMock.getById.mockResolvedValueOnce({
       id: "t3",
@@ -181,6 +206,29 @@ describe("CrossSystemActionService", () => {
     expect(result.draft.reason).toBe("insufficient_scheduling");
     expect(calendarAdapterMock.create).not.toHaveBeenCalled();
     expect(result.refreshHints.providers).toEqual([]);
+  });
+
+  it("coalesces concurrent job_hunt_prep_tasks into one bundle", async () => {
+    let seq = 0;
+    todoistAdapterMock.create.mockImplementation(async (payload: { content: string }) => {
+      seq += 1;
+      return {
+        id: `tp${seq}`,
+        content: payload.content,
+        description: "",
+        priority: 3,
+        due: null,
+        url: `https://todoist.com/showTask?id=prep-${seq}`,
+      };
+    });
+    readFileMock.mockRejectedValue(new Error("no_file"));
+    const service = createCrossSystemActionService("user-1");
+    const [a, b] = await Promise.all([service.jobHuntPrepTasks("m1"), service.jobHuntPrepTasks("m1")]);
+    expect(a.ok).toBe(true);
+    expect(b.ok).toBe(true);
+    if (!a.ok || !b.ok || a.action !== "job_hunt_prep_tasks" || b.action !== "job_hunt_prep_tasks") return;
+    expect(todoistAdapterMock.create).toHaveBeenCalledTimes(5);
+    expect(a.taskSummaries.map((t) => t.id).sort()).toEqual(b.taskSummaries.map((t) => t.id).sort());
   });
 
   it("creates job hunt prep tasks from email with multiple Todoist writes", async () => {
@@ -240,7 +288,7 @@ describe("CrossSystemActionService", () => {
         sourceIds: ["m1"],
         targetIds: ["t-old"],
         providers: ["gmail", "todoist"],
-        dedupeKey: "email_to_task|thread-1|follow up",
+        dedupeKey: "email_to_task|thread-1|followup_v1",
       })}\n`,
     );
     const service = createCrossSystemActionService("user-1");

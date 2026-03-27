@@ -1,11 +1,14 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
+  buildCommunicationDraftAssistantIntro,
   buildSuggestedPrompts,
   buildWelcomeReply,
   type AssistantMode,
   type AssistantReply,
+  type CommunicationDraftResult,
+  type CommunicationDraftType,
   type TaskDraft,
 } from "@/lib/assistant";
 import type { MyAssistDailyContext } from "@/lib/types";
@@ -18,6 +21,7 @@ type ChatMessage = {
   followUps?: string[];
   mode?: AssistantMode;
   taskDraft?: TaskDraft | null;
+  communicationDraft?: CommunicationDraftResult & { draftType: CommunicationDraftType };
 };
 
 function createId(): string {
@@ -39,12 +43,23 @@ function replyToMessage(reply: AssistantReply): ChatMessage {
   };
 }
 
+export type CommunicationDraftInjectPayload = {
+  key: number;
+  draft: CommunicationDraftResult;
+  draftType: CommunicationDraftType;
+  sourceHint?: string;
+};
+
 export function AssistantConsole({
   context,
   compact = false,
+  communicationDraftInject = null,
+  onCommunicationDraftConsumed,
 }: {
   context: MyAssistDailyContext;
   compact?: boolean;
+  communicationDraftInject?: CommunicationDraftInjectPayload | null;
+  onCommunicationDraftConsumed?: () => void;
 }) {
   const welcome = useMemo(() => {
     const reply = buildWelcomeReply(context);
@@ -63,6 +78,34 @@ export function AssistantConsole({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [creatingDraftId, setCreatingDraftId] = useState<string | null>(null);
+  const [communicationCopyLabel, setCommunicationCopyLabel] = useState<string | null>(null);
+  const lastCommunicationDraftInjectKeyRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!communicationDraftInject) return;
+    const k = communicationDraftInject.key;
+    if (lastCommunicationDraftInjectKeyRef.current === k) return;
+    lastCommunicationDraftInjectKeyRef.current = k;
+    const lang = communicationDraftInject.draft.language;
+    const intro = buildCommunicationDraftAssistantIntro(
+      communicationDraftInject.draftType,
+      lang,
+      communicationDraftInject.sourceHint,
+    );
+    setMessages((current) => [
+      ...current,
+      {
+        id: createId(),
+        role: "assistant",
+        text: intro,
+        communicationDraft: {
+          ...communicationDraftInject.draft,
+          draftType: communicationDraftInject.draftType,
+        },
+      },
+    ]);
+    onCommunicationDraftConsumed?.();
+  }, [communicationDraftInject, onCommunicationDraftConsumed]);
 
   const promptIdeas = useMemo(
     () => (compact ? buildSuggestedPrompts(context).slice(0, 4) : buildSuggestedPrompts(context)),
@@ -113,6 +156,18 @@ export function AssistantConsole({
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     void sendMessage(input);
+  }
+
+  async function copyCommunicationSnippet(label: string, text: string, messageId: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCommunicationCopyLabel(`${messageId}:${label}`);
+      window.setTimeout(() => {
+        setCommunicationCopyLabel((current) => (current === `${messageId}:${label}` ? null : current));
+      }, 1600);
+    } catch {
+      setError("Could not copy to clipboard.");
+    }
   }
 
   async function createTaskFromDraft(messageId: string, draft: TaskDraft) {
@@ -254,6 +309,49 @@ export function AssistantConsole({
                       >
                         Refine draft
                       </button>
+                    </div>
+                  </div>
+                ) : null}
+                {message.communicationDraft ? (
+                  <div className="theme-subpanel mt-4 rounded-[20px] border border-amber-500/25 bg-amber-500/8 p-4">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-amber-200/90">
+                      Draft message (not sent)
+                    </p>
+                    <p className="theme-muted mt-2 text-[11px] leading-5">
+                      Paste into Gmail or another client — MyAssist does not send email.
+                    </p>
+                    <p className="theme-accent mt-3 text-[11px] font-semibold uppercase tracking-[0.14em]">
+                      Subject
+                    </p>
+                    <p className="theme-ink mt-1 whitespace-pre-wrap text-sm leading-6">
+                      {message.communicationDraft.subject}
+                    </p>
+                    <p className="theme-accent mt-3 text-[11px] font-semibold uppercase tracking-[0.14em]">
+                      Body
+                    </p>
+                    <p className="theme-ink mt-1 whitespace-pre-wrap text-sm leading-6">
+                      {message.communicationDraft.body}
+                    </p>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {(
+                        [
+                          ["Subject", message.communicationDraft.subject],
+                          ["Body", message.communicationDraft.body],
+                          [
+                            "All",
+                            `Subject: ${message.communicationDraft.subject}\n\n${message.communicationDraft.body}`,
+                          ],
+                        ] as const
+                      ).map(([label, chunk]) => (
+                        <button
+                          key={label}
+                          type="button"
+                          onClick={() => void copyCommunicationSnippet(label, chunk, message.id)}
+                          className="theme-button-secondary rounded-full px-3 py-2 text-xs font-semibold transition"
+                        >
+                          {communicationCopyLabel === `${message.id}:${label}` ? "Copied" : `Copy ${label}`}
+                        </button>
+                      ))}
                     </div>
                   </div>
                 ) : null}
