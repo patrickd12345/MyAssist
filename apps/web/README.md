@@ -103,9 +103,12 @@ Notes:
 - Inbox rows show **Mark as read** or **Mark as unread** from Gmail `label_ids` (OAuth `batchModify` on `UNREAD`).
 - Integration statuses and connect links are available in the dashboard header (Gmail, Todoist, Calendar).
 - OAuth redirect URIs are built from `AUTH_URL` (then `NEXTAUTH_URL`, then `MYASSIST_PUBLIC_APP_URL`, then request origin). Register the exact callback URL in provider consoles, for example:
-  - `http://localhost:3000/api/integrations/gmail/callback`
-  - `http://localhost:3000/api/integrations/google_calendar/callback`
-  - `http://localhost:3000/api/integrations/todoist/callback`
+  - **Google (Gmail + Calendar):** `http://localhost:3000/api/integrations/google/callback` — one URI for both; the signed `state` selects Gmail vs Calendar.
+  - **Todoist:** `http://localhost:3000/api/integrations/todoist/callback`
+
+On **Vercel**, set `AUTH_URL` to your real public origin (e.g. `https://your-app.vercel.app`), not `http://localhost:3000`. If those env vars are accidentally left as localhost, `resolvePublicOrigin` ignores localhost in production and uses the request URL instead so OAuth still redirects to the live host.
+
+If Google shows **Error 400: redirect_uri_mismatch**, the `redirect_uri` your app sends does not exactly match one of the **Authorized redirect URIs** on the **same** OAuth 2.0 **Web client** whose **Client ID** is in `GOOGLE_CLIENT_ID` / `MYASSIST_GMAIL_CLIENT_ID` for this deployment. While signed in, open **`GET /api/integrations/oauth-self-check`** on the same host (e.g. `https://myassist.bookiji.com/api/integrations/oauth-self-check`) and copy **`redirectUri`** into Google Cloud Console — character-for-character (including `https` and no trailing slash).
 
 ## Validation commands
 
