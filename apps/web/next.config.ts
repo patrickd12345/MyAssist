@@ -6,7 +6,8 @@ const nextConfig: NextConfig = {
   webpack: (config, { dev }) => {
     if (dev) {
       // Avoid PackFileCacheStrategy "Array buffer allocation failed" on constrained Windows setups.
-      config.cache = false;
+      // `cache: false` breaks Sentry vendor chunks in dev (missing `./vendor-chunks/@sentry+core@*.js`).
+      config.cache = { type: "memory", maxGenerations: 1 };
     }
     // job-hunt-manager sources use .js extensions in imports (Node ESM); map to .ts for bundling.
     config.resolve.extensionAlias = {
