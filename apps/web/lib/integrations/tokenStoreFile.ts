@@ -1,5 +1,6 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { joinUnderMyAssistMemory } from "@/lib/memoryPaths";
 import { decryptJson, encryptJson } from "./crypto";
 import type { IntegrationProvider, IntegrationTokenPayload, StoredIntegrationRecord } from "./types";
 
@@ -15,13 +16,7 @@ function sanitizeUserId(userId: string): string {
 }
 
 function integrationsPath(userId: string): string {
-  return path.join(
-    process.cwd(),
-    ".myassist-memory",
-    "users",
-    sanitizeUserId(userId),
-    "integrations.json",
-  );
+  return joinUnderMyAssistMemory("users", sanitizeUserId(userId), "integrations.json");
 }
 
 function emptyFile(): IntegrationsFile {

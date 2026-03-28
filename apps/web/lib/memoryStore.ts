@@ -1,5 +1,6 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { joinUnderMyAssistMemory } from "./memoryPaths";
 import type { MyAssistDailyContext, SituationBrief } from "./types";
 
 type MemoryKind = "daily_brief" | "feedback" | "resolution" | "task_nudge";
@@ -57,7 +58,7 @@ export function resolveMemoryFilePath(userId: string): string {
     const resolved = path.resolve(legacy);
     return path.join(path.dirname(resolved), safe, path.basename(resolved));
   }
-  return path.join(process.cwd(), ".myassist-memory", "users", safe, "rolling-memory.json");
+  return joinUnderMyAssistMemory("users", safe, "rolling-memory.json");
 }
 
 function emptyState(): MemoryState {

@@ -2,6 +2,7 @@ import "server-only";
 
 import { appendFile, mkdir, readFile } from "node:fs/promises";
 import path from "node:path";
+import { joinUnderMyAssistMemory } from "@/lib/memoryPaths";
 import type { CalendarEvent } from "@/lib/adapters/calendarAdapter";
 import { createCalendarAdapter } from "@/lib/adapters/calendarAdapter";
 import type { GmailMessage } from "@/lib/adapters/gmailAdapter";
@@ -198,7 +199,7 @@ function jobPrepInflightKey(userId: string, sourceId: string): string {
 }
 
 function actionLogPath(userId: string): string {
-  return path.join(process.cwd(), ".myassist-memory", "users", sanitizeUserId(userId), "action-log.jsonl");
+  return joinUnderMyAssistMemory("users", sanitizeUserId(userId), "action-log.jsonl");
 }
 
 async function logAction(userId: string, entry: ActionLogEntry): Promise<void> {

@@ -3,6 +3,7 @@ import "server-only";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
+import { joinUnderMyAssistMemory } from "@/lib/memoryPaths";
 import type { ExtractedContact } from "./parseJobNotesContacts";
 import { primaryJobIdIsBlank } from "./jobHuntContactUtils";
 import type { JobHuntContactSource, JobHuntPersonContact } from "./jobHuntContactTypes";
@@ -16,7 +17,7 @@ function sanitizeUserId(userId: string): string {
 
 function contactsFilePath(userId: string): string {
   const safe = sanitizeUserId(userId);
-  return path.join(process.cwd(), ".myassist-memory", "users", safe, "job-hunt-contacts.json");
+  return joinUnderMyAssistMemory("users", safe, "job-hunt-contacts.json");
 }
 
 export type JobHuntLooseNote = {

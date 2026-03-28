@@ -25,8 +25,12 @@ export async function writeLastDailyContext(
   context: MyAssistDailyContext,
 ): Promise<void> {
   const file = resolveDailyContextSnapshotPath(userId);
-  await mkdir(path.dirname(file), { recursive: true });
-  const toStore = { ...context };
-  delete toStore.user_task_nudges;
-  await writeFile(file, `${JSON.stringify(toStore, null, 2)}\n`, "utf8");
+  try {
+    await mkdir(path.dirname(file), { recursive: true });
+    const toStore = { ...context };
+    delete toStore.user_task_nudges;
+    await writeFile(file, `${JSON.stringify(toStore, null, 2)}\n`, "utf8");
+  } catch (e) {
+    console.warn("[dailyContextSnapshot] writeLastDailyContext skipped:", e);
+  }
 }

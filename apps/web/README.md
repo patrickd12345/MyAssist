@@ -56,6 +56,7 @@ The Vercel project linked to production should use this app as the deploy root:
 - **Custom domain:** assign `myassist.bookiji.com` to this project’s Production deployment in Vercel → Domains.
 - **Deployment Protection (Vercel Authentication):** If anonymous hits to `*.vercel.app` return **401** and an HTML **Vercel** login page (not your app), the project has **Vercel Authentication** enabled. The Vercel CLI does not toggle this; use **Project → Settings → Deployment Protection** or `PATCH /v10/projects/{name}` with `{"ssoProtection":null}` and a bearer token. Re-enable protection if you need private previews.
 - **OAuth + integration pills on Vercel:** Gmail/Todoist/Calendar tokens are stored in **Supabase** when `SUPABASE_URL` (or `NEXT_PUBLIC_SUPABASE_URL`) and `SUPABASE_SECRET_KEY` are set; otherwise the app falls back to **`.myassist-memory` on disk**, which **does not persist** on serverless. If OAuth finishes but pills stay “disconnected”, configure Supabase env vars and redeploy. After connect, the dashboard shows a short **OAuth completed** banner and refetches status (query `?integrations=connected` is stripped from the URL).
+- **File memory on Vercel:** When `VERCEL` is set, file-backed paths use **`/tmp/myassist-memory`** (writable) instead of `/var/task/.../.myassist-memory`, so **Refresh** and daily context no longer fail with `ENOENT` on `mkdir`. That cache is **ephemeral**; durable memory still needs **Supabase** where the app supports it.
 
 ## Local run
 

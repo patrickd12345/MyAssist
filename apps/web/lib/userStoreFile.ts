@@ -2,6 +2,7 @@ import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { mkdir, open, readFile, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { hash } from "bcryptjs";
+import { joinUnderMyAssistMemory } from "./memoryPaths";
 import type { SafeUser, StoredUser } from "./userStoreTypes";
 
 type UserRegistryFile = {
@@ -17,7 +18,7 @@ const USER_STORE_LOCK_RETRY_MS = 25;
 function registryPath(): string {
   const override = process.env.MYASSIST_USER_STORE_FILE?.trim();
   if (override) return path.resolve(override);
-  return path.join(process.cwd(), ".myassist-memory", "users.json");
+  return joinUnderMyAssistMemory("users.json");
 }
 
 function normalizeEmail(email: string): string {
