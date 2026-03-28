@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   bucketTodoistTasksFromApi,
   calendarDateInTimeZone,
+  compareTasksTodoistOrder,
   getTaskDueCalendarDate,
+  getTaskDueSortMs,
   todayCalendarDateInTaskZone,
 } from "./todoistTaskBuckets";
 
@@ -67,6 +69,50 @@ describe("todoistTaskBuckets", () => {
     const out = bucketTodoistTasksFromApi(tasks, { now, timeZone: TZ });
     expect(out.todoist_overdue[0]?.id).toBe("b");
     expect(out.todoist_due_today[0]?.id).toBe("a");
+  });
+
+  it("orders overdue by due instant (time on same day), like Todoist", () => {
+    const now = new Date("2026-03-28T12:00:00.000Z");
+    const tasks: Record<string, unknown>[] = [
+      {
+        id: "late",
+        content: "7 AM",
+        priority: 1,
+        due: { datetime: "2026-03-23T14:00:00.000Z" },
+      },
+      {
+        id: "early",
+        content: "Midnight",
+        priority: 1,
+        due: { datetime: "2026-03-23T04:00:00.000Z" },
+      },
+      {
+        id: "dateOnly",
+        content: "Mar 24 no time",
+        priority: 1,
+        due: { date: "2026-03-24" },
+      },
+    ];
+    const out = bucketTodoistTasksFromApi(tasks, { now, timeZone: TZ });
+    expect(out.todoist_overdue.map((t) => t.id)).toEqual(["early", "late", "dateOnly"]);
+  });
+
+  it("getTaskDueSortMs uses datetime before date-only on the same calendar day", () => {
+    const tz = TZ;
+    const noon = new Date("2026-03-23T16:00:00.000Z");
+    const tTime = getTaskDueSortMs(
+      { due: { datetime: "2026-03-23T16:00:00.000Z" } },
+      tz,
+    );
+    const tDay = getTaskDueSortMs({ due: { date: "2026-03-23" } }, tz);
+    expect(tDay).toBeLessThanOrEqual(noon.getTime());
+    expect(tTime).toBe(noon.getTime());
+  });
+
+  it("compareTasksTodoistOrder matches bucket sort", () => {
+    const a = { id: "1", priority: 1, due: { date: "2026-06-10" } };
+    const b = { id: "2", priority: 4, due: { date: "2026-06-10" } };
+    expect(compareTasksTodoistOrder(a, b, TZ)).toBeGreaterThan(0);
   });
 
   it("fills Overdue, Today, and upcoming high-priority from one normalized pass over the same task list", () => {

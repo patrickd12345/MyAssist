@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import { compareTasksTodoistOrder, DEFAULT_TASK_DAY_TIMEZONE } from "@/lib/todoistTaskBuckets";
 import type { TodoistTask } from "@/lib/types";
 
 function taskContent(task: TodoistTask): string {
@@ -10,16 +11,6 @@ function taskContent(task: TodoistTask): string {
 function taskDue(task: TodoistTask): string | null {
   const due = task.due as { date?: string; datetime?: string } | undefined;
   return due?.datetime ?? due?.date ?? null;
-}
-
-function taskDeadline(task: TodoistTask): string | null {
-  const deadline = task.deadline as { date?: string } | string | null | undefined;
-  if (typeof deadline === "string") return deadline.trim() || null;
-  if (deadline && typeof deadline === "object" && typeof deadline.date === "string") {
-    return deadline.date.trim() || null;
-  }
-  if (typeof task.deadline_date === "string") return task.deadline_date.trim() || null;
-  return null;
 }
 
 function formatDue(value: string | null): string {
@@ -32,67 +23,12 @@ function formatDue(value: string | null): string {
     hour: value.includes("T") ? "numeric" : undefined,
     minute: value.includes("T") ? "2-digit" : undefined,
     hour12: true,
-    timeZone: "America/Toronto",
+    timeZone: DEFAULT_TASK_DAY_TIMEZONE,
   }).format(date);
 }
 
 function priorityLabel(priority: unknown): string {
   return typeof priority === "number" ? `P${priority}` : "P?";
-}
-
-function priorityValue(priority: unknown): number {
-  if (priority === 1 || priority === 2 || priority === 3 || priority === 4) return priority;
-  return 99;
-}
-
-function hasDeadline(task: TodoistTask): boolean {
-  return Boolean(taskDeadline(task));
-}
-
-function parseTaskDate(value: string | null): number {
-  if (!value) return Number.POSITIVE_INFINITY;
-  const parsed = Date.parse(value);
-  if (Number.isNaN(parsed)) return Number.POSITIVE_INFINITY;
-  return parsed;
-}
-
-function isNearTimestamp(timestamp: number): boolean {
-  if (!Number.isFinite(timestamp)) return false;
-  const now = Date.now();
-  const diffMs = timestamp - now;
-  const withinTwoDays = diffMs <= 2 * 24 * 60 * 60 * 1000;
-  return withinTwoDays;
-}
-
-function deadlineUrgencyRank(task: TodoistTask): number {
-  if (!hasDeadline(task)) return 3;
-  const ts = effectiveUrgencyTimestamp(task);
-  if (!Number.isFinite(ts)) return 2;
-  const now = Date.now();
-  if (ts < now) return 0;
-  if (isNearTimestamp(ts)) return 1;
-  return 2;
-}
-
-function dueRank(task: TodoistTask): number {
-  const due = task.due as { date?: string; datetime?: string } | undefined;
-  if (typeof due?.datetime === "string" && due.datetime.trim()) return 0;
-  if (typeof due?.date === "string" && due.date.trim()) return 1;
-  return 2;
-}
-
-function dueTimestamp(task: TodoistTask): number {
-  return parseTaskDate(taskDue(task));
-}
-
-function deadlineTimestamp(task: TodoistTask): number {
-  return parseTaskDate(taskDeadline(task));
-}
-
-function effectiveUrgencyTimestamp(task: TodoistTask): number {
-  const deadlineTs = deadlineTimestamp(task);
-  if (Number.isFinite(deadlineTs)) return deadlineTs;
-  return dueTimestamp(task);
 }
 
 export type DeferOption = { label: string; value: string; intent: string };
@@ -150,19 +86,9 @@ export function TaskList({
   const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [menuTaskId, setMenuTaskId] = useState<string | null>(null);
   const sortedTasks = useMemo(() => {
-    const baseSorted = [...tasks].sort((a, b) => {
-      const byDeadlineUrgency = deadlineUrgencyRank(a) - deadlineUrgencyRank(b);
-      if (byDeadlineUrgency !== 0) return byDeadlineUrgency;
-      const byUrgencyDate = effectiveUrgencyTimestamp(a) - effectiveUrgencyTimestamp(b);
-      if (byUrgencyDate !== 0) return byUrgencyDate;
-      const byRank = dueRank(a) - dueRank(b);
-      if (byRank !== 0) return byRank;
-      const byPriority = priorityValue(a.priority) - priorityValue(b.priority);
-      if (byPriority !== 0) return byPriority;
-      const byDueTime = dueTimestamp(a) - dueTimestamp(b);
-      if (byDueTime !== 0) return byDueTime;
-      return taskContent(a).localeCompare(taskContent(b));
-    });
+    const baseSorted = [...tasks].sort((a, b) =>
+      compareTasksTodoistOrder(a as Record<string, unknown>, b as Record<string, unknown>),
+    );
 
     // Apply nudges (one pass, up and down)
     const result = [...baseSorted];

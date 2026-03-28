@@ -25,7 +25,7 @@ describe("TaskList", () => {
     expect(screen.getByText("P2")).toBeInTheDocument();
   });
 
-  it("sorts due-today tasks by urgency before rendering", () => {
+  it("sorts due-today tasks like Todoist: same calendar day → higher API priority (P4 urgent) first", () => {
     render(
       <TaskList
         title="Today"
@@ -42,7 +42,7 @@ describe("TaskList", () => {
     const orderedTitles = screen
       .getAllByText(/Critical deadline|Important task|Low priority task/)
       .map((node) => node.textContent);
-    expect(orderedTitles).toEqual(["Critical deadline", "Important task", "Low priority task"]);
+    expect(orderedTitles).toEqual(["Low priority task", "Important task", "Critical deadline"]);
   });
 
   it("boosts tasks with deadline metadata above other near tasks", () => {
@@ -68,7 +68,7 @@ describe("TaskList", () => {
     const orderedTitles = screen
       .getAllByText(/Regular p1|Regular p2|Deadline-backed p4/)
       .map((node) => node.textContent);
-    expect(orderedTitles).toEqual(["Deadline-backed p4", "Regular p1", "Regular p2"]);
+    expect(orderedTitles).toEqual(["Deadline-backed p4", "Regular p2", "Regular p1"]);
   });
 
   it("calls onComplete when Complete is clicked", async () => {

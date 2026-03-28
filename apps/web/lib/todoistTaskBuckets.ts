@@ -46,14 +46,85 @@ function getTaskPriority(task: Record<string, unknown>): number {
   return typeof task.priority === "number" ? task.priority : 1;
 }
 
-function compareTasks(a: Record<string, unknown>, b: Record<string, unknown>, timeZone: string): number {
-  const dueA = getTaskDueCalendarDate(a, timeZone) ?? "9999-12-31";
-  const dueB = getTaskDueCalendarDate(b, timeZone) ?? "9999-12-31";
-  if (dueA !== dueB) return dueA.localeCompare(dueB);
+/**
+ * First UTC ms of calendar day `ymd` (YYYY-MM-DD) in `timeZone` (midnight local).
+ */
+export function startOfCalendarDayUtcMs(ymd: string, timeZone: string): number {
+  const [Y, M, D] = ymd.split("-").map((s) => parseInt(s, 10));
+  if (!Number.isFinite(Y) || !Number.isFinite(M) || !Number.isFinite(D)) return 0;
+  const target = `${Y}-${String(M).padStart(2, "0")}-${String(D).padStart(2, "0")}`;
+  let lo = Date.UTC(Y, M - 1, D - 1, 0, 0, 0);
+  let hi = Date.UTC(Y, M - 1, D + 1, 0, 0, 0);
+  while (hi - lo > 1) {
+    const mid = Math.floor((lo + hi) / 2);
+    const cal = calendarDateInTimeZone(new Date(mid), timeZone);
+    if (cal < target) lo = mid;
+    else hi = mid;
+  }
+  return hi;
+}
+
+/**
+ * Sort key aligned with Todoist's Today / Overdue lists: chronological by due (datetime or start of day),
+ * not just YYYY-MM-DD string order.
+ */
+export function getTaskDueSortMs(
+  task: Record<string, unknown>,
+  timeZone: string = DEFAULT_TASK_DAY_TIMEZONE,
+): number {
+  const due = task.due as Record<string, unknown> | undefined;
+  if (!due || typeof due !== "object") return Number.MAX_SAFE_INTEGER;
+  if (typeof due.datetime === "string" && due.datetime.trim()) {
+    const t = new Date(due.datetime.trim()).getTime();
+    if (!Number.isNaN(t)) return t;
+  }
+  if (typeof due.date === "string" && due.date.trim()) {
+    return startOfCalendarDayUtcMs(due.date.trim(), timeZone);
+  }
+  return Number.MAX_SAFE_INTEGER;
+}
+
+function getDeadlineSortMs(task: Record<string, unknown>): number | null {
+  const deadline = task.deadline as { date?: string } | undefined;
+  if (deadline && typeof deadline.date === "string") {
+    const t = Date.parse(deadline.date.trim());
+    if (Number.isFinite(t)) return t;
+  }
+  if (typeof task.deadline_date === "string") {
+    const t = Date.parse(task.deadline_date.trim());
+    if (Number.isFinite(t)) return t;
+  }
+  return null;
+}
+
+/**
+ * Todoist-like: earliest due first; same due instant → tasks with a separate deadline field first
+ * (then by deadline date); then higher API priority (4 = urgent) first; then stable id.
+ */
+export function compareTasksTodoistOrder(
+  a: Record<string, unknown>,
+  b: Record<string, unknown>,
+  timeZone: string = DEFAULT_TASK_DAY_TIMEZONE,
+): number {
+  const dueA = getTaskDueSortMs(a, timeZone);
+  const dueB = getTaskDueSortMs(b, timeZone);
+  if (dueA !== dueB) return dueA - dueB;
+
+  const deadlineA = getDeadlineSortMs(a);
+  const deadlineB = getDeadlineSortMs(b);
+  const hasA = deadlineA !== null;
+  const hasB = deadlineB !== null;
+  if (hasA !== hasB) return hasA ? -1 : 1;
+  if (hasA && hasB && deadlineA !== deadlineB) return deadlineA - deadlineB;
+
   const priorityA = getTaskPriority(a);
   const priorityB = getTaskPriority(b);
   if (priorityA !== priorityB) return priorityB - priorityA;
   return String(a.id ?? "").localeCompare(String(b.id ?? ""));
+}
+
+function compareTasks(a: Record<string, unknown>, b: Record<string, unknown>, timeZone: string): number {
+  return compareTasksTodoistOrder(a, b, timeZone);
 }
 
 export type TodoistBucketSlices = {
