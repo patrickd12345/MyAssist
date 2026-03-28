@@ -45,7 +45,9 @@ Session protection is enforced in server components and API route handlers (no E
 
 ## Production (Vercel, e.g. myassist.bookiji.com)
 
-The Vercel project **`web`** in your team should use this app as the deploy root:
+You may have **more than one** Vercel project pointing at this repo (e.g. **`web`** vs **`my-assist`**). **Environment variables are per project.** If runtime logs show `MissingSecret` on one hostname but not another, open **Vercel → that project → Settings → Environment Variables** and ensure **`AUTH_SECRET`** (and **`AUTH_URL`**) exist for **Production** (and **Preview** if you use preview URLs).
+
+The Vercel project linked to production should use this app as the deploy root:
 
 - **Git repository:** `patrickd12345/MyAssist`, branch `main`
 - **Monorepo root:** leave **Root Directory** empty in the Vercel dashboard (repo root). Deployment config lives in **`vercel.json`** at the repo root: install → `pnpm install`, build → **`pnpm run vercel-build`** (`pnpm --filter web run build`), **output** → **`apps/web/.next`** so Vercel finds the Next.js build output.
