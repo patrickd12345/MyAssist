@@ -8,47 +8,39 @@ const FALLBACK_SECRET =
   "myassist-dev-only-auth-secret-min-32-chars-do-not-use-in-production";
 
 /**
- * Auth.js merges `process.env.AUTH_SECRET` inside `setEnvDefaults`. If it stays
- * empty while the merged config ends up without a usable `secret`, `assertConfig`
- * throws MissingSecret (500 on `/api/auth/session`). Always normalize env first.
+ * Auth.js reads `process.env.AUTH_SECRET`. We only synthesize it for dev/test and for the
+ * Next.js production *build* phase (page data collection). Do not precompute a `secret`
+ * string at module load — that can be bundled as a constant and ignore Vercel runtime env.
+ *
+ * Production runtime: set `AUTH_SECRET` (or `NEXTAUTH_SECRET`) in the Vercel project
+ * (Production + Preview as needed). See apps/web/.env.example.
  */
-function ensureAuthSecretForAuthJs(): string {
-  const authSecret = process.env.AUTH_SECRET?.trim();
-  const nextAuthSecret = process.env.NEXTAUTH_SECRET?.trim();
-  if (authSecret) {
-    return authSecret;
-  }
-  if (nextAuthSecret) {
-    process.env.AUTH_SECRET = nextAuthSecret;
-    return nextAuthSecret;
+function patchAuthSecretForNonProductionContexts(): void {
+  if (process.env.AUTH_SECRET?.trim() || process.env.NEXTAUTH_SECRET?.trim()) {
+    return;
   }
   if (process.env.NODE_ENV === "development") {
     console.warn(
       "[auth] AUTH_SECRET is unset; using a local fallback. Set AUTH_SECRET in apps/web/.env.local for stable sessions.",
     );
     process.env.AUTH_SECRET = FALLBACK_SECRET;
-    return FALLBACK_SECRET;
+    return;
   }
   if (process.env.NODE_ENV === "test") {
     process.env.AUTH_SECRET = FALLBACK_SECRET;
-    return FALLBACK_SECRET;
+    return;
   }
-  // `next build` loads route modules with NODE_ENV=production while collecting page data; secrets
-  // may be unset locally or not yet applied. Runtime on Vercel still gets AUTH_SECRET from env.
   if (process.env.NEXT_PHASE === PHASE_PRODUCTION_BUILD) {
     process.env.AUTH_SECRET = FALLBACK_SECRET;
-    return FALLBACK_SECRET;
   }
-  throw new Error(
-    "AUTH_SECRET (or NEXTAUTH_SECRET) must be set in production. Generate with: npx auth secret",
-  );
 }
 
-const resolvedSecret = ensureAuthSecretForAuthJs();
+patchAuthSecretForNonProductionContexts();
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
-  secret: resolvedSecret,
+  // Bracket access + live env: avoid a one-shot string that ignores Vercel runtime injection.
+  secret: process.env["AUTH_SECRET"] ?? process.env["NEXTAUTH_SECRET"],
   session: { strategy: "jwt" },
   pages: {
     signIn: "/sign-in",
