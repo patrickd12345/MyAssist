@@ -294,17 +294,35 @@ body::after {
   transform: translateY(-1px);
 }
 
-/* Unread inbox row: raised “tile” + light sky tint (pill unchanged in InboxEmailRow). */
+/* Read inbox row: flatter, slightly muted vs unread (paired with .inbox-row-unread). */
+.list-card.inbox-row-read {
+  background: color-mix(in srgb, var(--surface-soft) 72%, rgba(15, 23, 42, 0.04));
+  border-color: color-mix(in srgb, var(--line) 92%, transparent);
+  box-shadow: none;
+}
+
+.list-card.inbox-row-read:hover {
+  background: color-mix(in srgb, var(--surface-soft) 100%, transparent);
+  border-color: var(--line-strong);
+}
+
+/* Unread inbox row: raised tile + visible sky cue (pill stays in InboxEmailRow). */
 .inbox-row-unread {
-  border-color: color-mix(in srgb, var(--accent-2) 28%, var(--line));
+  border-color: color-mix(in srgb, var(--accent-2) 45%, var(--line));
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, var(--ink) 9%, transparent),
     0 6px 20px -8px rgba(15, 23, 42, 0.14),
     0 2px 8px -4px rgba(15, 23, 42, 0.1);
 }
 
+/* Non-emphasis unread: stronger tint + 4px sky “ribbon” on the left (inset). */
 .inbox-row-unread--fresh {
-  background: color-mix(in srgb, var(--surface-soft) 88%, rgba(56, 189, 248, 0.08));
+  background: color-mix(in srgb, var(--surface-soft) 78%, rgba(56, 189, 248, 0.2));
+  box-shadow:
+    inset 4px 0 0 0 color-mix(in srgb, var(--accent-2) 88%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--ink) 9%, transparent),
+    0 6px 20px -8px rgba(15, 23, 42, 0.16),
+    0 2px 8px -4px rgba(15, 23, 42, 0.11);
 }
 
 :root[data-theme="neon"] .inbox-row-unread,
@@ -319,7 +337,7 @@ body::after {
 :root[data-theme="neon"] .inbox-row-unread--fresh,
 :root[data-theme="kpop-demon-hunters"] .inbox-row-unread--fresh,
 :root[data-theme="zara-larsson"] .inbox-row-unread--fresh {
-  background: color-mix(in srgb, var(--surface-soft) 82%, rgba(56, 189, 248, 0.1));
+  background: color-mix(in srgb, var(--surface-soft) 72%, rgba(56, 189, 248, 0.22));
 }
 
 .list-card.inbox-row-unread:hover {
@@ -337,6 +355,12 @@ body::after {
     inset 0 1px 0 color-mix(in srgb, var(--ink) 12%, transparent),
     0 14px 36px -12px rgba(0, 0, 0, 0.6),
     0 4px 14px -4px rgba(0, 0, 0, 0.4);
+}
+
+:root[data-theme="neon"] .list-card.inbox-row-read,
+:root[data-theme="kpop-demon-hunters"] .list-card.inbox-row-read,
+:root[data-theme="zara-larsson"] .list-card.inbox-row-read {
+  background: color-mix(in srgb, var(--surface-soft) 68%, rgba(0, 0, 0, 0.12));
 }
 
 .tone-hot {

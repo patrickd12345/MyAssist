@@ -176,7 +176,9 @@ export function InboxEmailRow({
     <li
       className={`list-card rounded-[22px] px-4 py-4 ${
         emphasis ? "border-l-[3px] border-amber-400/55 bg-amber-500/[0.07]" : ""
-      } ${isGmailUnread ? "inbox-row-unread" : ""} ${isGmailUnread && !emphasis ? "inbox-row-unread--fresh" : ""}`}
+      } ${isGmailUnread ? "inbox-row-unread" : "inbox-row-read"} ${
+        isGmailUnread && !emphasis ? "inbox-row-unread--fresh" : ""
+      }`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 flex-1 items-start gap-2">
@@ -192,7 +194,9 @@ export function InboxEmailRow({
             )}
           </span>
           <p
-            className={`theme-ink line-clamp-2 text-sm leading-6 ${isGmailUnread ? "font-semibold" : "font-medium opacity-90"}`}
+            className={`line-clamp-2 text-sm leading-6 ${
+              isGmailUnread ? "theme-ink font-semibold" : "theme-muted font-medium"
+            }`}
             title={itemTooltip}
           >
             {subject}
@@ -201,7 +205,7 @@ export function InboxEmailRow({
         <div className="flex shrink-0 items-center gap-1">
           {isGmailUnread ? (
             <span
-              className="signal-pill shrink-0 rounded-full bg-sky-500/20 px-2 py-0.5 text-[10px] font-semibold text-sky-200/95 ring-1 ring-sky-400/35"
+              className="signal-pill shrink-0 rounded-full bg-sky-500/25 px-2 py-0.5 text-[10px] font-semibold theme-ink ring-1 ring-sky-500/45"
               title="Unread in Gmail"
             >
               New
@@ -224,7 +228,7 @@ export function InboxEmailRow({
           {importanceScore !== null ? ` (${importanceScore}/100)` : ""}
         </p>
       ) : (
-        <p className="theme-muted mt-2 text-[11px] leading-5 opacity-60">
+        <p className="theme-muted mt-2 text-[11px] leading-5 opacity-85">
           Triage intent: Ranking timed out or omitted by model
         </p>
       )}
