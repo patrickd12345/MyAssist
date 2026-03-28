@@ -126,15 +126,15 @@ function insightSeverityClass(severity: Insight["severity"]): string {
 
 function integrationFeedbackPanelClass(outcome: UnifiedActionFeedback["outcome"]): string {
   if (outcome === "failed") {
-    return "border-red-500/35 bg-red-500/10 text-red-100";
+    return "border-red-500/35 bg-red-500/10 theme-ink";
   }
   if (outcome === "deduped") {
-    return "border-amber-500/35 bg-amber-500/10 text-amber-50";
+    return "border-amber-500/35 bg-amber-500/10 theme-ink";
   }
   if (outcome === "partial") {
-    return "border-sky-500/35 bg-sky-500/10 text-sky-50";
+    return "border-sky-500/35 bg-sky-500/10 theme-ink";
   }
-  return "border-emerald-500/35 bg-emerald-500/10 text-emerald-100";
+  return "border-emerald-500/35 bg-emerald-500/10 theme-ink";
 }
 
 function formatActionHistoryTime(iso: string): string {
@@ -1852,8 +1852,8 @@ export function Dashboard({
         <div
           className={`glass-panel mb-6 rounded-[24px] border p-4 text-sm leading-6 ${
             oauthReturnBanner.kind === "connected"
-              ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-900"
-              : "border-red-500/40 bg-red-500/10 text-red-900"
+              ? "border-emerald-500/40 bg-emerald-500/10 theme-ink"
+              : "border-red-500/40 bg-red-500/10 theme-ink"
           }`}
           role="status"
         >
@@ -1895,8 +1895,8 @@ export function Dashboard({
                 key={provider}
                 className={`rounded-full border px-3 py-1 ${
                   connected
-                    ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-800"
-                    : "border-amber-500/40 bg-amber-500/10 text-amber-800"
+                    ? "border-emerald-500/40 bg-emerald-500/10 theme-ink"
+                    : "border-amber-500/40 bg-amber-500/10 theme-ink"
                 }`}
               >
                 <span className="font-semibold">
@@ -2226,7 +2226,7 @@ export function Dashboard({
                     ) : null}
                     {proactiveIntel ? (
                       <div className="mt-3 space-y-3 text-sm">
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-sky-200/90">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] theme-muted">
                           {proactiveIntel.morningBriefing.greetingLine}
                         </p>
                         <p className="theme-ink font-medium leading-6">
@@ -2241,12 +2241,14 @@ export function Dashboard({
                         ) : null}
                         {proactiveIntel.recommendedActions.length > 0 ? (
                           <div>
-                            <p className="text-[11px] font-semibold text-emerald-200/90">Suggested next steps</p>
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.1em] theme-ink">
+                              Suggested next steps
+                            </p>
                             <div className="mt-2 flex flex-wrap gap-2">
                               {proactiveIntel.recommendedActions.map((line) => (
                                 <span
                                   key={line}
-                                  className="rounded-full border border-emerald-500/35 bg-emerald-500/10 px-3 py-1 text-[11px] font-medium text-emerald-100/95"
+                                  className="rounded-full border border-emerald-600/35 bg-emerald-500/[0.12] px-3 py-1.5 text-[11px] font-medium leading-snug theme-ink"
                                 >
                                   {line}
                                 </span>
@@ -2318,7 +2320,9 @@ export function Dashboard({
                       <p className="theme-ink mt-2 font-medium leading-6">{dailySynthesis.oneLineSummary}</p>
                       {dailySynthesis.actionNow.length > 0 ? (
                         <div className="mt-3">
-                          <p className="text-[11px] font-semibold text-emerald-200/90">Action now</p>
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.08em] theme-ink">
+                            Action now
+                          </p>
                           <ul className="theme-muted mt-1 list-inside list-disc text-xs leading-5">
                             {dailySynthesis.actionNow.map((line) => (
                               <li key={line}>{line}</li>
@@ -2668,7 +2672,7 @@ export function Dashboard({
                         {m.signal.subject}
                       </p>
                       {(m.touchpoint_logged || m.stage_updated) && (
-                        <p className="mt-2 text-xs text-emerald-200/90">
+                        <p className="theme-ink mt-2 text-xs font-medium">
                           {m.touchpoint_logged ? "Touchpoint logged. " : ""}
                           {m.stage_updated ? `Stage → ${m.stage_updated}` : ""}
                         </p>
