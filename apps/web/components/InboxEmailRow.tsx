@@ -176,7 +176,7 @@ export function InboxEmailRow({
     <li
       className={`list-card rounded-[22px] px-4 py-4 ${
         emphasis ? "border-l-[3px] border-amber-400/55 bg-amber-500/[0.07]" : ""
-      }`}
+      } ${isGmailUnread ? "inbox-row-unread" : ""} ${isGmailUnread && !emphasis ? "inbox-row-unread--fresh" : ""}`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 flex-1 items-start gap-2">
