@@ -54,6 +54,7 @@ The Vercel project linked to production should use this app as the deploy root:
 - **Next.js detector:** the repo **root** `package.json` lists **`next`** (same version as `apps/web`) so Vercel recognizes the framework while the real app code stays under **`apps/web`**.
 - **Production env:** set at least `AUTH_SECRET` and `AUTH_URL` (public origin, e.g. `https://myassist.bookiji.com`). Add the **same** `AUTH_SECRET` (and other secrets) under **Preview** too if you use preview deployments—otherwise `NODE_ENV=production` previews will fail auth at runtime. Mirror any Supabase / OAuth values from `apps/web/.env.example` so hosted mode matches local behavior. The CLI has no one-shot “import `.env`” command; use the dashboard **bulk paste** or run `scripts/push-env-to-vercel.ps1` from `apps/web` (see script header). Review keys before pushing—overwrite uses `vercel env add --force`.
 - **Custom domain:** assign `myassist.bookiji.com` to this project’s Production deployment in Vercel → Domains.
+- **Deployment Protection (Vercel Authentication):** If anonymous hits to `*.vercel.app` return **401** and an HTML **Vercel** login page (not your app), the project has **Vercel Authentication** enabled. The Vercel CLI does not toggle this; use **Project → Settings → Deployment Protection** or `PATCH /v10/projects/{name}` with `{"ssoProtection":null}` and a bearer token. Re-enable protection if you need private previews.
 
 ## Local run
 
@@ -114,6 +115,8 @@ npm run web:build
 ## Troubleshooting (Next.js dev)
 
 If the dev server throws **Cannot find module './NNN.js'** under `apps/web/.next/server`, the webpack cache is out of date. Stop `next dev`, run `npm run web:clean` from the repo root (or delete the `apps/web/.next` folder), then start dev again.
+
+If routes (e.g. **Gmail OAuth callback**) fail with **Cannot find module './vendor-chunks/@sentry+core@…'** on **Vercel or locally**, ensure you are on the current `next.config.ts` (no `withSentryConfig` — see file comment), redeploy, and run `npm run web:clean` before `next dev` if testing locally. Stale `.next` from older builds can keep broken chunk references until cleaned.
 
 If `/api/auth/session` returns **500** and logs show **MissingSecret**, set `AUTH_SECRET` in `apps/web/.env.local` (32+ random characters). In **development** only, a local fallback is used when both secrets are unset; **production** requires an explicit secret. Restart `next dev` after pulling auth changes.
 

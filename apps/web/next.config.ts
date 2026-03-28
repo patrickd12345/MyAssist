@@ -1,12 +1,21 @@
-import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
 
+/**
+ * Do **not** wrap with `withSentryConfig` from `@sentry/nextjs`.
+ *
+ * That wrapper adds webpack splitting/instrumentation that emits server `vendor-chunks/@sentry+core@*.js`
+ * references. On Vercel those chunks can be missing at runtime (OAuth callbacks and other API routes
+ * crash with "Cannot find module './vendor-chunks/@sentry+core@…'").
+ *
+ * Sentry still runs from `instrumentation.ts` + `sentry.server.config.ts` / `sentry.edge.config.ts` /
+ * `sentry.client.config.ts` + `global-error.tsx`. You lose automatic build-time sourcemap upload unless
+ * you add `sentry-cli` or CI; runtime error capture remains.
+ */
 const nextConfig: NextConfig = {
   transpilePackages: ["job-hunt-manager"],
   webpack: (config, { dev }) => {
     if (dev) {
       // Avoid PackFileCacheStrategy "Array buffer allocation failed" on constrained Windows setups.
-      // `cache: false` breaks Sentry vendor chunks in dev (missing `./vendor-chunks/@sentry+core@*.js`).
       config.cache = { type: "memory", maxGenerations: 1 };
     }
     // job-hunt-manager sources use .js extensions in imports (Node ESM); map to .ts for bundling.
@@ -17,9 +26,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withSentryConfig(nextConfig, {
-  org: process.env.SENTRY_ORG,
-  project: process.env.SENTRY_PROJECT,
-  silent: !process.env.CI,
-  disableLogger: true,
-});
+export default nextConfig;
