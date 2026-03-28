@@ -55,6 +55,7 @@ The Vercel project linked to production should use this app as the deploy root:
 - **Production env:** set at least `AUTH_SECRET` and `AUTH_URL` (public origin, e.g. `https://myassist.bookiji.com`). Add the **same** `AUTH_SECRET` (and other secrets) under **Preview** too if you use preview deployments—otherwise `NODE_ENV=production` previews will fail auth at runtime. Mirror any Supabase / OAuth values from `apps/web/.env.example` so hosted mode matches local behavior. The CLI has no one-shot “import `.env`” command; use the dashboard **bulk paste** or run `scripts/push-env-to-vercel.ps1` from `apps/web` (see script header). Review keys before pushing—overwrite uses `vercel env add --force`.
 - **Custom domain:** assign `myassist.bookiji.com` to this project’s Production deployment in Vercel → Domains.
 - **Deployment Protection (Vercel Authentication):** If anonymous hits to `*.vercel.app` return **401** and an HTML **Vercel** login page (not your app), the project has **Vercel Authentication** enabled. The Vercel CLI does not toggle this; use **Project → Settings → Deployment Protection** or `PATCH /v10/projects/{name}` with `{"ssoProtection":null}` and a bearer token. Re-enable protection if you need private previews.
+- **OAuth + integration pills on Vercel:** Gmail/Todoist/Calendar tokens are stored in **Supabase** when `SUPABASE_URL` (or `NEXT_PUBLIC_SUPABASE_URL`) and `SUPABASE_SECRET_KEY` are set; otherwise the app falls back to **`.myassist-memory` on disk**, which **does not persist** on serverless. If OAuth finishes but pills stay “disconnected”, configure Supabase env vars and redeploy. After connect, the dashboard shows a short **OAuth completed** banner and refetches status (query `?integrations=connected` is stripped from the URL).
 
 ## Local run
 
@@ -82,7 +83,7 @@ Set in `apps/web/.env.local`:
 - `MYASSIST_DEV_USER_ID`: user id to use when auth is disabled
 - `MYASSIST_USER_STORE_FILE`: optional path to the JSON user registry (default: `.myassist-memory/users.json`)
 - `MYASSIST_USE_MOCK_CONTEXT`: set to `true` or `1` to serve **mock** daily context instead of live Gmail/Calendar/Todoist reads (useful for UI dev without OAuth)
-- `MYASSIST_INTEGRATIONS_ENCRYPTION_KEY`: base64 32-byte key (recommended) used to encrypt OAuth integration tokens at rest
+- `MYASSIST_INTEGRATIONS_ENCRYPTION_KEY`: optional; **if unset**, encryption uses a hash of `AUTH_SECRET` (or a dev fallback). Set an explicit key for production and keep it identical on Vercel and locally if you share one Supabase DB — generate: `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`
 - `GOOGLE_CLIENT_ID`: Google OAuth client id for Gmail + Calendar connect flow
 - `GOOGLE_CLIENT_SECRET`: Google OAuth client secret for Gmail + Calendar connect flow
 - `TODOIST_CLIENT_ID`: Todoist OAuth client id for direct task actions

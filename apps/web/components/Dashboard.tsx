@@ -589,6 +589,10 @@ export function Dashboard({
   const [assignBusyKey, setAssignBusyKey] = useState<string | null>(null);
   const [assignError, setAssignError] = useState<string | null>(null);
   const [integrationStatuses, setIntegrationStatuses] = useState<IntegrationStatusRow[]>([]);
+  const [oauthReturnBanner, setOauthReturnBanner] = useState<{
+    kind: "connected" | "error";
+    provider?: string;
+  } | null>(null);
   const lastHeadlineKeyRef = useRef<string | null>(initialData?.generated_at ?? null);
   const [proactiveIntel, setProactiveIntel] = useState<{
     morningBriefing: MorningBriefing;
@@ -619,25 +623,42 @@ export function Dashboard({
     }
   }, []);
 
-  useEffect(() => {
-    let cancelled = false;
-    const loadIntegrationStatuses = async () => {
-      try {
-        const res = await fetch("/api/integrations/status", { cache: "no-store" });
-        if (!res.ok) return;
-        const body = (await res.json()) as { providers?: IntegrationStatusRow[] };
-        if (!cancelled && Array.isArray(body.providers)) {
-          setIntegrationStatuses(body.providers);
-        }
-      } catch {
-        if (!cancelled) setIntegrationStatuses([]);
+  const loadIntegrationStatuses = useCallback(async () => {
+    try {
+      const res = await fetch("/api/integrations/status", { cache: "no-store" });
+      if (!res.ok) return;
+      const body = (await res.json()) as { providers?: IntegrationStatusRow[] };
+      if (Array.isArray(body.providers)) {
+        setIntegrationStatuses(body.providers);
       }
-    };
-    void loadIntegrationStatuses();
-    return () => {
-      cancelled = true;
-    };
+    } catch {
+      setIntegrationStatuses([]);
+    }
   }, []);
+
+  useEffect(() => {
+    void loadIntegrationStatuses();
+  }, [loadIntegrationStatuses]);
+
+  /** OAuth callback redirects with `?integrations=connected|error` — refetch pills and show feedback (easy to miss in the URL). */
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const integration = params.get("integrations");
+    const provider = params.get("provider");
+    if (integration !== "connected" && integration !== "error") return;
+
+    setOauthReturnBanner({
+      kind: integration,
+      provider: provider ?? undefined,
+    });
+    const path = `${window.location.pathname}${window.location.hash ?? ""}`;
+    window.history.replaceState({}, "", path);
+
+    void loadIntegrationStatuses();
+    const delayed = window.setTimeout(() => void loadIntegrationStatuses(), 600);
+    return () => window.clearTimeout(delayed);
+  }, [loadIntegrationStatuses]);
 
   useEffect(() => {
     if (theme === "light") {
@@ -1826,6 +1847,42 @@ export function Dashboard({
           ))}
         </nav>
       </section>
+
+      {oauthReturnBanner ? (
+        <div
+          className={`glass-panel mb-6 rounded-[24px] border p-4 text-sm leading-6 ${
+            oauthReturnBanner.kind === "connected"
+              ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-900"
+              : "border-red-500/40 bg-red-500/10 text-red-900"
+          }`}
+          role="status"
+        >
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="font-semibold">
+                {oauthReturnBanner.kind === "connected"
+                  ? "OAuth completed — integration status refreshed below."
+                  : "OAuth could not save this integration on the server."}
+              </p>
+              <p className="mt-1 text-xs opacity-90">
+                {oauthReturnBanner.kind === "connected"
+                  ? "If a pill still shows disconnected, production needs durable token storage (Supabase URL + secret in Vercel). The filesystem under .myassist-memory is not writable on serverless."
+                  : "Check Vercel function logs for this request. Ensure SUPABASE_URL (or NEXT_PUBLIC_SUPABASE_URL) and SUPABASE_SECRET_KEY are set, and MYASSIST_INTEGRATIONS_ENCRYPTION_KEY matches across deploys."}
+                {oauthReturnBanner.provider ? (
+                  <span className="ml-1 font-mono">({oauthReturnBanner.provider})</span>
+                ) : null}
+              </p>
+            </div>
+            <button
+              type="button"
+              className="shrink-0 rounded-full border border-current/30 px-3 py-1 text-xs font-semibold opacity-80 hover:opacity-100"
+              onClick={() => setOauthReturnBanner(null)}
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       <section className="glass-panel mb-6 rounded-[24px] p-4" aria-label="Integration status">
         <div className="flex flex-wrap items-center gap-2 text-xs">
