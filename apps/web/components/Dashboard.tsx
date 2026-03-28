@@ -807,43 +807,6 @@ export function Dashboard({
     [data],
   );
 
-  const loadCachedSnapshot = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/daily-context?source=cache", { cache: "no-store" });
-      const headerSource = res.headers.get(MYASSIST_CONTEXT_SOURCE_HEADER);
-      const j = (await res.json()) as { error?: string } & Partial<MyAssistDailyContext>;
-
-      if (res.status === 404) {
-        setData(null);
-        setContextSource("live");
-        return;
-      }
-
-      if (!res.ok) {
-        setData(null);
-        setError(j.error ?? `HTTP ${res.status}`);
-        return;
-      }
-      if ("error" in j && j.error) {
-        setData(null);
-        setError(j.error);
-        return;
-      }
-      setContextSource(
-        headerSource === "mock" ? "mock" : headerSource === "cache" ? "cache" : "live",
-      );
-      setData(j as MyAssistDailyContext);
-    } catch (e) {
-      setData(null);
-      setError(e instanceof Error ? e.message : "Request failed");
-    } finally {
-      setLoading(false);
-      setBootstrapped(true);
-    }
-  }, []);
-
   const refresh = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -870,6 +833,45 @@ export function Dashboard({
       setLoading(false);
     }
   }, []);
+
+  const loadCachedSnapshot = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/daily-context?source=cache", { cache: "no-store" });
+      const headerSource = res.headers.get(MYASSIST_CONTEXT_SOURCE_HEADER);
+      const j = (await res.json()) as { error?: string } & Partial<MyAssistDailyContext>;
+
+      if (res.status === 404) {
+        setData(null);
+        setContextSource("live");
+        // No on-disk snapshot (first visit, or serverless FS where cache does not persist). Pull live once.
+        await refresh();
+        return;
+      }
+
+      if (!res.ok) {
+        setData(null);
+        setError(j.error ?? `HTTP ${res.status}`);
+        return;
+      }
+      if ("error" in j && j.error) {
+        setData(null);
+        setError(j.error);
+        return;
+      }
+      setContextSource(
+        headerSource === "mock" ? "mock" : headerSource === "cache" ? "cache" : "live",
+      );
+      setData(j as MyAssistDailyContext);
+    } catch (e) {
+      setData(null);
+      setError(e instanceof Error ? e.message : "Request failed");
+    } finally {
+      setLoading(false);
+      setBootstrapped(true);
+    }
+  }, [refresh]);
 
   const refreshProviderSlice = useCallback(
     async (provider: ProviderSlice) => {
