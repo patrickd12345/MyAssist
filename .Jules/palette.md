@@ -1,0 +1,3 @@
+## 2024-05-24 - Chat input UX and Icon-only accessibility
+**Learning:** The app's custom task management components (like `TaskList`) use bare icon components (e.g., `ChevronUpIcon`) inside `<button>` elements without accessible names, creating a pattern of screen-reader-inaccessible controls for structural reordering. Additionally, the Assistant interface uses a `<textarea>` for input but lacked the standard "Enter to submit" chat UX pattern.
+**Action:** Audit other reordering or structural controls in the app for missing `aria-label` attributes on icon-only buttons. Ensure any future chat-like `<textarea>` implementations include `Enter` to submit and `Shift+Enter` for newlines.
