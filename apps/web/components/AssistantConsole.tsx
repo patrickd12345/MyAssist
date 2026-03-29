@@ -400,6 +400,14 @@ export function AssistantConsole({
                 id="assistant-input"
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && !event.shiftKey) {
+                    event.preventDefault();
+                    if (!pending && input.trim() !== "") {
+                      void sendMessage(input);
+                    }
+                  }
+                }}
                 placeholder="Ask what to do first, what to defer, how to handle a meeting, or turn an item into a plan."
                 className={`theme-input w-full rounded-[22px] px-4 py-3 text-sm leading-6 outline-none transition ${
                   compact ? "min-h-28" : "min-h-32"
