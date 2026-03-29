@@ -17,14 +17,16 @@ import {
   storeSituationBrief,
 } from "@/lib/memoryStore";
 import { maybeHandleJobHuntAssistantCommand } from "@/lib/jobHuntAssistantTools";
+import { executeChat, type CanonicalAiMetadata } from "@/lib/aiRuntime";
+import { getApiRequestId, jsonApiError, toApiHttpError } from "@/lib/api/error-contract";
+import { resolveMyAssistRuntimeEnv } from "@/lib/env/runtime";
+import { logAiServerEvent, logServerEvent } from "@/lib/serverLog";
 import { getSessionUserId } from "@/lib/session";
 import { isMyAssistDailyContext } from "@/lib/validateContext";
 import type { MyAssistDailyContext, SituationBrief } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-const OLLAMA_URL = (process.env.OLLAMA_BASE_URL ?? "http://127.0.0.1:11434").replace(/\/$/, "");
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL ?? "tinyllama:latest";
 /** Chat path: try primary then these. Heavier models may OOM on low-RAM machines. */
 const OLLAMA_MODEL_FALLBACKS = ["phi3:mini", "llama3.1:8b", "mistral:latest"];
 
@@ -36,10 +38,11 @@ const DEFAULT_HEADLINE_MODELS = [
 ];
 
 export async function POST(req: Request) {
+  const requestId = getApiRequestId(req);
   try {
     const userId = await getSessionUserId();
     if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return jsonApiError("unauthorized", "Unauthorized", 401, requestId);
     }
 
     const body = (await req.json()) as {
@@ -67,7 +70,7 @@ export async function POST(req: Request) {
         : "chat";
 
     if (kind === "chat" && !message) {
-      return NextResponse.json({ error: "Message is required." }, { status: 400 });
+      return jsonApiError("message_required", "Message is required.", 400, requestId);
     }
 
     if (kind === "situation_feedback") {
@@ -75,9 +78,11 @@ export async function POST(req: Request) {
         body.rating === "useful" || body.rating === "needs_work" ? body.rating : null;
       const runDate = typeof body.run_date === "string" ? body.run_date.trim() : "";
       if (!rating || !runDate) {
-        return NextResponse.json(
-          { error: "run_date and rating are required for situation feedback." },
-          { status: 400 },
+        return jsonApiError(
+          "invalid_feedback_request",
+          "run_date and rating are required for situation feedback.",
+          400,
+          requestId,
         );
       }
       const note = typeof body.note === "string" ? body.note.trim() : "";
@@ -105,9 +110,11 @@ export async function POST(req: Request) {
           ? body.resolution_feedback
           : undefined;
       if (!text || !source || !runDate) {
-        return NextResponse.json(
-          { error: "text, source, and run_date are required to resolve an item." },
-          { status: 400 },
+        return jsonApiError(
+          "invalid_resolve_request",
+          "text, source, and run_date are required to resolve an item.",
+          400,
+          requestId,
         );
       }
       const persisted = await storeResolvedItem(userId, {
@@ -135,8 +142,18 @@ export async function POST(req: Request) {
           : await createReply(context, message, userId);
     return NextResponse.json(reply);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    const normalized = toApiHttpError(error, {
+      fallbackCode: "assistant_route_failed",
+      fallbackMessage: "Unknown error",
+      fallbackStatus: 500,
+      requestId,
+    });
+    logServerEvent("error", "assistant_route_failed", {
+      requestId,
+      code: normalized.code,
+      status: normalized.status ?? 500,
+    });
+    return jsonApiError(normalized.code, normalized.message, 500, requestId);
   }
 }
 
@@ -146,13 +163,18 @@ async function resolveContext(candidate: unknown, userId: string): Promise<MyAss
   return context;
 }
 
+type AssistantApiMode = "ollama" | "fallback" | "gateway";
+
 type SituationBriefResponse = {
-  mode: "ollama" | "fallback";
+  mode: AssistantApiMode;
   brief: SituationBrief;
   memory_entries?: number;
   briefModel?: string;
-  fallbackReason?: string;
-};
+} & CanonicalAiMetadata;
+
+type AssistantRouteResponse = Omit<AssistantReply, "mode"> & {
+  mode: AssistantApiMode;
+} & CanonicalAiMetadata;
 
 type EnergyLevel = "high" | "normal" | "low";
 
@@ -184,7 +206,7 @@ async function createChiefOfStaffChatReply(
   context: MyAssistDailyContext,
   userId: string,
   energyLevel: EnergyLevel,
-): Promise<AssistantReply> {
+): Promise<AssistantRouteResponse> {
   const result = await createSituationBrief(context, userId, energyLevel);
   const actions = result.brief.next_actions.slice(0, 2);
   const followUps = [
@@ -198,23 +220,31 @@ async function createChiefOfStaffChatReply(
     actions,
     followUps,
     taskDraft: null,
+    provider: result.provider,
+    model: result.model,
+    latencyMs: result.latencyMs,
+    fallbackReason: result.fallbackReason ?? null,
   };
 }
 
-async function createReply(context: MyAssistDailyContext, message: string, userId: string): Promise<AssistantReply> {
+async function createReply(context: MyAssistDailyContext, message: string, userId: string): Promise<AssistantRouteResponse> {
   const jobHuntToolReply = await maybeHandleJobHuntAssistantCommand(userId, message);
   if (jobHuntToolReply) {
-    return jobHuntToolReply;
+    return {
+      ...jobHuntToolReply,
+      provider: "fallback",
+      model: "fallback",
+      latencyMs: 0,
+      fallbackReason: null,
+    };
   }
   try {
     const memoryPrompt = await getRollingMemoryPrompt(userId, context);
     
-    const raw = await requestOllama({
+    const result = await executeChat({
       format: "json",
-      options: {
-        temperature: 0.2,
-        num_predict: 220,
-      },
+      temperature: 0.2,
+      maxTokens: 220,
       messages: [
         {
           role: "system",
@@ -243,15 +273,31 @@ async function createReply(context: MyAssistDailyContext, message: string, userI
         },
       ],
     });
-    const parsed = parseAssistantReply(raw);
-    return {
-      mode: "ollama",
+    const parsed = parseAssistantReply(result.text);
+    const response = {
+      mode: result.mode,
       answer: parsed.answer,
       actions: parsed.actions,
       followUps: parsed.followUps,
+      taskDraft: parsed.taskDraft,
+      provider: result.provider,
+      model: result.model,
+      latencyMs: result.latencyMs,
+      fallbackReason: result.fallbackReason,
     };
-  } catch {
-    return buildFallbackReply(context, message);
+    logAiServerEvent("assistant_chat_completed", response, { route: "assistant", kind: "chat" });
+    return response;
+  } catch (error) {
+    const fallback = buildFallbackReply(context, message);
+    const response = {
+      ...fallback,
+      provider: "fallback",
+      model: "fallback",
+      latencyMs: 0,
+      fallbackReason: error instanceof Error ? error.message : "AI request failed",
+    };
+    logAiServerEvent("assistant_chat_fallback", response, { route: "assistant", kind: "chat" });
+    return response;
   }
 }
 
@@ -322,14 +368,23 @@ async function createSituationBrief(
           },
         ],
       });
-      const brief = parseSituationBrief(raw, context);
+      const brief = parseSituationBrief(raw.text, context);
       const persisted = await storeSituationBrief(userId, context, brief);
-      return {
-        mode: "ollama",
+      const response = {
+        mode: raw.mode,
         brief,
         memory_entries: persisted.entries,
-        briefModel: model,
+        briefModel: raw.model,
+        provider: raw.provider,
+        model: raw.model,
+        latencyMs: raw.latencyMs,
+        fallbackReason: raw.fallbackReason,
       };
+      logAiServerEvent("assistant_situation_brief_completed", response, {
+        route: "assistant",
+        kind: "situation_brief",
+      });
+      return response;
     } catch (error) {
       attemptErrors.push(
         `${model}: ${error instanceof Error ? error.message : String(error)}`.slice(0, 220),
@@ -339,18 +394,28 @@ async function createSituationBrief(
 
   const fallback = buildSituationBriefFallback(context);
   const persisted = await storeSituationBrief(userId, context, fallback);
-  return {
+  const response: SituationBriefResponse = {
     mode: "fallback",
     brief: fallback,
     memory_entries: persisted.entries,
+    provider: "fallback",
+    model: "fallback",
+    latencyMs: 0,
     fallbackReason: attemptErrors.slice(0, 6).join(" | "),
   };
+  logAiServerEvent("assistant_situation_brief_fallback", response, {
+    route: "assistant",
+    kind: "situation_brief",
+  });
+  return response;
 }
 
-type HeadlineApiResponse = Pick<AssistantReply, "mode" | "answer"> & {
+type HeadlineApiResponse = {
+  mode: AssistantApiMode;
+  answer: string;
   headlineModel?: string;
   headlineFallbackReason?: string;
-};
+} & CanonicalAiMetadata;
 
 async function createHeadline(context: MyAssistDailyContext): Promise<HeadlineApiResponse> {
   const digest = buildHeadlineDigest(context);
@@ -403,8 +468,21 @@ async function createHeadline(context: MyAssistDailyContext): Promise<HeadlineAp
         options: headlineOptions,
         messages,
       });
-      const answer = parseHeadlineAnswer(raw);
-      return { mode: "ollama", answer, headlineModel: model };
+      const answer = parseHeadlineAnswer(raw.text);
+      const response = {
+        mode: raw.mode,
+        answer,
+        headlineModel: raw.model,
+        provider: raw.provider,
+        model: raw.model,
+        latencyMs: raw.latencyMs,
+        fallbackReason: raw.fallbackReason,
+      };
+      logAiServerEvent("assistant_headline_completed", response, {
+        route: "assistant",
+        kind: "headline",
+      });
+      return response;
     } catch (error) {
       attemptErrors.push(
         `${model}: ${error instanceof Error ? error.message : String(error)}`.slice(0, 200),
@@ -412,45 +490,34 @@ async function createHeadline(context: MyAssistDailyContext): Promise<HeadlineAp
     }
   }
 
-  return {
+  const response: HeadlineApiResponse = {
     mode: "fallback",
     answer: buildHeadlineFallback(context),
+    provider: "fallback",
+    model: "fallback",
+    latencyMs: 0,
+    fallbackReason:
+      attemptErrors.length > 0
+        ? attemptErrors.slice(0, 6).join(" | ")
+        : "No headline models configured or all attempts failed.",
     headlineFallbackReason:
       attemptErrors.length > 0
         ? attemptErrors.slice(0, 6).join(" | ")
         : "No headline models configured or all attempts failed.",
   };
-}
-
-async function requestOllama(body: {
-  format: "json";
-  options: { temperature: number; num_predict: number };
-  messages: Array<{ role: "system" | "user"; content: string }>;
-}): Promise<string> {
-  const models = getCandidateModels();
-
-  let lastError: Error | null = null;
-
-  for (const model of models) {
-    try {
-      const raw = await requestOllamaForModel(model, body);
-      return raw;
-    } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error));
-    }
-  }
-
-  throw lastError ?? new Error("Ollama request failed");
-}
-
-function getCandidateModels(): string[] {
-  return [OLLAMA_MODEL, ...OLLAMA_MODEL_FALLBACKS].filter(
-    (model, index, array) => array.indexOf(model) === index,
-  );
+  logAiServerEvent("assistant_headline_fallback", response, {
+    route: "assistant",
+    kind: "headline",
+  });
+  return response;
 }
 
 function getHeadlineCandidateModels(): string[] {
-  const fromEnv = process.env.OLLAMA_HEADLINE_MODELS?.trim();
+  const runtime = resolveMyAssistRuntimeEnv();
+  if (runtime.aiMode === "gateway" || runtime.aiProvider.toLowerCase() === "gateway") {
+    return [runtime.openAiModel || "gpt-4o-mini"];
+  }
+  const fromEnv = runtime.ollamaHeadlineModels.trim();
   if (fromEnv) {
     return fromEnv
       .split(",")
@@ -468,44 +535,22 @@ async function requestOllamaForModel(
     options: { temperature: number; num_predict: number };
     messages: Array<{ role: "system" | "user"; content: string }>;
   },
-): Promise<string> {
-  const requestPayload: Record<string, unknown> = {
+): Promise<CanonicalAiMetadata & { text: string }> {
+  return executeChat({
     model,
-    stream: false,
-    options: body.options,
+    temperature: body.options.temperature,
+    maxTokens: body.options.num_predict,
+    format: body.format,
     messages: body.messages,
-  };
-  if (body.format) {
-    requestPayload.format = body.format;
-  }
-
-  const response = await fetch(`${OLLAMA_URL}/api/chat`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(requestPayload),
   });
-
-  if (!response.ok) {
-    throw new Error(`Ollama returned ${response.status} for ${model}`);
-  }
-
-  const ollamaJson = (await response.json()) as {
-    message?: { content?: string };
-    response?: string;
-  };
-
-  const raw = ollamaJson.message?.content ?? ollamaJson.response ?? "";
-  if (!raw.trim()) {
-    throw new Error(`Empty Ollama response for ${model}`);
-  }
-
-  return raw;
 }
 
 function getSituationCandidateModels(): string[] {
-  const fromEnv = process.env.OLLAMA_SITUATION_MODELS?.trim();
+  const runtime = resolveMyAssistRuntimeEnv();
+  if (runtime.aiMode === "gateway" || runtime.aiProvider.toLowerCase() === "gateway") {
+    return [runtime.openAiModel || "gpt-4o-mini"];
+  }
+  const fromEnv = runtime.ollamaSituationModels.trim();
   if (fromEnv) {
     return fromEnv
       .split(",")
@@ -513,7 +558,7 @@ function getSituationCandidateModels(): string[] {
       .filter(Boolean)
       .filter((model, index, array) => array.indexOf(model) === index);
   }
-  return [OLLAMA_MODEL, ...DEFAULT_HEADLINE_MODELS, ...OLLAMA_MODEL_FALLBACKS].filter(
+  return [runtime.ollamaModel, ...DEFAULT_HEADLINE_MODELS, ...OLLAMA_MODEL_FALLBACKS].filter(
     (model, index, array) => array.indexOf(model) === index,
   );
 }

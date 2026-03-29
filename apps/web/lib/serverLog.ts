@@ -1,4 +1,10 @@
 import "server-only";
+import {
+  emitAiLog,
+  emitStructuredLog,
+  getRequestId,
+  type AiLogMetadata,
+} from "@bookiji-inc/observability";
 
 export type ServerLogLevel = "info" | "warn" | "error";
 
@@ -10,17 +16,17 @@ export function logServerEvent(
   event: string,
   fields: Record<string, string | number | boolean | undefined | null> = {},
 ): void {
-  const line = JSON.stringify({
-    ts: new Date().toISOString(),
-    level,
-    event,
-    ...fields,
-  });
-  if (level === "error") {
-    console.error(line);
-  } else if (level === "warn") {
-    console.warn(line);
-  } else {
-    console.info(line);
-  }
+  emitStructuredLog(level, event, fields);
+}
+
+export function logAiServerEvent(
+  event: string,
+  metadata: AiLogMetadata,
+  fields: Record<string, string | number | boolean | undefined | null> = {},
+): void {
+  emitAiLog("info", event, metadata, fields);
+}
+
+export function getServerRequestId(source?: string | Headers | Request): string {
+  return getRequestId(source);
 }

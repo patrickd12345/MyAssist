@@ -7,9 +7,10 @@ import {
   listJobHuntContactsFull,
   type JobHuntPersonContact,
 } from "./jobHuntContactsStore";
+import { resolveMyAssistRuntimeEnv } from "./env/runtime";
 
 function dataPath(): string | undefined {
-  return process.env.JOB_HUNT_DATA_PATH?.trim() || undefined;
+  return resolveMyAssistRuntimeEnv().jobHuntDataPath || undefined;
 }
 
 function clean(v: string | null | undefined): string {

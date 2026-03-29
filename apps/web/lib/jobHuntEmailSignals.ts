@@ -1,9 +1,11 @@
 import "server-only";
 
 import type { GmailSignal, JobHuntEmailMatch } from "./types";
+import { resolveMyAssistRuntimeEnv } from "./env/runtime";
 
 export function defaultJobHuntSignalsUrl(): string {
-  const d = process.env.JOB_HUNT_DIGEST_URL?.trim();
+  const runtime = resolveMyAssistRuntimeEnv();
+  const d = runtime.jobHuntDigestUrl.trim();
   if (d) {
     try {
       const u = new URL(d);
@@ -21,20 +23,22 @@ export function defaultJobHuntSignalsUrl(): string {
  * Fails soft (empty array) if the digest server is down.
  */
 export async function postJobHuntEmailSignals(signals: GmailSignal[]): Promise<JobHuntEmailMatch[]> {
+  const runtime = resolveMyAssistRuntimeEnv();
+  const disableSignals = runtime.myassistDisableJobHuntSignals;
   if (
-    process.env.MYASSIST_DISABLE_JOB_HUNT_SIGNALS === "1" ||
-    process.env.MYASSIST_DISABLE_JOB_HUNT_SIGNALS === "true"
+    disableSignals === "1" ||
+    disableSignals === "true"
   ) {
     return [];
   }
-  if (process.env.NODE_ENV === "test") {
+  if (runtime.nodeEnv === "test") {
     return [];
   }
   if (signals.length === 0) {
     return [];
   }
 
-  const url = process.env.JOB_HUNT_SIGNALS_URL?.trim() || defaultJobHuntSignalsUrl();
+  const url = runtime.jobHuntSignalsUrl || defaultJobHuntSignalsUrl();
   const payload = {
     signals: signals.map((s) => ({
       id: s.id,

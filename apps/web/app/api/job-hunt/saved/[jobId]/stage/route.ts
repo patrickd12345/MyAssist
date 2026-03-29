@@ -1,5 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server';
+import { jsonLegacyApiError } from '@/lib/api/error-contract';
 import { lifecycleStageSchema } from "job-hunt-manager/types/lifecycle";
+import { resolveMyAssistRuntimeEnv } from "@/lib/env/runtime";
 import { updateJobStage } from "@/lib/jobHuntLifecycle";
 import { maybeCreateTodoistTaskForJobStage } from "@/lib/jobHuntStageTodoistSync";
 import { getSessionUserId } from "@/lib/session";
@@ -9,7 +11,7 @@ export const dynamic = "force-dynamic";
 export async function POST(req: Request, ctx: { params: Promise<{ jobId: string }> }) {
   const userId = await getSessionUserId();
   if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return jsonLegacyApiError("Unauthorized", 401);
   }
 
   const { jobId: rawId } = await ctx.params;
@@ -38,7 +40,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ jobId: string 
   try {
     const lifecycle = await updateJobStage(jobId, parsed.data, notes ? { notes } : undefined);
     if (parsed.data === "interview_scheduled") {
-      const prepWebhook = process.env.MYASSIST_JOB_HUNT_PREP_WEBHOOK?.trim();
+      const prepWebhook = resolveMyAssistRuntimeEnv().jobHuntPrepWebhook;
       if (prepWebhook) {
         void fetch(prepWebhook, {
           method: "POST",

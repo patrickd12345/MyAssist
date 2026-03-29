@@ -1,18 +1,14 @@
 import "server-only";
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { resolveMyAssistRuntimeEnv } from "@/lib/env/runtime";
 
 let cached: SupabaseClient | null = null;
 let cachedKey: string | null = null;
 
 /** Same Supabase project URL as other Bookiji apps (Kinetix often uses NEXT_PUBLIC_* or VITE_* only). */
 export function resolveSupabaseProjectUrl(): string | undefined {
-  return (
-    process.env.SUPABASE_URL?.trim() ||
-    process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() ||
-    process.env.VITE_SUPABASE_URL?.trim() ||
-    undefined
-  );
+  return resolveMyAssistRuntimeEnv().supabaseProjectUrl || undefined;
 }
 
 /**
@@ -20,11 +16,7 @@ export function resolveSupabaseProjectUrl(): string | undefined {
  * legacy JWT `service_role` still works if enabled in the dashboard.
  */
 export function resolveSupabaseSecretKey(): string | undefined {
-  return (
-    process.env.SUPABASE_SECRET_KEY?.trim() ||
-    process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() ||
-    undefined
-  );
+  return resolveMyAssistRuntimeEnv().supabaseSecretKey || undefined;
 }
 
 /**

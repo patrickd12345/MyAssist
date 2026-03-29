@@ -1,6 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server';
+import { jsonLegacyApiError } from '@/lib/api/error-contract';
 import { integrationService } from "@/lib/integrations/service";
 import { storeResolvedItem } from "@/lib/memoryStore";
+import { logServerEvent } from "@/lib/serverLog";
 import { getSessionUserId } from "@/lib/session";
 import { resolveTodoistApiToken } from "@/lib/todoistToken";
 
@@ -13,7 +15,7 @@ export async function POST(
   const { taskId } = await params;
   const userId = await getSessionUserId();
   if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return jsonLegacyApiError("Unauthorized", 401);
   }
 
   const body = (await req.json()) as {
@@ -34,11 +36,11 @@ export async function POST(
       : new Date().toISOString().slice(0, 10);
 
   if (!taskId?.trim()) {
-    return NextResponse.json({ error: "Task ID is required." }, { status: 400 });
+    return jsonLegacyApiError("Task ID is required.", 400);
   }
 
   if (!dueString) {
-    return NextResponse.json({ error: "dueString is required." }, { status: 400 });
+    return jsonLegacyApiError("dueString is required.", 400);
   }
 
   try {
@@ -53,10 +55,7 @@ export async function POST(
     } else {
       const token = await resolveTodoistApiToken(userId);
       if (!token) {
-        return NextResponse.json(
-          { error: "Todoist is disconnected. Connect Todoist in Integrations first." },
-          { status: 409 },
-        );
+        return jsonLegacyApiError("Todoist is disconnected. Connect Todoist in Integrations first.", 409);
       }
       const response = await fetch(`https://api.todoist.com/api/v1/tasks/${encodeURIComponent(taskId)}`, {
         method: "POST",
@@ -72,11 +71,9 @@ export async function POST(
       });
       if (!response.ok) {
         const text = await response.text();
-        return NextResponse.json(
-          {
-            error: `Todoist reschedule failed with ${response.status}: ${text.slice(0, 300)}`,
-          },
-          { status: response.status },
+        return jsonLegacyApiError(
+          `Todoist reschedule failed with ${response.status}: ${text.slice(0, 300)}`,
+          response.status,
         );
       }
       payload = await response.json();
@@ -92,13 +89,16 @@ export async function POST(
           run_date: runDate,
         });
       } catch (memoryError) {
-        console.error("[schedule] Failed to store snooze intent:", memoryError);
+        logServerEvent("warn", "todoist_schedule_store_resolved_item_failed", {
+          taskId,
+          error: memoryError instanceof Error ? memoryError.message : String(memoryError),
+        });
       }
     }
 
     return NextResponse.json({ ok: true, taskId, task: payload });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown Todoist error";
-    return NextResponse.json({ error: message }, { status: 502 });
+    return jsonLegacyApiError(String(message ), 502);
   }
 }

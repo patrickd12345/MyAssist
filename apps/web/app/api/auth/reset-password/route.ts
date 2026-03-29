@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server';
+import { jsonLegacyApiError } from '@/lib/api/error-contract';
 import { resetPasswordWithToken } from "@/lib/userStore";
 
 export const dynamic = "force-dynamic";
@@ -10,10 +11,10 @@ export async function POST(req: Request) {
     const password = typeof body.password === "string" ? body.password : "";
     const ok = await resetPasswordWithToken({ token, password });
     if (!ok) {
-      return NextResponse.json({ error: "Invalid or expired reset link." }, { status: 400 });
+      return jsonLegacyApiError("Invalid or expired reset link.", 400);
     }
     return NextResponse.json({ ok: true });
   } catch {
-    return NextResponse.json({ error: "Could not reset password." }, { status: 400 });
+    return jsonLegacyApiError("Could not reset password.", 400);
   }
 }

@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server';
+import { jsonLegacyApiError } from '@/lib/api/error-contract';
 import { createCrossSystemActionService, type ActionName } from "@/lib/services/crossSystemActionService";
 import { getSessionUserId } from "@/lib/session";
 
@@ -21,14 +22,14 @@ function isActionName(value: unknown): value is ActionName {
 export async function POST(req: Request) {
   const userId = await getSessionUserId();
   if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return jsonLegacyApiError("Unauthorized", 401);
   }
 
   let body: unknown;
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
+    return jsonLegacyApiError("Invalid JSON body.", 400);
   }
 
   const record = body as {
@@ -40,11 +41,11 @@ export async function POST(req: Request) {
   const sourceId = typeof record.sourceId === "string" ? record.sourceId.trim() : "";
 
   if (!isActionName(action)) {
-    return NextResponse.json({ error: "Unknown or missing action." }, { status: 400 });
+    return jsonLegacyApiError("Unknown or missing action.", 400);
   }
 
   if (action !== "calendar_create_manual" && !sourceId) {
-    return NextResponse.json({ error: "sourceId is required." }, { status: 400 });
+    return jsonLegacyApiError("sourceId is required.", 400);
   }
 
   const service = createCrossSystemActionService(userId);
@@ -65,7 +66,7 @@ export async function POST(req: Request) {
     case "calendar_create_manual": {
       const payload = record.payload;
       if (!payload || typeof payload !== "object") {
-        return NextResponse.json({ error: "payload is required for calendar_create_manual." }, { status: 400 });
+        return jsonLegacyApiError("payload is required for calendar_create_manual.", 400);
       }
       const p = payload as Record<string, unknown>;
       const summary = typeof p.summary === "string" ? p.summary.trim() : "";
@@ -74,10 +75,7 @@ export async function POST(req: Request) {
       const end = typeof p.end === "string" ? p.end.trim() : "";
       const origin = p.origin === "email_to_event" || p.origin === "task_to_calendar_block" ? p.origin : null;
       if (!summary || !start || !end || !origin) {
-        return NextResponse.json(
-          { error: "Invalid manual calendar payload (summary, start, end, origin)." },
-          { status: 400 },
-        );
+        return jsonLegacyApiError("Invalid manual calendar payload (summary, start, end, origin).", 400);
       }
       const correlationSourceId =
         typeof p.correlationSourceId === "string" && p.correlationSourceId.trim()
@@ -106,7 +104,7 @@ export async function POST(req: Request) {
       return NextResponse.json(result);
     }
     default: {
-      return NextResponse.json({ error: "Unsupported action." }, { status: 400 });
+      return jsonLegacyApiError("Unsupported action.", 400);
     }
   }
 }

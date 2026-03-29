@@ -1,24 +1,17 @@
 import "server-only";
 
+import { resolveMyAssistRuntimeEnv } from "@/lib/env/runtime";
 import type { IntegrationTokenPayload } from "../types";
 
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 
 export function googleClientId(): string | undefined {
-  return (
-    process.env.GOOGLE_CLIENT_ID?.trim() ||
-    process.env.MYASSIST_GMAIL_CLIENT_ID?.trim() ||
-    process.env.MYASSIST_GOOGLE_CLIENT_ID?.trim()
-  );
+  return resolveMyAssistRuntimeEnv().googleClientId || undefined;
 }
 
 function googleClientSecret(): string | undefined {
-  return (
-    process.env.GOOGLE_CLIENT_SECRET?.trim() ||
-    process.env.MYASSIST_GMAIL_CLIENT_SECRET?.trim() ||
-    process.env.MYASSIST_GOOGLE_CLIENT_SECRET?.trim()
-  );
+  return resolveMyAssistRuntimeEnv().googleClientSecret || undefined;
 }
 
 export function googleScopesFor(provider: "gmail" | "google_calendar"): string {

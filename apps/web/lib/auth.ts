@@ -3,6 +3,8 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { compare } from "bcryptjs";
 import { findUserByEmail } from "./userStore";
+import { resolveMyAssistRuntimeEnv } from "./env/runtime";
+import { logServerEvent } from "./serverLog";
 
 const FALLBACK_SECRET =
   "myassist-dev-only-auth-secret-min-32-chars-do-not-use-in-production";
@@ -16,21 +18,23 @@ const FALLBACK_SECRET =
  * (Production + Preview as needed). See apps/web/.env.example.
  */
 function patchAuthSecretForNonProductionContexts(): void {
-  if (process.env.AUTH_SECRET?.trim() || process.env.NEXTAUTH_SECRET?.trim()) {
+  const runtime = resolveMyAssistRuntimeEnv(process.env);
+  if (runtime.authSecret) {
     return;
   }
-  if (process.env.NODE_ENV === "development") {
-    console.warn(
-      "[auth] AUTH_SECRET is unset; using a local fallback. Set AUTH_SECRET in apps/web/.env.local for stable sessions.",
-    );
+  if (runtime.nodeEnv === "development") {
+    logServerEvent("warn", "myassist_auth_secret_fallback", {
+      message:
+        "AUTH_SECRET is unset; using a local fallback. Set AUTH_SECRET in apps/web/.env.local for stable sessions.",
+    });
     process.env.AUTH_SECRET = FALLBACK_SECRET;
     return;
   }
-  if (process.env.NODE_ENV === "test") {
+  if (runtime.nodeEnv === "test") {
     process.env.AUTH_SECRET = FALLBACK_SECRET;
     return;
   }
-  if (process.env.NEXT_PHASE === PHASE_PRODUCTION_BUILD) {
+  if (runtime.nextPhase === PHASE_PRODUCTION_BUILD) {
     process.env.AUTH_SECRET = FALLBACK_SECRET;
   }
 }

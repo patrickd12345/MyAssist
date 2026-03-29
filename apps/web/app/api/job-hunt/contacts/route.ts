@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server';
+import { jsonLegacyApiError } from '@/lib/api/error-contract';
 import { createManualContact, listJobHuntContacts, listJobHuntContactsFull } from "@/lib/jobHuntContactsStore";
 import { getSessionUserId } from "@/lib/session";
 
@@ -7,7 +8,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   const userId = await getSessionUserId();
   if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return jsonLegacyApiError("Unauthorized", 401);
   }
 
   const incoming = new URL(req.url);
@@ -30,7 +31,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   const userId = await getSessionUserId();
   if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return jsonLegacyApiError("Unauthorized", 401);
   }
 
   let body: unknown;

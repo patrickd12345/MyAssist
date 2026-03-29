@@ -1,9 +1,10 @@
 import "server-only";
 
 import type { LifecycleState } from "job-hunt-manager/types/lifecycle";
+import { resolveMyAssistRuntimeEnv } from "./env/runtime";
 
 function dataPath(): string | undefined {
-  return process.env.JOB_HUNT_DATA_PATH?.trim() || undefined;
+  return resolveMyAssistRuntimeEnv().jobHuntDataPath || undefined;
 }
 
 export async function appendJobTimelineNote(jobId: string, detail: string): Promise<LifecycleState> {

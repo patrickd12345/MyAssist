@@ -1,4 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server';
+import { jsonLegacyApiError } from '@/lib/api/error-contract';
+import { resolveMyAssistRuntimeEnv } from "@/lib/env/runtime";
 import { getSessionUserId } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
@@ -8,10 +10,10 @@ const DEFAULT_DIGEST_URL = "http://127.0.0.1:3847/digest";
 export async function GET() {
   const userId = await getSessionUserId();
   if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return jsonLegacyApiError("Unauthorized", 401);
   }
 
-  const digestUrl = process.env.JOB_HUNT_DIGEST_URL?.trim() || DEFAULT_DIGEST_URL;
+  const digestUrl = resolveMyAssistRuntimeEnv().jobHuntDigestUrl || DEFAULT_DIGEST_URL;
 
   try {
     const controller = new AbortController();

@@ -1,6 +1,9 @@
+import { resolveMyAssistRuntimeEnv } from "./env/runtime";
+
 export async function getSessionUserId(): Promise<string | null> {
-  if (process.env.MYASSIST_AUTH_DISABLED === "true") {
-    const dev = process.env.MYASSIST_DEV_USER_ID?.trim();
+  const runtime = resolveMyAssistRuntimeEnv();
+  if (runtime.authDisabledRaw === "true") {
+    const dev = runtime.devUserId;
     return dev && dev !== "" ? dev : "dev-user";
   }
 

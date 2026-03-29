@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server';
+import { jsonLegacyApiError } from '@/lib/api/error-contract';
 import { linkContactToJob, unlinkContactFromJob } from "@/lib/jobHuntContactsStore";
 import { getSessionUserId } from "@/lib/session";
 
@@ -8,7 +9,7 @@ export const dynamic = "force-dynamic";
 export async function POST(req: Request, ctx: { params: Promise<{ jobId: string }> }) {
   const userId = await getSessionUserId();
   if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return jsonLegacyApiError("Unauthorized", 401);
   }
 
   const { jobId: rawId } = await ctx.params;
@@ -46,7 +47,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ jobId: string 
 export async function DELETE(req: Request, ctx: { params: Promise<{ jobId: string }> }) {
   const userId = await getSessionUserId();
   if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return jsonLegacyApiError("Unauthorized", 401);
   }
 
   const { jobId: rawId } = await ctx.params;

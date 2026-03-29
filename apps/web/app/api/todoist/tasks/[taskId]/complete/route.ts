@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server';
+import { jsonLegacyApiError } from '@/lib/api/error-contract';
 import { getSessionUserId } from "@/lib/session";
 import { integrationService } from "@/lib/integrations/service";
 import { resolveTodoistApiToken } from "@/lib/todoistToken";
@@ -12,11 +13,11 @@ export async function POST(
   const { taskId } = await params;
   const userId = await getSessionUserId();
   if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return jsonLegacyApiError("Unauthorized", 401);
   }
 
   if (!taskId?.trim()) {
-    return NextResponse.json({ error: "Task ID is required." }, { status: 400 });
+    return jsonLegacyApiError("Task ID is required.", 400);
   }
 
   try {
@@ -27,10 +28,7 @@ export async function POST(
 
     const token = await resolveTodoistApiToken(userId);
     if (!token) {
-      return NextResponse.json(
-        { error: "Todoist is disconnected. Connect Todoist in Integrations first." },
-        { status: 409 },
-      );
+      return jsonLegacyApiError("Todoist is disconnected. Connect Todoist in Integrations first.", 409);
     }
 
     const response = await fetch(
@@ -46,17 +44,15 @@ export async function POST(
 
     if (!response.ok) {
       const text = await response.text();
-      return NextResponse.json(
-        {
-          error: `Todoist close failed with ${response.status}: ${text.slice(0, 300)}`,
-        },
-        { status: response.status },
+      return jsonLegacyApiError(
+        `Todoist close failed with ${response.status}: ${text.slice(0, 300)}`,
+        response.status,
       );
     }
 
     return NextResponse.json({ ok: true, taskId });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown Todoist error";
-    return NextResponse.json({ error: message }, { status: 502 });
+    return jsonLegacyApiError(String(message ), 502);
   }
 }

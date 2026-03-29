@@ -2,6 +2,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { joinUnderMyAssistMemory } from "./memoryPaths";
 import type { MyAssistDailyContext, SituationBrief } from "./types";
+import { resolveMyAssistRuntimeEnv } from "./env/runtime";
 
 type MemoryKind = "daily_brief" | "feedback" | "resolution" | "task_nudge";
 
@@ -53,7 +54,7 @@ function sanitizeUserId(userId: string): string {
 
 export function resolveMemoryFilePath(userId: string): string {
   const safe = sanitizeUserId(userId);
-  const legacy = process.env.MYASSIST_MEMORY_FILE?.trim();
+  const legacy = resolveMyAssistRuntimeEnv().myassistMemoryFile.trim();
   if (legacy) {
     const resolved = path.resolve(legacy);
     return path.join(path.dirname(resolved), safe, path.basename(resolved));

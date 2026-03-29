@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server';
+import { jsonLegacyApiError } from '@/lib/api/error-contract';
 import { assignEmailSignalToJob } from "@/lib/jobHuntEmailAssignment";
 import { getSessionUserId } from "@/lib/session";
 import type { GmailSignal } from "@/lib/types";
@@ -19,7 +20,7 @@ function isSignal(value: unknown): value is GmailSignal {
 export async function POST(req: Request) {
   const userId = await getSessionUserId();
   if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return jsonLegacyApiError("Unauthorized", 401);
   }
 
   let body: unknown;

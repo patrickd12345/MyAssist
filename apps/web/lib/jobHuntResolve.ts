@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { UnifiedJob } from "job-hunt-manager/types/job";
+import { resolveMyAssistRuntimeEnv } from "./env/runtime";
 
 export type ResolveJobResponse = {
   ok: true;
@@ -21,7 +22,7 @@ export async function fetchResolveJobFromStore(
   const { HuntService } = await import("job-hunt-manager/services/hunt-service");
   const { buildLinkedInViewUrlFromQuery } = await import("job-hunt-manager/connectors/linkedin-job-view");
 
-  const dataPath = process.env.JOB_HUNT_DATA_PATH?.trim() || undefined;
+  const dataPath = resolveMyAssistRuntimeEnv().jobHuntDataPath || undefined;
   const svc = new HuntService(dataPath);
 
   let candidates = await svc.resolveJobCandidates(q);

@@ -7,6 +7,7 @@ import { getSessionUserId } from "@/lib/session";
 import { fetchTodoistTaskRecordsForUser } from "@/lib/todoistApiTasks";
 import { bucketTodoistTasksFromApi, todayCalendarDateInTaskZone } from "@/lib/todoistTaskBuckets";
 import type { MyAssistDailyContext } from "@/lib/types";
+import { jsonLegacyApiError } from "@/lib/api/error-contract";
 
 export const dynamic = "force-dynamic";
 
@@ -115,7 +116,7 @@ export async function GET(request: NextRequest) {
   try {
     const userId = await getSessionUserId();
     if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return jsonLegacyApiError("Unauthorized", 401);
     }
 
     const fromCache = request.nextUrl.searchParams.get("source") === "cache";
@@ -127,7 +128,7 @@ export async function GET(request: NextRequest) {
     if (fromCache) {
       const cached = await readLastDailyContext(userId);
       if (!cached) {
-        return NextResponse.json({ error: "no_cached_snapshot" }, { status: 404 });
+        return jsonLegacyApiError("no_cached_snapshot", 404);
       }
       const nudges = await getTaskNudges(userId);
       let context = { ...cached, user_task_nudges: nudges };
@@ -159,6 +160,6 @@ export async function GET(request: NextRequest) {
     return res;
   } catch (e) {
     const message = e instanceof Error ? e.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 502 });
+    return jsonLegacyApiError(String(message ), 502);
   }
 }

@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server';
+import { jsonLegacyApiError } from '@/lib/api/error-contract';
 import { formatActionTypeLabel } from "@/lib/actionResultModel";
 import { readActionLogEntries, type StoredActionLogEntry } from "@/lib/services/crossSystemActionService";
 import { getSessionUserId } from "@/lib/session";
@@ -23,7 +24,7 @@ function recoverableTargetsForEntry(e: StoredActionLogEntry): Array<{ kind: "cal
 export async function GET() {
   const userId = await getSessionUserId();
   if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return jsonLegacyApiError("Unauthorized", 401);
   }
 
   const entries = await readActionLogEntries(userId);

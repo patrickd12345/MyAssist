@@ -3,6 +3,7 @@ import path from "node:path";
 import { resolveMemoryFilePath } from "@/lib/memoryStore";
 import type { MyAssistDailyContext } from "@/lib/types";
 import { isMyAssistDailyContext } from "@/lib/validateContext";
+import { logServerEvent } from "./serverLog";
 
 export function resolveDailyContextSnapshotPath(userId: string): string {
   return path.join(path.dirname(resolveMemoryFilePath(userId)), "last-daily-context.json");
@@ -31,6 +32,8 @@ export async function writeLastDailyContext(
     delete toStore.user_task_nudges;
     await writeFile(file, `${JSON.stringify(toStore, null, 2)}\n`, "utf8");
   } catch (e) {
-    console.warn("[dailyContextSnapshot] writeLastDailyContext skipped:", e);
+    logServerEvent("warn", "myassist_daily_context_snapshot_write_skipped", {
+      error: e instanceof Error ? e.message : String(e),
+    });
   }
 }

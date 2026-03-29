@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server';
+import { jsonLegacyApiError } from '@/lib/api/error-contract';
 import { googleClientId } from "@/lib/integrations/providers/google";
 import { resolvePublicOrigin } from "@/lib/integrations/origin";
 import { getSessionUserId } from "@/lib/session";
@@ -16,7 +17,7 @@ const GOOGLE_CALLBACK_PATH = "/api/integrations/google/callback";
 export async function GET(req: Request) {
   const userId = await getSessionUserId();
   if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return jsonLegacyApiError("Unauthorized", 401);
   }
 
   const rawRequestOrigin = new URL(req.url).origin;

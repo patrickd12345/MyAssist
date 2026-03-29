@@ -1,7 +1,7 @@
 import "server-only";
+import { executeChat } from "@/lib/aiRuntime";
+import { resolveMyAssistRuntimeEnv } from "@/lib/env/runtime";
 
-const OLLAMA_URL = (process.env.OLLAMA_BASE_URL ?? "http://127.0.0.1:11434").replace(/\/$/, "");
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL ?? "tinyllama:latest";
 const OLLAMA_FALLBACKS = ["phi3:mini", "llama3.1:8b", "mistral:latest"];
 
 export type ExtractedContact = {
@@ -128,28 +128,21 @@ function normalizeContact(o: unknown): ExtractedContact | null {
 }
 
 async function requestOllamaJson(model: string, messages: Array<{ role: "system" | "user"; content: string }>) {
-  const response = await fetch(`${OLLAMA_URL}/api/chat`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model,
-      stream: false,
-      format: "json",
-      options: { temperature: 0.2, num_predict: 512 },
-      messages,
-    }),
+  const response = await executeChat({
+    model,
+    format: "json",
+    temperature: 0.2,
+    maxTokens: 512,
+    messages,
   });
-  if (!response.ok) {
-    throw new Error(`Ollama returned ${response.status}`);
-  }
-  const ollamaJson = (await response.json()) as { message?: { content?: string }; response?: string };
-  const raw = ollamaJson.message?.content ?? ollamaJson.response ?? "";
+  const raw = response.text;
   if (!raw.trim()) throw new Error("Empty Ollama response");
   return raw;
 }
 
 function candidateModels(): string[] {
-  return [OLLAMA_MODEL, ...OLLAMA_FALLBACKS].filter((m, i, a) => a.indexOf(m) === i);
+  const runtime = resolveMyAssistRuntimeEnv();
+  return [runtime.ollamaModel, ...OLLAMA_FALLBACKS].filter((m, i, a) => a.indexOf(m) === i);
 }
 
 /**

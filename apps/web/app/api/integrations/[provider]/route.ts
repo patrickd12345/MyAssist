@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server';
+import { jsonLegacyApiError } from '@/lib/api/error-contract';
 import { integrationService } from "@/lib/integrations/service";
 import type { IntegrationProvider } from "@/lib/integrations/types";
 import { getSessionUserId } from "@/lib/session";
@@ -10,7 +11,7 @@ export async function DELETE(
   { params }: { params: Promise<{ provider: IntegrationProvider }> },
 ) {
   const userId = await getSessionUserId();
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!userId) return jsonLegacyApiError("Unauthorized", 401);
   const { provider } = await params;
   await integrationService.disconnect(userId, provider);
   return NextResponse.json({ ok: true, provider });

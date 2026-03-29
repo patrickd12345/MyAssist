@@ -1,4 +1,5 @@
 import { getUserById } from "@/lib/userStore";
+import { resolveMyAssistRuntimeEnv } from "@/lib/env/runtime";
 import { getIntegrationToken } from "./integrations/tokenStore";
 
 export async function resolveTodoistApiToken(userId: string): Promise<string | undefined> {
@@ -8,5 +9,5 @@ export async function resolveTodoistApiToken(userId: string): Promise<string | u
   const user = await getUserById(userId);
   const fromUser = user?.todoistApiToken?.trim();
   if (fromUser) return fromUser;
-  return process.env.TODOIST_API_TOKEN?.trim();
+  return resolveMyAssistRuntimeEnv().todoistApiToken || undefined;
 }

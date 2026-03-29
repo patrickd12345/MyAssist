@@ -1,8 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server';
+import { jsonLegacyApiError } from '@/lib/api/error-contract';
 import { integrationService } from "@/lib/integrations/service";
 import { oauthDebugLog } from "@/lib/integrations/oauthDebugLog";
 import { resolvePublicOrigin } from "@/lib/integrations/origin";
 import { verifyGoogleOAuthState } from "@/lib/integrations/oauthState";
+import { resolveMyAssistRuntimeEnv } from "@/lib/env/runtime";
+import { logServerEvent } from "@/lib/serverLog";
 
 export const dynamic = "force-dynamic";
 
@@ -33,12 +36,12 @@ export async function GET(req: Request) {
       hasState: Boolean(state),
       forwardedHost: req.headers.get("x-forwarded-host") ?? null,
       forwardedProto: req.headers.get("x-forwarded-proto") ?? null,
-      nodeEnv: process.env.NODE_ENV,
+      nodeEnv: resolveMyAssistRuntimeEnv().nodeEnv,
     },
   });
   // #endregion
   if (err) return NextResponse.redirect(`${origin}/?integrations=error`);
-  if (!code || !state) return NextResponse.json({ error: "Missing OAuth code/state" }, { status: 400 });
+  if (!code || !state) return jsonLegacyApiError("Missing OAuth code/state", 400);
 
   try {
     const { userId, provider } = verifyGoogleOAuthState(state);
@@ -50,7 +53,9 @@ export async function GET(req: Request) {
     });
     return NextResponse.redirect(`${origin}/?integrations=connected&provider=${provider}`);
   } catch (error) {
-    console.error("[integrations/google/callback] failed:", error);
+    logServerEvent("error", "myassist_google_callback_failed", {
+      error: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.redirect(`${origin}/?integrations=error`);
   }
 }

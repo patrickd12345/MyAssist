@@ -26,7 +26,7 @@ describe("POST /api/assistant auth guard", () => {
     const res = await POST(
       new Request("http://localhost/api/assistant", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-request-id": "req_guard" },
         body: JSON.stringify({
           kind: "situation_feedback",
           run_date: "2026-03-25",
@@ -35,5 +35,9 @@ describe("POST /api/assistant auth guard", () => {
       }),
     );
     expect(res.status).toBe(401);
+    const json = (await res.json()) as { code: string; message: string; requestId: string };
+    expect(json.code).toBe("unauthorized");
+    expect(json.message).toBe("Unauthorized");
+    expect(json.requestId).toBe("req_guard");
   });
 });

@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createHmac, randomBytes } from "node:crypto";
+import { resolveMyAssistRuntimeEnv } from "@/lib/env/runtime";
 import type { IntegrationProvider } from "./types";
 
 type OAuthStatePayload = {
@@ -11,7 +12,7 @@ type OAuthStatePayload = {
 };
 
 function secret(): string {
-  return process.env.AUTH_SECRET?.trim() || "myassist-oauth-state-secret";
+  return resolveMyAssistRuntimeEnv().authSecret || "myassist-oauth-state-secret";
 }
 
 export function createOAuthState(userId: string, provider: IntegrationProvider): string {

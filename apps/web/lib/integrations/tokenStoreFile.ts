@@ -1,6 +1,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { joinUnderMyAssistMemory } from "@/lib/memoryPaths";
+import { logServerEvent } from "@/lib/serverLog";
 import { decryptJson, encryptJson } from "./crypto";
 import type { IntegrationProvider, IntegrationTokenPayload, StoredIntegrationRecord } from "./types";
 
@@ -90,7 +91,7 @@ export async function getIntegrationToken(
   try {
     return decryptJson<IntegrationTokenPayload>(row.encrypted_payload);
   } catch {
-    console.warn(`[Integrations] Could not decrypt token for ${provider} (key changed?). Treating as disconnected.`);
+    logServerEvent("warn", "myassist_integrations_token_decrypt_failed", { provider, store: "file" });
     return null;
   }
 }

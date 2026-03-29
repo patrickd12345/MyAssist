@@ -1,9 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server';
+import { jsonLegacyApiError } from '@/lib/api/error-contract';
 import {
   checkRegisterRateLimit,
   clientIpFromRequest,
 } from "@/lib/registerRateLimit";
 import { createUser } from "@/lib/userStore";
+import { resolveMyAssistRuntimeEnv } from "@/lib/env/runtime";
 
 export const dynamic = "force-dynamic";
 
@@ -11,13 +13,9 @@ export async function POST(req: Request) {
   try {
     const ipLimit = checkRegisterRateLimit(clientIpFromRequest(req));
     if (!ipLimit.ok) {
-      return NextResponse.json(
-        { error: "Too many requests. Try again later." },
-        {
-          status: 429,
-          headers: { "Retry-After": String(ipLimit.retryAfterSec) },
-        },
-      );
+      return jsonLegacyApiError("Too many requests. Try again later.", 429, {
+        headers: { "Retry-After": String(ipLimit.retryAfterSec) },
+      });
     }
 
     const body = (await req.json()) as {
@@ -25,11 +23,11 @@ export async function POST(req: Request) {
       password?: unknown;
       inviteCode?: unknown;
     };
-    const expectedInvite = process.env.MYASSIST_REGISTRATION_INVITE_CODE?.trim();
+    const expectedInvite = resolveMyAssistRuntimeEnv().registrationInviteCode;
     if (expectedInvite) {
       const code = typeof body.inviteCode === "string" ? body.inviteCode.trim() : "";
       if (code !== expectedInvite) {
-        return NextResponse.json({ error: "Could not complete registration." }, { status: 400 });
+        return jsonLegacyApiError("Could not complete registration.", 400);
       }
     }
 
@@ -39,8 +37,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true });
   } catch (error) {
     if (error instanceof Error && (error.message === "DUPLICATE" || error.message === "INVALID_INPUT")) {
-      return NextResponse.json({ error: "Could not complete registration." }, { status: 400 });
+      return jsonLegacyApiError("Could not complete registration.", 400);
     }
-    return NextResponse.json({ error: "Could not complete registration." }, { status: 400 });
+    return jsonLegacyApiError("Could not complete registration.", 400);
   }
 }

@@ -1,18 +1,17 @@
 import "server-only";
 
+import { resolveMyAssistRuntimeEnv } from "@/lib/env/runtime";
 import type { IntegrationTokenPayload } from "../types";
 
 const TODOIST_AUTH_URL = "https://todoist.com/oauth/authorize";
 const TODOIST_TOKEN_URL = "https://todoist.com/oauth/access_token";
 
 function todoistClientId(): string | undefined {
-  return process.env.TODOIST_CLIENT_ID?.trim() || process.env.MYASSIST_TODOIST_CLIENT_ID?.trim();
+  return resolveMyAssistRuntimeEnv().todoistClientId || undefined;
 }
 
 function todoistClientSecret(): string | undefined {
-  return (
-    process.env.TODOIST_CLIENT_SECRET?.trim() || process.env.MYASSIST_TODOIST_CLIENT_SECRET?.trim()
-  );
+  return resolveMyAssistRuntimeEnv().todoistClientSecret || undefined;
 }
 
 export function buildTodoistAuthUrl(input: { redirectUri: string; state: string }): string {

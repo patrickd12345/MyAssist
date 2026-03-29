@@ -1,4 +1,5 @@
 import "server-only";
+import { logServerEvent } from "@/lib/serverLog";
 
 /** Session debug — OAuth flow only; no secrets. */
 // #region agent log
@@ -18,7 +19,7 @@ export function oauthDebugLog(input: {
     data: input.data,
     timestamp: Date.now(),
   };
-  console.error("[MYASSIST_DEBUG_OAUTH]", JSON.stringify(body));
+  logServerEvent("error", "myassist_debug_oauth", { payload: JSON.stringify(body) });
   fetch("http://127.0.0.1:7538/ingest/febd9a03-add3-4714-bff3-bb76cbeaeb9d", {
     method: "POST",
     headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "f4d498" },

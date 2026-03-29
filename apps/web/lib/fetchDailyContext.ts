@@ -10,14 +10,17 @@ import { getEmailTriageHints } from "./memoryStore";
 import { fetchTodoistTaskRecordsForUser } from "./todoistApiTasks";
 import { bucketTodoistTasksFromApi } from "./todoistTaskBuckets";
 import type { MyAssistDailyContext } from "./types";
+import { executeChat } from "./aiRuntime";
+import { resolveMyAssistRuntimeEnv } from "./env/runtime";
+import { logServerEvent } from "./serverLog";
 
 export type { DailyContextSource };
 export { MYASSIST_CONTEXT_SOURCE_HEADER };
-const OLLAMA_URL = (process.env.OLLAMA_BASE_URL ?? "http://127.0.0.1:11434").replace(/\/$/, "");
 const EMAIL_IMPORTANCE_TIMEOUT_MS = 60000;
 
 function shouldUseMockContext(): boolean {
-  const v = process.env.MYASSIST_USE_MOCK_CONTEXT?.trim().toLowerCase();
+  const runtime = resolveMyAssistRuntimeEnv();
+  const v = runtime.myassistUseMockContext.trim().toLowerCase();
   return v === "1" || v === "true";
 }
 
@@ -205,7 +208,8 @@ export async function prioritizeGmailSignalsWithAi(
   signals: MyAssistDailyContext["gmail_signals"],
   triageHints?: EmailTriageHints,
 ): Promise<MyAssistDailyContext["gmail_signals"]> {
-  if (process.env.MYASSIST_ENABLE_EMAIL_IMPORTANCE_AI === "0") return signals;
+  const runtime = resolveMyAssistRuntimeEnv();
+  if (runtime.myassistEnableEmailImportanceAi === "0") return signals;
   if (signals.length <= 1) return signals;
 
   const keyed = signals.map((signal, index) => ({
@@ -225,52 +229,43 @@ export async function prioritizeGmailSignalsWithAi(
 
   for (const model of getEmailImportanceModels()) {
     try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), EMAIL_IMPORTANCE_TIMEOUT_MS);
-      const response = await fetch(`${OLLAMA_URL}/api/chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model,
-          stream: false,
-          format: "json",
-          options: {
-            temperature: 0.1,
-            num_predict: 420,
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("email_importance_timeout")), EMAIL_IMPORTANCE_TIMEOUT_MS),
+      );
+      const aiPromise = executeChat({
+        model,
+        format: "json",
+        temperature: 0.1,
+        maxTokens: 420,
+        messages: [
+          {
+            role: "system",
+            content: [
+              "Rank email importance for immediate action planning.",
+              "Assess from sender, subject, snippet, and timing context.",
+              "Do not use fixed keyword rules; infer urgency and consequence from context.",
+              "Use this rubric: prioritize concrete action requests, human-to-human messages, explicit deadlines/consequences, and high-stakes blockers.",
+              "Strongly deprioritize marketing/newsletter/survey/promotional language even when words like 'important' or 'urgent' appear.",
+              "Treat generic corporate copy (feedback requests, promotional alerts, campaigns, announcements) as low importance unless there is a concrete consequence.",
+              "Do not over-score clickbait urgency words without specific action or consequences.",
+              hintBlock,
+              "Return strict JSON: { ranked: [{ index: number, importance: number, reason: string }] }",
+              "reason must be 2-6 words, concrete, and non-generic.",
+              "reason must explain importance, never quote or copy email subject/snippet text.",
+              "Include every index exactly once if possible.",
+              "importance is 0-100. Higher means more urgent/important right now.",
+            ]
+              .filter((line) => line.trim() !== "")
+              .join(" "),
           },
-          messages: [
-            {
-              role: "system",
-              content: [
-                "Rank email importance for immediate action planning.",
-                "Assess from sender, subject, snippet, and timing context.",
-                "Do not use fixed keyword rules; infer urgency and consequence from context.",
-                "Use this rubric: prioritize concrete action requests, human-to-human messages, explicit deadlines/consequences, and high-stakes blockers.",
-                "Strongly deprioritize marketing/newsletter/survey/promotional language even when words like 'important' or 'urgent' appear.",
-                "Treat generic corporate copy (feedback requests, promotional alerts, campaigns, announcements) as low importance unless there is a concrete consequence.",
-                "Do not over-score clickbait urgency words without specific action or consequences.",
-                hintBlock,
-                "Return strict JSON: { ranked: [{ index: number, importance: number, reason: string }] }",
-                "reason must be 2-6 words, concrete, and non-generic.",
-                "reason must explain importance, never quote or copy email subject/snippet text.",
-                "Include every index exactly once if possible.",
-                "importance is 0-100. Higher means more urgent/important right now.",
-              ]
-                .filter((line) => line.trim() !== "")
-                .join(" "),
-            },
-            {
-              role: "user",
-              content: JSON.stringify({ emails: payload }),
-            },
-          ],
-        }),
-        signal: controller.signal,
+          {
+            role: "user",
+            content: JSON.stringify({ emails: payload }),
+          },
+        ],
       });
-      clearTimeout(timeout);
-      if (!response.ok) continue;
-      const modelJson = (await response.json()) as { message?: { content?: string }; response?: string };
-      const raw = modelJson.message?.content ?? modelJson.response ?? "";
+      const result = await Promise.race([aiPromise, timeoutPromise]);
+      const raw = result.text;
       const ranked = parseRankedEmails(raw);
       if (ranked.length === 0) continue;
       const scoreByIndex = new Map(ranked.map((item) => [item.index, item.importance]));
@@ -297,17 +292,21 @@ export async function prioritizeGmailSignalsWithAi(
           importance_model: model,
         }));
     } catch (e) {
-      console.warn(`[MyAssist] Email ranking failed for model ${model}:`, e);
+      logServerEvent("warn", "myassist_email_ranking_model_failed", {
+        model,
+        error: e instanceof Error ? e.message : String(e),
+      });
       continue;
     }
   }
 
-  console.warn("[MyAssist] All email ranking models failed, returning original order");
+  logServerEvent("warn", "myassist_email_ranking_all_models_failed");
   return signals;
 }
 
 function getEmailImportanceModels(): string[] {
-  const fromEnv = process.env.OLLAMA_EMAIL_IMPORTANCE_MODELS?.trim();
+  const runtime = resolveMyAssistRuntimeEnv();
+  const fromEnv = runtime.ollamaEmailImportanceModels.trim();
   if (fromEnv) {
     return fromEnv
       .split(",")
@@ -316,11 +315,11 @@ function getEmailImportanceModels(): string[] {
       .filter((model, index, array) => array.indexOf(model) === index);
   }
   return [
-    process.env.OLLAMA_EMAIL_IMPORTANCE_MODEL?.trim() || "",
+    runtime.ollamaEmailImportanceModel.trim() || "",
     "mistral:latest",
     "qwen2.5:1.5b",
     "qwen2.5:0.5b",
-    process.env.OLLAMA_MODEL?.trim() || "",
+    runtime.ollamaModel,
     "tinyllama:latest",
   ].filter((model, index, array) => Boolean(model) && array.indexOf(model) === index);
 }

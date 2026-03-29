@@ -5,6 +5,7 @@ import { buildTodoistAuthUrl } from "@/lib/integrations/providers/todoist";
 import type { IntegrationProvider } from "@/lib/integrations/types";
 import { oauthDebugLog } from "@/lib/integrations/oauthDebugLog";
 import { resolvePublicOrigin } from "@/lib/integrations/origin";
+import { resolveMyAssistRuntimeEnv } from "@/lib/env/runtime";
 import { getSessionUserId } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
@@ -45,10 +46,10 @@ export async function GET(
           redirectUri,
           forwardedHost: req.headers.get("x-forwarded-host") ?? null,
           forwardedProto: req.headers.get("x-forwarded-proto") ?? null,
-          hasAuthUrlEnv: Boolean(process.env.AUTH_URL?.trim()),
-          hasNextAuthUrlEnv: Boolean(process.env.NEXTAUTH_URL?.trim()),
-          hasPublicAppUrlEnv: Boolean(process.env.MYASSIST_PUBLIC_APP_URL?.trim()),
-          nodeEnv: process.env.NODE_ENV,
+          hasAuthUrlEnv: Boolean(resolveMyAssistRuntimeEnv().authUrl),
+          hasNextAuthUrlEnv: Boolean(resolveMyAssistRuntimeEnv().nextAuthUrl),
+          hasPublicAppUrlEnv: Boolean(resolveMyAssistRuntimeEnv().publicAppUrl),
+          nodeEnv: resolveMyAssistRuntimeEnv().nodeEnv,
         },
       });
       // #endregion

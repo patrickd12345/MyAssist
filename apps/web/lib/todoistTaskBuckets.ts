@@ -1,3 +1,5 @@
+import { resolveMyAssistRuntimeEnv } from "./env/runtime";
+
 /**
  * Todoist REST `due.date` is a calendar day in the user's timezone (YYYY-MM-DD).
  * Comparing it to UTC "today" mis-classifies tasks (empty Overdue/Today vs Brief picks).
@@ -5,7 +7,7 @@
  */
 
 export const DEFAULT_TASK_DAY_TIMEZONE =
-  (typeof process !== "undefined" && process.env.MYASSIST_TASK_DAY_TZ?.trim()) || "America/Toronto";
+  resolveMyAssistRuntimeEnv().myassistTaskDayTz.trim() || "America/Toronto";
 
 export function calendarDateInTimeZone(instant: Date, timeZone: string): string {
   const parts = new Intl.DateTimeFormat("en-CA", {

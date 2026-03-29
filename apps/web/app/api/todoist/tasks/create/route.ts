@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server';
+import { jsonLegacyApiError } from '@/lib/api/error-contract';
 import { getSessionUserId } from "@/lib/session";
 import { resolveTodoistApiToken } from "@/lib/todoistToken";
 
@@ -7,16 +8,13 @@ export const dynamic = "force-dynamic";
 export async function POST(req: Request) {
   const userId = await getSessionUserId();
   if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return jsonLegacyApiError("Unauthorized", 401);
   }
 
   const token = await resolveTodoistApiToken(userId);
 
   if (!token) {
-    return NextResponse.json(
-      { error: "TODOIST_API_TOKEN is not configured for dashboard task creation." },
-      { status: 500 },
-    );
+    return jsonLegacyApiError("TODOIST_API_TOKEN is not configured for dashboard task creation.", 500);
   }
 
   const body = (await req.json()) as {
@@ -35,7 +33,7 @@ export async function POST(req: Request) {
       : undefined;
 
   if (!content) {
-    return NextResponse.json({ error: "Task content is required." }, { status: 400 });
+    return jsonLegacyApiError("Task content is required.", 400);
   }
 
   try {
@@ -56,11 +54,9 @@ export async function POST(req: Request) {
 
     if (!response.ok) {
       const text = await response.text();
-      return NextResponse.json(
-        {
-          error: `Todoist create failed with ${response.status}: ${text.slice(0, 300)}`,
-        },
-        { status: response.status },
+      return jsonLegacyApiError(
+        `Todoist create failed with ${response.status}: ${text.slice(0, 300)}`,
+        response.status,
       );
     }
 
@@ -68,6 +64,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, task });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown Todoist error";
-    return NextResponse.json({ error: message }, { status: 502 });
+    return jsonLegacyApiError(String(message ), 502);
   }
 }

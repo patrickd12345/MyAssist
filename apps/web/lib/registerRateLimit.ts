@@ -1,3 +1,5 @@
+import { resolveMyAssistRuntimeEnv } from "./env/runtime";
+
 const WINDOW_MS = 15 * 60 * 1000;
 const MAX_PER_WINDOW = 10;
 
@@ -21,7 +23,7 @@ export function checkRegisterRateLimit(ip: string): { ok: true } | { ok: false; 
 }
 
 export function resetRegisterRateLimitForTests(): void {
-  if (process.env.NODE_ENV === "test") {
+  if (resolveMyAssistRuntimeEnv().nodeEnv === "test") {
     buckets.clear();
   }
 }

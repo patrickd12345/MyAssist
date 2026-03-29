@@ -3,6 +3,7 @@ import { mkdir, open, readFile, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { hash } from "bcryptjs";
 import { joinUnderMyAssistMemory } from "./memoryPaths";
+import { resolveMyAssistRuntimeEnv } from "./env/runtime";
 import type { SafeUser, StoredUser } from "./userStoreTypes";
 
 type UserRegistryFile = {
@@ -16,7 +17,7 @@ const USER_STORE_LOCK_TIMEOUT_MS = 10_000;
 const USER_STORE_LOCK_RETRY_MS = 25;
 
 function registryPath(): string {
-  const override = process.env.MYASSIST_USER_STORE_FILE?.trim();
+  const override = resolveMyAssistRuntimeEnv().myassistUserStoreFile.trim();
   if (override) return path.resolve(override);
   return joinUnderMyAssistMemory("users.json");
 }

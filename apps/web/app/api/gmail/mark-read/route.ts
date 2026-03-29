@@ -1,4 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server';
+import { jsonLegacyApiError } from '@/lib/api/error-contract';
+import { resolveMyAssistRuntimeEnv } from "@/lib/env/runtime";
 import { integrationService } from "@/lib/integrations/service";
 import { getSessionUserId } from "@/lib/session";
 
@@ -14,7 +16,7 @@ type MarkReadPayload = {
 export async function POST(req: Request) {
   const userId = await getSessionUserId();
   if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return jsonLegacyApiError("Unauthorized", 401);
   }
 
   let body: unknown;
@@ -55,7 +57,7 @@ export async function POST(req: Request) {
     const direct = await integrationService.markEmailRead(userId, { messageId, threadId });
     if (direct.ok) return NextResponse.json({ ok: true, mode: "oauth" });
 
-    const webhook = process.env.MYASSIST_GMAIL_MARK_READ_WEBHOOK_URL?.trim() ?? "";
+    const webhook = resolveMyAssistRuntimeEnv().gmailMarkReadWebhookUrl;
     if (!webhook) {
       return NextResponse.json(
         {

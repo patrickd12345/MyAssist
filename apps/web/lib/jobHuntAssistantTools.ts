@@ -2,9 +2,10 @@ import "server-only";
 
 import type { AssistantReply } from "./assistant";
 import { listJobHuntContactsFull } from "./jobHuntContactsStore";
+import { resolveMyAssistRuntimeEnv } from "./env/runtime";
 
 function dataPath(): string | undefined {
-  return process.env.JOB_HUNT_DATA_PATH?.trim() || undefined;
+  return resolveMyAssistRuntimeEnv().jobHuntDataPath || undefined;
 }
 
 function jobIdFromToken(raw: string): string {

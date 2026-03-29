@@ -3,6 +3,7 @@ import {
   MYASSIST_INTEGRATION_TOKENS_TABLE,
   MYASSIST_SCHEMA,
 } from "@/lib/myassistSchema";
+import { logServerEvent } from "@/lib/serverLog";
 import { decryptJson, encryptJson } from "./crypto";
 import type { IntegrationProvider, IntegrationTokenPayload } from "./types";
 
@@ -84,7 +85,7 @@ export async function getIntegrationToken(
   try {
     return decryptJson<IntegrationTokenPayload>(row.encrypted_payload);
   } catch {
-    console.warn(`[Integrations] Could not decrypt token for ${provider} (key changed?). Treating as disconnected.`);
+    logServerEvent("warn", "myassist_integrations_token_decrypt_failed", { provider, store: "supabase" });
     return null;
   }
 }

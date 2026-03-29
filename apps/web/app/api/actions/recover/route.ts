@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server';
+import { jsonLegacyApiError } from '@/lib/api/error-contract';
 import { recoverCreatedTarget } from "@/lib/services/actionRecoveryService";
 import { getSessionUserId } from "@/lib/session";
 
@@ -7,14 +8,14 @@ export const dynamic = "force-dynamic";
 export async function POST(req: Request) {
   const userId = await getSessionUserId();
   if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return jsonLegacyApiError("Unauthorized", 401);
   }
 
   let body: unknown;
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
+    return jsonLegacyApiError("Invalid JSON body.", 400);
   }
 
   const record = body as { targetId?: unknown; kind?: unknown };
@@ -22,7 +23,7 @@ export async function POST(req: Request) {
   const kind = record.kind === "calendar" || record.kind === "todoist" ? record.kind : null;
 
   if (!targetId || !kind) {
-    return NextResponse.json({ error: "targetId and kind (calendar | todoist) are required." }, { status: 400 });
+    return jsonLegacyApiError("targetId and kind (calendar | todoist) are required.", 400);
   }
 
   const result = await recoverCreatedTarget(userId, targetId, kind);

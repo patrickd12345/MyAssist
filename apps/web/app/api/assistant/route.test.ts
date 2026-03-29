@@ -41,11 +41,15 @@ describe("POST /api/assistant", () => {
     const res = await POST(
       new Request("http://localhost/api/assistant", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-request-id": "req_empty_message" },
         body: JSON.stringify({ kind: "chat", message: "   ", context: minimalContext }),
       }),
     );
     expect(res.status).toBe(400);
+    const json = (await res.json()) as { code: string; message: string; requestId: string };
+    expect(json.code).toBe("message_required");
+    expect(json.message).toBe("Message is required.");
+    expect(json.requestId).toBe("req_empty_message");
   });
 
   it("returns 400 when situation_feedback is missing run_date or rating", async () => {
@@ -254,5 +258,20 @@ describe("POST /api/assistant", () => {
     const json = (await res.json()) as { mode: string; fallbackReason?: string };
     expect(json.mode).toBe("fallback");
     expect(json.fallbackReason).toBeDefined();
+  });
+
+  it("returns assistant_route_failed with requestId when request parsing throws", async () => {
+    const res = await POST(
+      new Request("http://localhost/api/assistant", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-request-id": "req_parse_failure" },
+        body: "{",
+      }),
+    );
+
+    expect(res.status).toBe(500);
+    const json = (await res.json()) as { code: string; message: string; requestId: string };
+    expect(json.code).toBe("assistant_route_failed");
+    expect(json.requestId).toBe("req_parse_failure");
   });
 });

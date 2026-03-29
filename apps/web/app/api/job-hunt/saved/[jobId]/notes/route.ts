@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server';
+import { jsonLegacyApiError } from '@/lib/api/error-contract';
 import { appendJobTimelineNote } from "@/lib/jobHuntLifecycle";
 import { getSessionUserId } from "@/lib/session";
 
@@ -6,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: Request, ctx: { params: Promise<{ jobId: string }> }) {
   if (!(await getSessionUserId())) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return jsonLegacyApiError("Unauthorized", 401);
   }
 
   const { jobId: rawId } = await ctx.params;

@@ -1,11 +1,13 @@
 import "server-only";
 
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
+import { resolveMyAssistRuntimeEnv } from "@/lib/env/runtime";
 
 const ALGO = "aes-256-gcm";
 
 function resolveKey(): Buffer {
-  const env = process.env.MYASSIST_INTEGRATIONS_ENCRYPTION_KEY?.trim();
+  const runtime = resolveMyAssistRuntimeEnv();
+  const env = runtime.integrationsEncryptionKey;
   if (env) {
     try {
       const raw = Buffer.from(env, "base64");
@@ -16,7 +18,7 @@ function resolveKey(): Buffer {
     const hashed = createHash("sha256").update(env).digest();
     return hashed;
   }
-  const fallback = process.env.AUTH_SECRET?.trim() || "myassist-dev-integration-key";
+  const fallback = runtime.authSecret || "myassist-dev-integration-key";
   return createHash("sha256").update(fallback).digest();
 }
 

@@ -1,8 +1,10 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server';
+import { jsonLegacyApiError } from '@/lib/api/error-contract';
 import { integrationService } from "@/lib/integrations/service";
 import { resolvePublicOrigin } from "@/lib/integrations/origin";
 import { verifyOAuthState } from "@/lib/integrations/oauthState";
 import { exchangeTodoistCode } from "@/lib/integrations/providers/todoist";
+import { logServerEvent } from "@/lib/serverLog";
 import type { IntegrationProvider } from "@/lib/integrations/types";
 
 export const dynamic = "force-dynamic";
@@ -22,7 +24,7 @@ export async function GET(
   const state = url.searchParams.get("state")?.trim();
   const err = url.searchParams.get("error")?.trim();
   if (err) return NextResponse.redirect(`${origin}/?integrations=error`);
-  if (!code || !state) return NextResponse.json({ error: "Missing OAuth code/state" }, { status: 400 });
+  if (!code || !state) return jsonLegacyApiError("Missing OAuth code/state", 400);
 
   try {
     const { userId } = verifyOAuthState(state, provider);
@@ -40,11 +42,14 @@ export async function GET(
       });
       await integrationService.storeToken(userId, provider, token);
     } else {
-      return NextResponse.json({ error: "Unsupported provider" }, { status: 400 });
+      return jsonLegacyApiError("Unsupported provider", 400);
     }
     return NextResponse.redirect(`${origin}/?integrations=connected&provider=${provider}`);
   } catch (error) {
-    console.error("[integrations/callback] failed:", error);
+    logServerEvent("error", "integrations_callback_failed", {
+      provider,
+      error: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.redirect(`${origin}/?integrations=error&provider=${provider}`);
   }
 }
