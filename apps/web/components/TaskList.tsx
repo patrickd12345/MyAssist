@@ -173,13 +173,14 @@ export function TaskList({
                 </div>
                 {canComplete ? (
                   <div className="relative mt-4 flex justify-between items-center">
-                    <div className="flex gap-1 opacity-40 hover:opacity-100 transition-opacity">
+                    <div className="flex gap-1 opacity-40 hover:opacity-100 focus-within:opacity-100 transition-opacity">
                       <button
                         type="button"
                         disabled={isPending || index === 0}
                         onClick={() => void onNudge?.(id, "up", taskContent(task))}
-                        className="rounded px-2 py-1 text-[10px] hover:bg-black/5 disabled:opacity-30 disabled:cursor-not-allowed"
+                        className="rounded px-2 py-1 text-[10px] hover:bg-black/5 focus-visible:ring-2 focus-visible:outline-none disabled:opacity-30 disabled:cursor-not-allowed"
                         title="Bump up one slot (AI will learn this preference)"
+                        aria-label="Bump task up"
                       >
                         ▲
                       </button>
@@ -187,8 +188,9 @@ export function TaskList({
                         type="button"
                         disabled={isPending || index === sortedTasks.length - 1}
                         onClick={() => void onNudge?.(id, "down", taskContent(task))}
-                        className="rounded px-2 py-1 text-[10px] hover:bg-black/5 disabled:opacity-30 disabled:cursor-not-allowed"
+                        className="rounded px-2 py-1 text-[10px] hover:bg-black/5 focus-visible:ring-2 focus-visible:outline-none disabled:opacity-30 disabled:cursor-not-allowed"
                         title="Bump down one slot (AI will learn this preference)"
+                        aria-label="Bump task down"
                       >
                         ▼
                       </button>
@@ -212,7 +214,7 @@ export function TaskList({
                           event.preventDefault();
                           setMenuTaskId(id);
                         }}
-                        className="theme-button-secondary rounded-full px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50"
+                        className="theme-button-secondary rounded-full px-3 py-2 text-xs font-semibold transition focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         {isPending ? "Completing..." : "Complete"}
                       </button>
@@ -221,8 +223,10 @@ export function TaskList({
                           type="button"
                           disabled={isPending}
                           onClick={() => setMenuTaskId((current) => (current === id ? null : id))}
-                          className="theme-button-secondary rounded-full px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50"
+                          className="theme-button-secondary rounded-full px-3 py-2 text-xs font-semibold transition focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                           aria-label="Open defer options"
+                          aria-haspopup="menu"
+                          aria-expanded={isMenuOpen}
                         >
                           Defer
                         </button>
@@ -232,7 +236,7 @@ export function TaskList({
                           type="button"
                           disabled={isPending || blockBusy}
                           onClick={() => void onBlockCalendar(id)}
-                          className="theme-button-secondary rounded-full px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50"
+                          className="theme-button-secondary rounded-full px-3 py-2 text-xs font-semibold transition focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                           title="Create a focus block on Google Calendar when the task has a due time"
                         >
                           {blockBusy ? "Calendar…" : "Block"}
@@ -240,17 +244,21 @@ export function TaskList({
                       ) : null}
                     </div>
                     {isMenuOpen && onSchedule ? (
-                      <div className="theme-menu absolute right-0 top-full z-20 mt-2 w-64 max-w-[min(100vw-2rem,18rem)] rounded-[20px] p-2 shadow-[0_18px_48px_rgba(50,25,8,0.12)]">
+                      <div
+                        role="menu"
+                        className="theme-menu absolute right-0 top-full z-20 mt-2 w-64 max-w-[min(100vw-2rem,18rem)] rounded-[20px] p-2 shadow-[0_18px_48px_rgba(50,25,8,0.12)]"
+                      >
                         {deferOptions(new Date()).map((option) => (
                           <button
                             key={`${option.value}|${option.intent}`}
+                            role="menuitem"
                             type="button"
                             disabled={isPending}
                             onClick={() => {
                               setMenuTaskId(null);
                               void onSchedule(id, option.value, option.intent);
                             }}
-                            className="theme-menu-item block w-full rounded-[14px] px-3 py-2 text-left text-xs font-medium transition disabled:opacity-50"
+                            className="theme-menu-item block w-full rounded-[14px] px-3 py-2 text-left text-xs font-medium transition focus-visible:ring-2 focus-visible:outline-none disabled:opacity-50"
                           >
                             {option.label}
                           </button>
