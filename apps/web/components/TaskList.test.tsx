@@ -105,7 +105,7 @@ describe("TaskList", () => {
     await user.click(screen.getByRole("button", { name: "Open defer options" }));
     const menu = screen.getByRole("button", { name: "Open defer options" }).closest(".relative");
     expect(menu).toBeTruthy();
-    const deferFocus = within(menu!.parentElement as HTMLElement).getByRole("button", {
+    const deferFocus = within(menu!.parentElement as HTMLElement).getByRole("menuitem", {
       name: "Too big — need focus time",
     });
     await user.click(deferFocus);
