@@ -5,6 +5,8 @@ import { integrationService } from "@/lib/integrations/service";
 import { getTaskNudges } from "@/lib/memoryStore";
 import { getSessionUserId } from "@/lib/session";
 import { fetchTodoistTaskRecordsForUser } from "@/lib/todoistApiTasks";
+import { buildTodoistIntelligence } from "@/lib/todoistIntelligence";
+import { mapTodoistTaskPreview } from "@/lib/todoistPreview";
 import { bucketTodoistTasksFromApi, todayCalendarDateInTaskZone } from "@/lib/todoistTaskBuckets";
 import type { GmailPhaseBSignal } from "@/lib/integrations/gmailSignalDetection";
 import { buildCalendarIntelligence } from "@/lib/calendarIntelligence";
@@ -47,10 +49,16 @@ function mapOAuthGmailSignals(raw: Array<Record<string, unknown>>): MyAssistDail
 async function fetchTodoistSlices(userId: string): Promise<Pick<
   MyAssistDailyContext,
   "todoist_overdue" | "todoist_due_today" | "todoist_upcoming_high_priority"
-> | null> {
+> & { todoist_intelligence: NonNullable<MyAssistDailyContext["todoist_intelligence"]> } | null> {
   const tasks = await fetchTodoistTaskRecordsForUser(userId);
   if (tasks === null) return null;
-  return bucketTodoistTasksFromApi(tasks);
+  const previews = tasks
+    .map((task) => mapTodoistTaskPreview(task))
+    .filter((task): task is NonNullable<ReturnType<typeof mapTodoistTaskPreview>> => Boolean(task));
+  return {
+    ...bucketTodoistTasksFromApi(tasks),
+    todoist_intelligence: buildTodoistIntelligence(previews),
+  };
 }
 
 async function buildProviderSliceResponse(
@@ -107,6 +115,7 @@ async function buildProviderSliceResponse(
     todoist_due_today: liveTodoist?.todoist_due_today ?? (cached?.todoist_due_today ?? []),
     todoist_upcoming_high_priority:
       liveTodoist?.todoist_upcoming_high_priority ?? (cached?.todoist_upcoming_high_priority ?? []),
+    todoist_intelligence: liveTodoist?.todoist_intelligence ?? cached?.todoist_intelligence,
   });
 }
 

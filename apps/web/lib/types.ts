@@ -1,6 +1,21 @@
 import type { GmailPhaseBSignal, GmailPhaseBSignalType } from "./integrations/gmailSignalDetection";
 
-export type TodoistTask = Record<string, unknown>;
+export type TodoistTaskPreview = {
+  id: string;
+  content: string;
+  description: string | null;
+  dueDate: string | null;
+  dueDatetime: string | null;
+  priority: 1 | 2 | 3 | 4;
+  projectId: string | null;
+  projectName?: string | null;
+  labels: string[];
+  isOverdue: boolean;
+  isToday: boolean;
+  source: "todoist";
+};
+
+export type TodoistTask = Record<string, unknown> & Partial<TodoistTaskPreview>;
 
 export type JobHuntSignal =
   | "interview_request"
@@ -165,6 +180,33 @@ export type MyAssistDailyContext = {
   job_hunt_email_matches?: JobHuntEmailMatch[];
   /** Phase B: buckets + deterministic summary; optional `aiSummary` when MYASSIST_DAILY_INTEL_AI is enabled. */
   daily_intelligence?: DailyIntelligence;
+  todoist_intelligence?: TodoistIntelligence;
+};
+
+export type TodoistSignalType =
+  | "overdue_task"
+  | "due_today"
+  | "high_priority_task"
+  | "job_search_task"
+  | "follow_up_task"
+  | "blocked_task"
+  | "task_heavy_day";
+
+export type TodoistSignal = {
+  type: TodoistSignalType;
+  detail: string;
+  taskIds?: string[];
+};
+
+export type TodoistIntelligence = {
+  signals: TodoistSignal[];
+  counts: {
+    total: number;
+    overdue: number;
+    dueToday: number;
+    highPriority: number;
+  };
+  summary: string;
 };
 
 export type SituationBrief = {

@@ -254,6 +254,14 @@ describe("Dashboard", () => {
     expect(screen.getAllByText("One priority").length).toBeGreaterThanOrEqual(1);
   });
 
+  it("shows compact Todoist intelligence empty state when no task intelligence is present", async () => {
+    const user = userEvent.setup();
+    render(<Dashboard initialData={{ ...sampleContext, todoist_overdue: [], todoist_due_today: [] }} initialError={null} initialSource="live" />);
+    await user.click(screen.getAllByRole("button", { name: "Tasks" })[0]);
+    expect(screen.getByText("No Todoist intelligence yet.")).toBeInTheDocument();
+    expect(screen.getByText("Nothing overdue in this snapshot.")).toBeInTheDocument();
+  });
+
   it("submits situation feedback when Useful is clicked", async () => {
     const user = userEvent.setup();
     render(

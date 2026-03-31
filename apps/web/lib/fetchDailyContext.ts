@@ -12,6 +12,8 @@ import { integrationService } from "./integrations/service";
 import type { GmailPhaseBSignal } from "./integrations/gmailSignalDetection";
 import { getEmailTriageHints } from "./memoryStore";
 import { fetchTodoistTaskRecordsForUser } from "./todoistApiTasks";
+import { buildTodoistIntelligence } from "./todoistIntelligence";
+import { mapTodoistTaskPreview } from "./todoistPreview";
 import { bucketTodoistTasksFromApi } from "./todoistTaskBuckets";
 import type { MyAssistDailyContext } from "./types";
 import { executeChat } from "./aiRuntime";
@@ -30,13 +32,20 @@ function shouldUseMockContext(): boolean {
 
 async function fetchTodoistSlicesForUser(
   userId: string,
-): Promise<Pick<
+): Promise<(Pick<
   MyAssistDailyContext,
   "todoist_overdue" | "todoist_due_today" | "todoist_upcoming_high_priority"
-> | null> {
+> & { todoist_intelligence: NonNullable<MyAssistDailyContext["todoist_intelligence"]> }) | null> {
   const tasks = await fetchTodoistTaskRecordsForUser(userId);
   if (tasks === null) return null;
-  return bucketTodoistTasksFromApi(tasks);
+  const buckets = bucketTodoistTasksFromApi(tasks);
+  const previews = tasks
+    .map((task) => mapTodoistTaskPreview(task))
+    .filter((task): task is NonNullable<ReturnType<typeof mapTodoistTaskPreview>> => Boolean(task));
+  return {
+    ...buckets,
+    todoist_intelligence: buildTodoistIntelligence(previews),
+  };
 }
 
 function mapGmailFromOAuth(raw: Array<Record<string, unknown>>): MyAssistDailyContext["gmail_signals"] {
@@ -115,6 +124,7 @@ export async function fetchDailyContextLive(userId: string | null): Promise<{
     todoist_overdue: todoistSlices?.todoist_overdue ?? [],
     todoist_due_today: todoistSlices?.todoist_due_today ?? [],
     todoist_upcoming_high_priority: todoistSlices?.todoist_upcoming_high_priority ?? [],
+    todoist_intelligence: todoistSlices?.todoist_intelligence,
   };
 
   base = flattenGmailSignals(base);
