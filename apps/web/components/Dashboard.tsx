@@ -911,6 +911,7 @@ export function Dashboard({
               todoist_overdue?: MyAssistDailyContext["todoist_overdue"];
               todoist_due_today?: MyAssistDailyContext["todoist_due_today"];
               todoist_upcoming_high_priority?: MyAssistDailyContext["todoist_upcoming_high_priority"];
+              todoist_intelligence?: MyAssistDailyContext["todoist_intelligence"];
             }
           | { error?: string };
         if (!res.ok || ("error" in body && body.error)) {
@@ -953,6 +954,7 @@ export function Dashboard({
               todoist_overdue: body.todoist_overdue,
               todoist_due_today: body.todoist_due_today,
               todoist_upcoming_high_priority: body.todoist_upcoming_high_priority,
+              ...(body.todoist_intelligence ? { todoist_intelligence: body.todoist_intelligence } : {}),
             };
           }
           return previous;
@@ -2827,6 +2829,12 @@ export function Dashboard({
                 </div>
               </div>
               <div className="mt-6 grid items-start gap-5 lg:grid-cols-2 2xl:grid-cols-3">
+                <div className="list-card rounded-[22px] px-4 py-4 lg:col-span-2 2xl:col-span-3">
+                  <p className="theme-accent text-[11px] uppercase tracking-[0.14em]">Todoist intelligence</p>
+                  <p className="theme-muted mt-2 text-sm leading-6">
+                    {displayData.todoist_intelligence?.summary ?? "No Todoist intelligence yet."}
+                  </p>
+                </div>
                 <TaskList
                   title="Overdue"
                   tasks={displayData.todoist_overdue}

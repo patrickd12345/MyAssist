@@ -132,3 +132,18 @@ describe("buildContextDigest calendar_intelligence", () => {
     expect(parsed.calendar_intelligence).toBeUndefined();
   });
 });
+
+describe("buildContextDigest todoist_intelligence", () => {
+  it("includes compact todoist intelligence when present", () => {
+    const json = buildContextDigest({
+      ...baseContext,
+      todoist_intelligence: {
+        signals: [{ type: "overdue_task", detail: "1 overdue task(s)." }],
+        counts: { total: 1, overdue: 1, dueToday: 0, highPriority: 0 },
+        summary: "Todoist: 1 overdue, 0 due today, 0 high-priority.",
+      },
+    });
+    const parsed = JSON.parse(json) as { todoist_intelligence?: { summary: string } };
+    expect(parsed.todoist_intelligence?.summary).toContain("Todoist:");
+  });
+});

@@ -141,6 +141,13 @@ export function buildContextDigest(context: MyAssistDailyContext): string {
   const firstSignal = context.gmail_signals[0];
   const dailyIntel = buildDailyIntelligencePromptBlock(context);
   const calendarIntel = buildCalendarIntelligencePromptBlock(context);
+  const todoistIntel = context.todoist_intelligence
+    ? {
+        counts: context.todoist_intelligence.counts,
+        signals: context.todoist_intelligence.signals.slice(0, 6),
+        summary: context.todoist_intelligence.summary,
+      }
+    : null;
   const digest = {
     run_date: context.run_date,
     urgent_counts: {
@@ -182,6 +189,7 @@ export function buildContextDigest(context: MyAssistDailyContext): string {
       : null,
     ...(dailyIntel ? { daily_intelligence: dailyIntel } : {}),
     ...(calendarIntel ? { calendar_intelligence: calendarIntel } : {}),
+    ...(todoistIntel ? { todoist_intelligence: todoistIntel } : {}),
   };
 
   return JSON.stringify(digest, null, 2);
