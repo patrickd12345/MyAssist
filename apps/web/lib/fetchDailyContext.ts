@@ -4,6 +4,7 @@ import { buildCalendarIntelligence } from "./calendarIntelligence";
 import { mapGoogleCalendarEventsRaw } from "./calendarPreview";
 import { buildDailyIntelligence, enrichDailyIntelligenceWithAi } from "./dailyIntelligence";
 import { MYASSIST_CONTEXT_SOURCE_HEADER, type DailyContextSource } from "./dailyContextShared";
+import { getDemoDailyContext } from "./demoDailyContext";
 import { getMockDailyContext } from "./mockDailyContext";
 import { syncContactsFromJobHuntEmailMatches } from "./jobHuntEmailAssignment";
 import { postJobHuntEmailSignals } from "./jobHuntEmailSignals";
@@ -13,12 +14,13 @@ import type { GmailPhaseBSignal } from "./integrations/gmailSignalDetection";
 import { getEmailTriageHints } from "./memoryStore";
 import { fetchTodoistTaskRecordsForUser } from "./todoistApiTasks";
 import { buildTodoistIntelligence } from "./todoistIntelligence";
+import { buildGoodMorningMessage } from "./goodMorning";
 import { buildUnifiedDailyBriefing } from "./unifiedDailyBriefing";
 import { mapTodoistTaskPreview } from "./todoistPreview";
 import { bucketTodoistTasksFromApi } from "./todoistTaskBuckets";
 import type { MyAssistDailyContext } from "./types";
 import { executeChat } from "./aiRuntime";
-import { resolveMyAssistRuntimeEnv } from "./env/runtime";
+import { isMyAssistDemoModeEnabled, resolveMyAssistRuntimeEnv } from "./env/runtime";
 import { logServerEvent } from "./serverLog";
 
 export type { DailyContextSource };
@@ -29,6 +31,42 @@ function shouldUseMockContext(): boolean {
   const runtime = resolveMyAssistRuntimeEnv();
   const v = runtime.myassistUseMockContext.trim().toLowerCase();
   return v === "1" || v === "true";
+}
+
+function todoistIntelligenceFromSeedTasks(
+  ctx: Pick<MyAssistDailyContext, "todoist_overdue" | "todoist_due_today" | "todoist_upcoming_high_priority">,
+): MyAssistDailyContext["todoist_intelligence"] | undefined {
+  const tasks = [...ctx.todoist_overdue, ...ctx.todoist_due_today, ...ctx.todoist_upcoming_high_priority];
+  const previews = tasks
+    .map((task) => mapTodoistTaskPreview(task as Record<string, unknown>))
+    .filter((task): task is NonNullable<ReturnType<typeof mapTodoistTaskPreview>> => Boolean(task));
+  if (previews.length === 0) return undefined;
+  return buildTodoistIntelligence(previews);
+}
+
+async function buildSyntheticDailyContext(
+  seed: MyAssistDailyContext,
+  source: DailyContextSource,
+): Promise<{ context: MyAssistDailyContext; source: DailyContextSource }> {
+  const mockCtx = enrichGmailSignalsWithJobHuntAnalysis(seed);
+  const calendar_intelligence = buildCalendarIntelligence(
+    mockCtx.calendar_today,
+    Date.now(),
+    mockCtx.run_date,
+  );
+  const todoist_intelligence = todoistIntelligenceFromSeedTasks(mockCtx);
+  const seedContext: MyAssistDailyContext = {
+    ...mockCtx,
+    calendar_intelligence,
+    ...(todoist_intelligence ? { todoist_intelligence } : {}),
+    daily_intelligence: buildDailyIntelligence(mockCtx.gmail_signals),
+  };
+  const unified_daily_briefing = await buildUnifiedDailyBriefing(seedContext);
+  const good_morning_message = await buildGoodMorningMessage(unified_daily_briefing);
+  return {
+    context: { ...seedContext, unified_daily_briefing, good_morning_message },
+    source,
+  };
 }
 
 async function fetchTodoistSlicesForUser(
@@ -74,29 +112,17 @@ function mapGmailFromOAuth(raw: Array<Record<string, unknown>>): MyAssistDailyCo
 
 /**
  * Builds daily context from live Gmail, Google Calendar, and Todoist reads (providers are source of truth).
- * Uses mock data only when MYASSIST_USE_MOCK_CONTEXT is true.
+ * Uses curated demo data when MYASSIST_DEMO_MODE is true (takes precedence), else mock when MYASSIST_USE_MOCK_CONTEXT is true.
  */
 export async function fetchDailyContextLive(userId: string | null): Promise<{
   context: MyAssistDailyContext;
   source: DailyContextSource;
 }> {
+  if (isMyAssistDemoModeEnabled()) {
+    return buildSyntheticDailyContext(getDemoDailyContext(), "demo");
+  }
   if (shouldUseMockContext()) {
-    const mockCtx = enrichGmailSignalsWithJobHuntAnalysis(getMockDailyContext());
-    const calendar_intelligence = buildCalendarIntelligence(
-      mockCtx.calendar_today,
-      Date.now(),
-      mockCtx.run_date,
-    );
-    const seedContext: MyAssistDailyContext = {
-      ...mockCtx,
-      daily_intelligence: buildDailyIntelligence(mockCtx.gmail_signals),
-      calendar_intelligence,
-    };
-    const unified_daily_briefing = await buildUnifiedDailyBriefing(seedContext);
-    return {
-      context: { ...seedContext, unified_daily_briefing },
-      source: "mock",
-    };
+    return buildSyntheticDailyContext(getMockDailyContext(), "mock");
   }
 
   const trimmed = userId?.trim() ?? "";
@@ -148,11 +174,13 @@ export async function fetchDailyContextLive(userId: string | null): Promise<{
     daily_intelligence,
   };
   const unified_daily_briefing = await buildUnifiedDailyBriefing(nextContext);
+  const good_morning_message = await buildGoodMorningMessage(unified_daily_briefing);
 
   return {
     context: {
       ...nextContext,
       unified_daily_briefing,
+      good_morning_message,
     },
     source: "live",
   };

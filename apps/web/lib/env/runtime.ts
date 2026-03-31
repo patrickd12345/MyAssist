@@ -45,6 +45,8 @@ export type MyAssistRuntimeEnv = {
   todoistClientId: string;
   todoistClientSecret: string;
   myassistUseMockContext: string;
+  /** When "1" / "true", serve curated demo daily context (no live provider reads). Takes precedence over MYASSIST_USE_MOCK_CONTEXT. */
+  myassistDemoMode: string;
   myassistEnableEmailImportanceAi: string;
   /** When "1" / "true", optional ai-core one-line summary for `daily_intelligence` (deterministic path always runs). */
   myassistDailyIntelAi: string;
@@ -101,6 +103,7 @@ export function resolveMyAssistRuntimeEnv(env: EnvSource = process.env): MyAssis
   const todoistClientId = readFirst(env, ["TODOIST_CLIENT_ID", "MYASSIST_TODOIST_CLIENT_ID"]);
   const todoistClientSecret = readFirst(env, ["TODOIST_CLIENT_SECRET", "MYASSIST_TODOIST_CLIENT_SECRET"]);
   const myassistUseMockContext = readFirst(env, ["MYASSIST_USE_MOCK_CONTEXT"]);
+  const myassistDemoMode = readFirst(env, ["MYASSIST_DEMO_MODE"]);
   const myassistEnableEmailImportanceAi = readFirst(env, ["MYASSIST_ENABLE_EMAIL_IMPORTANCE_AI"]);
   const myassistDailyIntelAi = readFirst(env, ["MYASSIST_DAILY_INTEL_AI"]);
   const myassistDisableJobHuntSignals = readFirst(env, ["MYASSIST_DISABLE_JOB_HUNT_SIGNALS"]);
@@ -146,6 +149,7 @@ export function resolveMyAssistRuntimeEnv(env: EnvSource = process.env): MyAssis
     todoistClientId,
     todoistClientSecret,
     myassistUseMockContext,
+    myassistDemoMode,
     myassistEnableEmailImportanceAi,
     myassistDailyIntelAi,
     myassistDisableJobHuntSignals,
@@ -158,6 +162,12 @@ export function resolveMyAssistRuntimeEnv(env: EnvSource = process.env): MyAssis
     myassistUserStoreFile,
     myassistTaskDayTz,
   };
+}
+
+/** Explicit demo fallback: curated snapshot, no Gmail/Calendar/Todoist API reads. */
+export function isMyAssistDemoModeEnabled(env: EnvSource = process.env): boolean {
+  const v = resolveMyAssistRuntimeEnv(env).myassistDemoMode.trim().toLowerCase();
+  return v === "1" || v === "true";
 }
 
 export function assertMyAssistRuntimeEnv(env: EnvSource = process.env): MyAssistRuntimeEnv {

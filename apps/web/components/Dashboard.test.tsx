@@ -235,6 +235,69 @@ describe("Dashboard", () => {
     expect(screen.getByRole("status")).toHaveTextContent("Demo mode is active.");
   });
 
+  it("shows sample briefing banner when source is demo", () => {
+    render(
+      <Dashboard initialData={sampleContext} initialError={null} initialSource="demo" />,
+    );
+    expect(screen.getByText(/Sample briefing/)).toBeInTheDocument();
+    expect(screen.getByText(/MYASSIST_DEMO_MODE/)).toBeInTheDocument();
+  });
+
+  it("shows Sample data chip when source is demo", () => {
+    render(
+      <Dashboard initialData={sampleContext} initialError={null} initialSource="demo" />,
+    );
+    expect(screen.getByText("Sample data")).toBeInTheDocument();
+  });
+
+  it("uses short overview panel section titles", () => {
+    render(
+      <Dashboard
+        initialData={{ ...sampleContext, daily_intelligence: sampleDailyIntel, calendar_intelligence: sampleCalendarIntel }}
+        initialError={null}
+        initialSource="live"
+      />,
+    );
+    expect(within(screen.getByLabelText("Unified daily briefing")).getByText("Briefing")).toBeInTheDocument();
+    expect(within(screen.getByLabelText("Daily intelligence")).getByText("Inbox")).toBeInTheDocument();
+    expect(within(screen.getByLabelText("Calendar intelligence")).getByText("Calendar")).toBeInTheDocument();
+  });
+
+  it("shows good morning header and compact metric row when briefing and greeting are present", () => {
+    const withBriefing: MyAssistDailyContext = {
+      ...sampleContext,
+      good_morning_message: {
+        message: "Good morning — test line.",
+        tone: "neutral",
+        generatedAt: "2026-03-25T12:00:00.000Z",
+      },
+      unified_daily_briefing: {
+        urgent: [],
+        important: [],
+        action_required: [],
+        job_related: [],
+        calendar_events_in_view: 0,
+        schedule_summary: "No calendar events in the current window.",
+        tasks_summary: "Todoist: 0 overdue, 0 due today.",
+        email_summary: "No Gmail messages in today's context.",
+        summary: "Urgent 0, important 0, action required 0. No calendar events in the current window.",
+        counts: { urgent: 2, important: 0, action_required: 0, job_related: 1 },
+      },
+    };
+    render(
+      <Dashboard
+        initialData={withBriefing}
+        initialError={null}
+        initialSource="live"
+        greetingFirstName="Pat"
+      />,
+    );
+    expect(screen.getByText("Good morning Pat")).toBeInTheDocument();
+    expect(screen.getByText("Good morning — test line.")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Jump to tasks — urgent count from briefing/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Jump to calendar — meetings in view/i })).toBeInTheDocument();
+  });
+
   it("loads headline and situation brief from the assistant API", async () => {
     const user = userEvent.setup();
     render(
@@ -587,7 +650,7 @@ describe("Dashboard", () => {
     render(<Dashboard initialData={sampleContext} initialError={null} initialSource="live" />);
     const region = screen.getByLabelText("Daily intelligence");
     expect(region).toBeInTheDocument();
-    expect(within(region).getByText(/No inbox triage snapshot on this load/)).toBeInTheDocument();
+    expect(within(region).getByText(/Connect Gmail to load triage/)).toBeInTheDocument();
   });
 
   it("shows calendar intelligence when calendar_intelligence is present", () => {
@@ -607,7 +670,7 @@ describe("Dashboard", () => {
     render(<Dashboard initialData={sampleContext} initialError={null} initialSource="live" />);
     const region = screen.getByLabelText("Calendar intelligence");
     expect(region).toBeInTheDocument();
-    expect(within(region).getByText(/No calendar snapshot on this load/)).toBeInTheDocument();
+    expect(within(region).getByText(/Connect Calendar to load schedule/)).toBeInTheDocument();
   });
 
   it("shows optional AI note when aiSummary is set", () => {
@@ -622,7 +685,7 @@ describe("Dashboard", () => {
         initialSource="live"
       />,
     );
-    expect(screen.getByText(/AI note:/)).toBeInTheDocument();
+    expect(screen.getByText(/AI ·/)).toBeInTheDocument();
     expect(screen.getByText(/Concise AI recap\./)).toBeInTheDocument();
   });
 });

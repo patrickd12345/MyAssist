@@ -31,6 +31,7 @@ describe("buildUnifiedDailyBriefing", () => {
   it("handles no signals", async () => {
     const out = await buildUnifiedDailyBriefing(baseContext());
     expect(out.counts.urgent).toBe(0);
+    expect(out.calendar_events_in_view).toBe(0);
     expect(out.summary).toMatch(/Urgent 0, important 0, action required 0/);
   });
 

@@ -12,7 +12,12 @@ import type { NextConfig } from "next";
  * you add `sentry-cli` or CI; runtime error capture remains.
  */
 const nextConfig: NextConfig = {
-  transpilePackages: ["job-hunt-manager"],
+  transpilePackages: [
+    "job-hunt-manager",
+    "@bookiji-inc/ai-runtime",
+    "@bookiji-inc/error-contract",
+    "@bookiji-inc/observability",
+  ],
   webpack: (config, { dev }) => {
     if (dev) {
       // Avoid PackFileCacheStrategy "Array buffer allocation failed" on constrained Windows setups.

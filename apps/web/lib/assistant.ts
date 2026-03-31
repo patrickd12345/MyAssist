@@ -204,6 +204,15 @@ export function buildContextDigest(context: MyAssistDailyContext): string {
     ...(calendarIntel ? { calendar_intelligence: calendarIntel } : {}),
     ...(todoistIntel ? { todoist_intelligence: todoistIntel } : {}),
     ...(unifiedBriefing ? { unified_daily_briefing: unifiedBriefing } : {}),
+    ...(context.good_morning_message
+      ? {
+          good_morning_message: {
+            message: context.good_morning_message.message,
+            tone: context.good_morning_message.tone,
+            generatedAt: context.good_morning_message.generatedAt,
+          },
+        }
+      : {}),
   };
 
   return JSON.stringify(digest, null, 2);

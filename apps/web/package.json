@@ -21,9 +21,9 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
-    "@bookiji-inc/error-contract": "link:../../../../packages/error-contract",
-    "@bookiji-inc/ai-runtime": "link:../../../../packages/ai-runtime",
-    "@bookiji-inc/observability": "link:../../../../packages/observability",
+    "@bookiji-inc/error-contract": "workspace:*",
+    "@bookiji-inc/ai-runtime": "workspace:*",
+    "@bookiji-inc/observability": "workspace:*",
     "@sentry/nextjs": "^9.47.1",
     "@supabase/supabase-js": "2.100.1",
     "bcryptjs": "^3.0.3",

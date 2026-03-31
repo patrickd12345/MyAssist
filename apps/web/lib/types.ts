@@ -170,6 +170,8 @@ export type UnifiedDailyBriefing = {
   important: string[];
   action_required: string[];
   job_related: string[];
+  /** Calendar events in the current window (same length as `calendar_today` in context). */
+  calendar_events_in_view: number;
   schedule_summary: string;
   tasks_summary: string;
   email_summary: string;
@@ -181,6 +183,13 @@ export type UnifiedDailyBriefing = {
     action_required: number;
     job_related: number;
   };
+};
+
+/** Executive-style greeting line derived from `UnifiedDailyBriefing` (deterministic + optional ai-core one-liner). */
+export type GoodMorningMessage = {
+  message: string;
+  tone: "neutral";
+  generatedAt: string;
 };
 
 export type MyAssistDailyContext = {
@@ -200,6 +209,7 @@ export type MyAssistDailyContext = {
   daily_intelligence?: DailyIntelligence;
   todoist_intelligence?: TodoistIntelligence;
   unified_daily_briefing?: UnifiedDailyBriefing;
+  good_morning_message?: GoodMorningMessage;
 };
 
 export type TodoistSignalType =

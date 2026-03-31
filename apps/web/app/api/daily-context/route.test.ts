@@ -1,20 +1,33 @@
 import { NextRequest } from "next/server";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import type { DailyContextSource } from "@/lib/dailyContextShared";
+import type { MyAssistDailyContext } from "@/lib/types";
 
-const mockContext = {
-  generated_at: "2026-03-25T00:00:00.000Z",
-  run_date: "2026-03-25",
-  todoist_overdue: [],
-  todoist_due_today: [],
-  todoist_upcoming_high_priority: [],
-  gmail_signals: [],
-  calendar_today: [],
-};
-
-const { readLastDailyContext, writeLastDailyContext } = vi.hoisted(() => ({
-  readLastDailyContext: vi.fn(),
-  writeLastDailyContext: vi.fn(),
-}));
+const { mockContext, readLastDailyContext, writeLastDailyContext, fetchDailyContextLiveMock } = vi.hoisted(
+  () => {
+    const mockContext = {
+      generated_at: "2026-03-25T00:00:00.000Z",
+      run_date: "2026-03-25",
+      todoist_overdue: [],
+      todoist_due_today: [],
+      todoist_upcoming_high_priority: [],
+      gmail_signals: [],
+      calendar_today: [],
+    };
+    const fetchDailyContextLiveMock = vi.fn(
+      async (): Promise<{ context: MyAssistDailyContext; source: DailyContextSource }> => ({
+        context: mockContext as MyAssistDailyContext,
+        source: "live",
+      }),
+    );
+    return {
+      mockContext,
+      readLastDailyContext: vi.fn(),
+      writeLastDailyContext: vi.fn(),
+      fetchDailyContextLiveMock,
+    };
+  },
+);
 const { fetchCalendarEvents, fetchGmailSignals } = vi.hoisted(() => ({
   fetchCalendarEvents: vi.fn(),
   fetchGmailSignals: vi.fn(),
@@ -26,10 +39,7 @@ vi.mock("@/lib/dailyContextSnapshot", () => ({
 }));
 
 vi.mock("@/lib/fetchDailyContext", () => ({
-  fetchDailyContextLive: vi.fn(async () => ({
-    context: mockContext,
-    source: "live" as const,
-  })),
+  fetchDailyContextLive: fetchDailyContextLiveMock,
   MYASSIST_CONTEXT_SOURCE_HEADER: "x-myassist-context-source",
 }));
 
@@ -62,6 +72,12 @@ describe("GET /api/daily-context", () => {
     writeLastDailyContext.mockResolvedValue(undefined);
     fetchCalendarEvents.mockResolvedValue(null);
     fetchGmailSignals.mockResolvedValue(null);
+    fetchDailyContextLiveMock.mockImplementation(
+      async (): Promise<{ context: MyAssistDailyContext; source: DailyContextSource }> => ({
+        context: mockContext as MyAssistDailyContext,
+        source: "live",
+      }),
+    );
   });
 
   it("returns JSON body and sets source header on live fetch", async () => {
@@ -74,6 +90,20 @@ describe("GET /api/daily-context", () => {
     expect(res.headers.get("x-myassist-context-source")).toBe("live");
     expect(writeLastDailyContext).toHaveBeenCalled();
     expect(readLastDailyContext).not.toHaveBeenCalled();
+  });
+
+  it("does not write snapshot when daily context source is demo", async () => {
+    fetchDailyContextLiveMock.mockImplementationOnce(
+      async (): Promise<{ context: MyAssistDailyContext; source: DailyContextSource }> => ({
+        context: mockContext as MyAssistDailyContext,
+        source: "demo",
+      }),
+    );
+    const req = new NextRequest("http://localhost/api/daily-context");
+    const res = await GET(req);
+    expect(res.status).toBe(200);
+    expect(res.headers.get("x-myassist-context-source")).toBe("demo");
+    expect(writeLastDailyContext).not.toHaveBeenCalled();
   });
 
   it("returns 404 when cache is requested but missing", async () => {

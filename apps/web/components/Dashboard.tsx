@@ -240,20 +240,6 @@ function taskTitle(task: Record<string, unknown> | undefined): string | null {
   return typeof task.content === "string" ? task.content : null;
 }
 
-function countUrgentItems(data: MyAssistDailyContext): number {
-  return data.todoist_overdue.length + data.todoist_due_today.length;
-}
-
-function pressureLevel(data: MyAssistDailyContext): "Low" | "Medium" | "High" {
-  const score =
-    countUrgentItems(data) * 3 +
-    Math.min(data.gmail_signals.length, 5) +
-    Math.min(data.calendar_today.length, 5);
-  if (score >= 24) return "High";
-  if (score >= 12) return "Medium";
-  return "Low";
-}
-
 function buildNextAction(data: MyAssistDailyContext): {
   title: string;
   detail: string;
@@ -302,12 +288,6 @@ function buildNextAction(data: MyAssistDailyContext): {
   };
 }
 
-function summarizeEmails(signals: GmailSignal[]): string {
-  if (signals.length === 0) return "No threads in this pull.";
-  if (signals.length === 1) return "1 thread in this pull.";
-  return `${signals.length} threads in this pull.`;
-}
-
 function formatRunDate(data: MyAssistDailyContext): string {
   return `Run ${data.run_date} · Generated ${formatWhen(data.generated_at)}`;
 }
@@ -336,26 +316,82 @@ function buildJobHuntHrefFromOpportunityLinkage(link: JobHuntCalendarOpportunity
   return `/job-hunt?${p.toString()}`;
 }
 
-function MetricValue({
+function compactOverviewMetrics(data: MyAssistDailyContext): {
+  urgent: number;
+  meetings: number;
+  tasksDue: number;
+  job: number;
+} {
+  const b = data.unified_daily_briefing;
+  return {
+    urgent: b?.counts.urgent ?? 0,
+    meetings: data.calendar_today.length,
+    tasksDue: data.todoist_overdue.length + data.todoist_due_today.length,
+    job: b?.counts.job_related ?? 0,
+  };
+}
+
+function CompactMetricCard({
+  label,
   value,
   href,
-  label,
+  ariaLabel,
 }: {
-  value: number | string;
-  href?: string;
   label: string;
+  value: number;
+  href?: string;
+  ariaLabel: string;
 }) {
-  const className =
-    "theme-ink mt-2 text-3xl font-semibold transition hover:opacity-80 focus-visible:opacity-80 focus-visible:outline-none";
-
-  if (!href) {
-    return <p className={className}>{value}</p>;
-  }
-
+  const inner = (
+    <span className="flex flex-wrap items-baseline gap-x-1.5">
+      <span className="text-sm font-medium text-zinc-400">{label}</span>
+      <span className="text-white/30" aria-hidden>
+        ·
+      </span>
+      <span className="tabular-nums text-xl font-semibold tracking-tight theme-ink">{value}</span>
+    </span>
+  );
   return (
-    <a href={href} className={`${className} inline-block`} aria-label={label}>
-      {value}
-    </a>
+    <div className="metric-chip min-w-0 rounded-[18px] border border-white/10 px-3 py-3 sm:px-4 sm:py-3.5">
+      {href ? (
+        <a
+          href={href}
+          className="block transition hover:opacity-85 focus-visible:opacity-85 focus-visible:outline-none"
+          aria-label={ariaLabel}
+        >
+          {inner}
+        </a>
+      ) : (
+        inner
+      )}
+    </div>
+  );
+}
+
+function CompactMetricsRow({ data }: { data: MyAssistDailyContext }) {
+  const m = compactOverviewMetrics(data);
+  return (
+    <div className="grid min-w-0 gap-2 sm:grid-cols-2 xl:grid-cols-4">
+      <CompactMetricCard
+        label="Urgent"
+        value={m.urgent}
+        href="#tasks"
+        ariaLabel="Jump to tasks — urgent count from briefing"
+      />
+      <CompactMetricCard
+        label="Meetings"
+        value={m.meetings}
+        href="#calendar"
+        ariaLabel="Jump to calendar — meetings in view"
+      />
+      <CompactMetricCard
+        label="Tasks due"
+        value={m.tasksDue}
+        href="#tasks"
+        ariaLabel="Jump to tasks — overdue and due today"
+      />
+      <CompactMetricCard label="Job" value={m.job} ariaLabel="Job-related signals count from briefing" />
+    </div>
   );
 }
 
@@ -418,19 +454,17 @@ function SkeletonBlock({ className }: { className: string }) {
   return <span className={`block rounded-lg bg-white/10 animate-pulse ${className}`} aria-hidden />;
 }
 
-function DashboardMetricsSkeleton() {
+function DashboardCompactMetricsSkeleton() {
   return (
     <div
-      className="mt-6 grid gap-3 sm:grid-cols-3 xl:grid-cols-4"
+      className="grid min-w-0 gap-2 sm:grid-cols-2 xl:grid-cols-4"
       role="status"
       aria-live="polite"
       aria-label="Loading dashboard metrics"
     >
       {Array.from({ length: 4 }).map((_, i) => (
-        <div key={`metric-skel-${i}`} className="metric-chip rounded-[22px] px-4 py-4">
-          <SkeletonBlock className="h-3 w-24" />
-          <SkeletonBlock className="mt-3 h-9 w-16" />
-          <SkeletonBlock className="mt-2 h-3 w-full max-w-[180px]" />
+        <div key={`metric-skel-${i}`} className="metric-chip rounded-[18px] border border-white/10 px-3 py-3 sm:px-4">
+          <SkeletonBlock className="h-5 w-24" />
         </div>
       ))}
     </div>
@@ -534,10 +568,13 @@ export function Dashboard({
   initialData,
   initialError,
   initialSource,
+  greetingFirstName = "there",
 }: {
   initialData: MyAssistDailyContext | null;
   initialError: string | null;
   initialSource: DailyContextSource;
+  /** First name for the good-morning header (from server session). */
+  greetingFirstName?: string;
 }) {
   const [data, setData] = useState<MyAssistDailyContext | null>(initialData);
   const [error, setError] = useState<string | null>(initialError);
@@ -848,7 +885,13 @@ export function Dashboard({
         setError(j.error);
         return;
       }
-      setContextSource(headerSource === "mock" ? "mock" : "live");
+      setContextSource(
+        headerSource === "demo"
+          ? "demo"
+          : headerSource === "mock"
+            ? "mock"
+            : "live",
+      );
       setData(j as MyAssistDailyContext);
     } catch (e) {
       setData(null);
@@ -885,7 +928,13 @@ export function Dashboard({
         return;
       }
       setContextSource(
-        headerSource === "mock" ? "mock" : headerSource === "cache" ? "cache" : "live",
+        headerSource === "demo"
+          ? "demo"
+          : headerSource === "mock"
+            ? "mock"
+            : headerSource === "cache"
+              ? "cache"
+              : "live",
       );
       setData(j as MyAssistDailyContext);
     } catch (e) {
@@ -914,6 +963,7 @@ export function Dashboard({
               todoist_upcoming_high_priority?: MyAssistDailyContext["todoist_upcoming_high_priority"];
               todoist_intelligence?: MyAssistDailyContext["todoist_intelligence"];
               unified_daily_briefing?: MyAssistDailyContext["unified_daily_briefing"];
+              good_morning_message?: MyAssistDailyContext["good_morning_message"];
             }
           | { error?: string };
         if (!res.ok || ("error" in body && body.error)) {
@@ -932,6 +982,9 @@ export function Dashboard({
             if (body.unified_daily_briefing && typeof body.unified_daily_briefing === "object") {
               merged.unified_daily_briefing = body.unified_daily_briefing;
             }
+            if (body.good_morning_message && typeof body.good_morning_message === "object") {
+              merged.good_morning_message = body.good_morning_message;
+            }
             return merged;
           }
           if (
@@ -945,6 +998,9 @@ export function Dashboard({
             }
             if (body.unified_daily_briefing && typeof body.unified_daily_briefing === "object") {
               merged.unified_daily_briefing = body.unified_daily_briefing;
+            }
+            if (body.good_morning_message && typeof body.good_morning_message === "object") {
+              merged.good_morning_message = body.good_morning_message;
             }
             return merged;
           }
@@ -966,6 +1022,7 @@ export function Dashboard({
               ...(body.unified_daily_briefing
                 ? { unified_daily_briefing: body.unified_daily_briefing }
                 : {}),
+              ...(body.good_morning_message ? { good_morning_message: body.good_morning_message } : {}),
             };
           }
           return previous;
@@ -1664,7 +1721,7 @@ export function Dashboard({
       className="theme-shell mx-auto min-h-screen w-full max-w-[1380px] px-4 py-6 sm:px-6 xl:px-8"
       aria-busy={showSkeleton}
     >
-      <section className="glass-panel-strong mb-6 rounded-[32px] px-5 py-5 sm:px-7 sm:py-6">
+      <section className="glass-panel-strong mb-6 min-w-0 overflow-hidden rounded-[32px] px-5 py-5 sm:px-7 sm:py-6">
         <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
           <div className="max-w-4xl">
             <div className="flex flex-wrap items-center gap-2">
@@ -1673,11 +1730,13 @@ export function Dashboard({
               </span>
               {data ? (
                 <span className="theme-chip rounded-full px-3 py-1 text-xs font-medium">
-                  {contextSource === "mock"
-                    ? "Demo feed"
-                    : contextSource === "cache"
-                      ? "Last snapshot"
-                      : "Live from providers"}
+                  {contextSource === "demo"
+                    ? "Sample data"
+                    : contextSource === "mock"
+                      ? "Demo feed"
+                      : contextSource === "cache"
+                        ? "Last snapshot"
+                        : "Live from providers"}
                 </span>
               ) : showSkeleton ? (
                 <span className="theme-chip rounded-full px-3 py-1 text-xs font-medium">Loading context…</span>
@@ -1816,53 +1875,25 @@ export function Dashboard({
           </div>
         </div>
 
-        {showSkeleton ? (
-          <DashboardMetricsSkeleton />
-        ) : displayData ? (
-          <div className="mt-6 grid gap-3 sm:grid-cols-3 xl:grid-cols-4">
-            <div className="metric-chip rounded-[22px] px-4 py-4">
-              <p className="theme-accent text-[11px] uppercase tracking-[0.18em]">Urgent queue</p>
-              <MetricValue
-                value={countUrgentItems(displayData)}
-                href="#tasks"
-                label="Jump to task lists"
-              />
-              <p className="theme-muted mt-1 text-sm">Overdue + due today.</p>
+        <div className="mt-6 min-w-0 space-y-3 sm:space-y-4">
+          {!showSkeleton && displayData?.good_morning_message ? (
+            <div className="rounded-2xl border border-white/15 bg-gradient-to-br from-white/[0.09] to-white/[0.02] px-5 py-4 shadow-sm shadow-black/15 sm:px-6 sm:py-5">
+              <p className="text-base font-semibold tracking-tight text-zinc-50">{`Good morning ${greetingFirstName}`}</p>
+              <p className="theme-muted mt-2 text-sm leading-relaxed">{displayData.good_morning_message.message}</p>
             </div>
-            <div className="metric-chip rounded-[22px] px-4 py-4">
-              <p className="theme-accent text-[11px] uppercase tracking-[0.18em]">Load</p>
-              <MetricValue value={pressureLevel(displayData)} label="Estimated day load" />
-              <p className="theme-muted mt-1 text-sm">From task, calendar, and inbox volume.</p>
-            </div>
-            <div className="metric-chip rounded-[22px] px-4 py-4">
-              <p className="theme-accent text-[11px] uppercase tracking-[0.18em]">Calendar</p>
-              <MetricValue
-                value={displayData.calendar_today.length}
-                href="#calendar"
-                label="Jump to calendar events"
-              />
-              <p className="theme-muted mt-1 text-sm">
-                {displayData.calendar_today.length === 1 ? "Event today" : "Events in view"}
-              </p>
-            </div>
-            <div className="metric-chip rounded-[22px] px-4 py-4">
-              <p className="theme-accent text-[11px] uppercase tracking-[0.18em]">Email in pull</p>
-              <MetricValue
-                value={displayData.gmail_signals.length}
-                href="#important-emails"
-                label="Jump to email list"
-              />
-              <p className="theme-muted mt-1 text-sm">{summarizeEmails(displayData.gmail_signals)}</p>
-            </div>
-          </div>
-        ) : null}
-        {!showSkeleton && displayData ? (
-          <>
-            <UnifiedDailyBriefingPanel briefing={displayData.unified_daily_briefing} />
-            <DailyIntelligencePanel intel={displayData.daily_intelligence} />
-            <CalendarIntelligencePanel intel={displayData.calendar_intelligence} />
-          </>
-        ) : null}
+          ) : null}
+
+          {showSkeleton ? <DashboardCompactMetricsSkeleton /> : null}
+
+          {!showSkeleton && displayData ? (
+            <>
+              <UnifiedDailyBriefingPanel briefing={displayData.unified_daily_briefing} />
+              <CompactMetricsRow data={displayData} />
+              <DailyIntelligencePanel intel={displayData.daily_intelligence} />
+              <CalendarIntelligencePanel intel={displayData.calendar_intelligence} />
+            </>
+          ) : null}
+        </div>
       </section>
 
       <section className="glass-panel mb-6 rounded-[24px] p-2">
@@ -1978,6 +2009,19 @@ export function Dashboard({
           </div>
         </div>
       </section>
+
+      {contextSource === "demo" && data && !error && (
+        <div
+          className="glass-panel mb-6 rounded-[24px] border-violet-500/30 bg-violet-500/10 p-4 text-violet-100"
+          role="status"
+        >
+          <p className="text-sm font-semibold">Sample briefing</p>
+          <p className="mt-1 text-xs leading-6 opacity-90">
+            Curated demo context — <code className="rounded bg-white/5 px-1.5 py-0.5">MYASSIST_DEMO_MODE</code> is enabled. No live provider
+            calls.
+          </p>
+        </div>
+      )}
 
       {contextSource === "mock" && data && !error && (
         <div className="glass-panel mb-6 rounded-[24px] border-blue-500/30 bg-blue-500/10 p-5 text-blue-100" role="status">

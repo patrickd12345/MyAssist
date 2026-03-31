@@ -12,9 +12,11 @@ import type { GmailPhaseBSignal } from "@/lib/integrations/gmailSignalDetection"
 import { buildCalendarIntelligence } from "@/lib/calendarIntelligence";
 import { mapGoogleCalendarEventsRaw } from "@/lib/calendarPreview";
 import { buildDailyIntelligence } from "@/lib/dailyIntelligence";
+import { buildGoodMorningMessage } from "@/lib/goodMorning";
 import { buildUnifiedDailyBriefing } from "@/lib/unifiedDailyBriefing";
 import type { MyAssistDailyContext } from "@/lib/types";
 import { jsonLegacyApiError } from "@/lib/api/error-contract";
+import { isMyAssistDemoModeEnabled } from "@/lib/env/runtime";
 
 export const dynamic = "force-dynamic";
 
@@ -66,6 +68,48 @@ async function buildProviderSliceResponse(
   provider: DailyContextProviderSlice,
   userId: string,
 ): Promise<Response> {
+  if (isMyAssistDemoModeEnabled()) {
+    const { context } = await fetchDailyContextLive(userId);
+    const run_date = context.run_date;
+    const generated_at = context.generated_at;
+    if (provider === "gmail") {
+      return NextResponse.json({
+        provider,
+        source: "demo",
+        run_date,
+        generated_at,
+        gmail_signals: context.gmail_signals,
+        daily_intelligence: context.daily_intelligence,
+        unified_daily_briefing: context.unified_daily_briefing,
+        good_morning_message: context.good_morning_message,
+      });
+    }
+    if (provider === "google_calendar") {
+      return NextResponse.json({
+        provider,
+        source: "demo",
+        run_date,
+        generated_at,
+        calendar_today: context.calendar_today,
+        calendar_intelligence: context.calendar_intelligence,
+        unified_daily_briefing: context.unified_daily_briefing,
+        good_morning_message: context.good_morning_message,
+      });
+    }
+    return NextResponse.json({
+      provider,
+      source: "demo",
+      run_date,
+      generated_at,
+      todoist_overdue: context.todoist_overdue,
+      todoist_due_today: context.todoist_due_today,
+      todoist_upcoming_high_priority: context.todoist_upcoming_high_priority,
+      todoist_intelligence: context.todoist_intelligence,
+      unified_daily_briefing: context.unified_daily_briefing,
+      good_morning_message: context.good_morning_message,
+    });
+  }
+
   const cached = await readLastDailyContext(userId);
   const fallbackRunDate = cached?.run_date ?? todayCalendarDateInTaskZone(new Date());
   const fallbackGeneratedAt = cached?.generated_at ?? new Date().toISOString();
@@ -88,6 +132,7 @@ async function buildProviderSliceResponse(
       todoist_upcoming_high_priority: cached?.todoist_upcoming_high_priority ?? [],
       todoist_intelligence: cached?.todoist_intelligence,
     });
+    const good_morning_message = await buildGoodMorningMessage(unified_daily_briefing);
     return NextResponse.json({
       provider,
       source: live ? "live" : "cache-fallback",
@@ -96,6 +141,7 @@ async function buildProviderSliceResponse(
       gmail_signals,
       daily_intelligence,
       unified_daily_briefing,
+      good_morning_message,
     });
   }
 
@@ -121,6 +167,7 @@ async function buildProviderSliceResponse(
       todoist_upcoming_high_priority: cached?.todoist_upcoming_high_priority ?? [],
       todoist_intelligence: cached?.todoist_intelligence,
     });
+    const good_morning_message = await buildGoodMorningMessage(unified_daily_briefing);
     return NextResponse.json({
       provider,
       source: live ? "live" : "cache-fallback",
@@ -129,6 +176,7 @@ async function buildProviderSliceResponse(
       calendar_today,
       calendar_intelligence,
       unified_daily_briefing,
+      good_morning_message,
     });
   }
 
@@ -150,6 +198,7 @@ async function buildProviderSliceResponse(
     todoist_upcoming_high_priority,
     todoist_intelligence,
   });
+  const good_morning_message = await buildGoodMorningMessage(unified_daily_briefing);
   return NextResponse.json({
     provider,
     source: liveTodoist ? "live" : "cache-fallback",
@@ -160,6 +209,7 @@ async function buildProviderSliceResponse(
     todoist_upcoming_high_priority,
     todoist_intelligence,
     unified_daily_briefing,
+    good_morning_message,
   });
 }
 
@@ -195,9 +245,11 @@ export async function GET(request: NextRequest) {
       } catch {
         // Keep cached context if OAuth refresh fails.
       }
+      const unified_daily_briefing = await buildUnifiedDailyBriefing(context);
       context = {
         ...context,
-        unified_daily_briefing: await buildUnifiedDailyBriefing(context),
+        unified_daily_briefing,
+        good_morning_message: await buildGoodMorningMessage(unified_daily_briefing),
       };
       const res = NextResponse.json(context);
       res.headers.set(MYASSIST_CONTEXT_SOURCE_HEADER, "cache");
@@ -206,11 +258,15 @@ export async function GET(request: NextRequest) {
 
     const { context, source } = await fetchDailyContextLive(userId);
 
-    await writeLastDailyContext(userId, context);
+    if (source !== "demo") {
+      await writeLastDailyContext(userId, context);
+    }
 
     const nudges = await getTaskNudges(userId);
     context.user_task_nudges = nudges;
-    context.unified_daily_briefing = await buildUnifiedDailyBriefing(context);
+    const unified_daily_briefing = await buildUnifiedDailyBriefing(context);
+    context.unified_daily_briefing = unified_daily_briefing;
+    context.good_morning_message = await buildGoodMorningMessage(unified_daily_briefing);
 
     const res = NextResponse.json(context);
     res.headers.set(MYASSIST_CONTEXT_SOURCE_HEADER, source);

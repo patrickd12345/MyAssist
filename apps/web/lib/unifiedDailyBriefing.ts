@@ -178,6 +178,7 @@ export async function buildUnifiedDailyBriefing(
     important: mergeUnique(important).slice(0, 8),
     action_required: mergeUnique(actionRequired).slice(0, 8),
     job_related: mergeUnique(jobRelated).slice(0, 8),
+    calendar_events_in_view: context.calendar_today.length,
     schedule_summary: scheduleSummary,
     tasks_summary: tasksSummary,
     email_summary: emailSummary,

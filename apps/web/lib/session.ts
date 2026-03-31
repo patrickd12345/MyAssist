@@ -15,3 +15,23 @@ export async function getSessionUserId(): Promise<string | null> {
   }
   return null;
 }
+
+function greetingFirstNameFromEmail(email: string | null | undefined): string {
+  if (!email?.trim()) return "there";
+  const local = email.split("@")[0]?.trim() ?? "";
+  if (!local) return "there";
+  const first = local.split(/[._-]/)[0] ?? local;
+  const cap = first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
+  return cap || "there";
+}
+
+/** First name for dashboard greeting (from session email local-part); `"there"` when unavailable. */
+export async function getSessionUserDisplayFirstName(): Promise<string> {
+  const runtime = resolveMyAssistRuntimeEnv();
+  if (runtime.authDisabledRaw === "true") {
+    return "there";
+  }
+  const { auth } = await import("./auth");
+  const session = await auth();
+  return greetingFirstNameFromEmail(session?.user?.email);
+}

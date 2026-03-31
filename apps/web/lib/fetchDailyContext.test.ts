@@ -4,6 +4,7 @@ import {
   prioritizeGmailSignalsWithAi,
   resolveGmailSubject,
 } from "./fetchDailyContext";
+import { getDemoDailyContext } from "./demoDailyContext";
 import * as jobHuntEmailSignals from "./jobHuntEmailSignals";
 import * as jobHuntEmailAssignment from "./jobHuntEmailAssignment";
 import { integrationService } from "./integrations/service";
@@ -15,6 +16,7 @@ describe("fetchDailyContextLive", () => {
   beforeEach(() => {
     process.env.MYASSIST_ENABLE_EMAIL_IMPORTANCE_AI = "0";
     delete process.env.MYASSIST_USE_MOCK_CONTEXT;
+    delete process.env.MYASSIST_DEMO_MODE;
     delete process.env.MYASSIST_DAILY_INTEL_AI;
     vi.spyOn(integrationService, "fetchGmailSignals").mockResolvedValue(null);
     vi.spyOn(integrationService, "fetchCalendarEvents").mockResolvedValue(null);
@@ -37,7 +39,33 @@ describe("fetchDailyContextLive", () => {
     expect(context.daily_intelligence?.summary.generatedDeterministicSummary).toBeDefined();
     expect(context.calendar_intelligence?.summary).toBeDefined();
     expect(context.unified_daily_briefing?.summary).toBeDefined();
+    expect(context.good_morning_message?.message.length).toBeGreaterThan(0);
     expect(integrationService.fetchGmailSignals).not.toHaveBeenCalled();
+  });
+
+  it("returns curated demo context when MYASSIST_DEMO_MODE is true", async () => {
+    process.env.MYASSIST_DEMO_MODE = "true";
+    const { context, source } = await fetchDailyContextLive("user-1");
+    expect(source).toBe("demo");
+    expect(context.gmail_signals.length).toBeGreaterThanOrEqual(2);
+    expect(context.calendar_today.length).toBeGreaterThanOrEqual(2);
+    expect(context.unified_daily_briefing?.counts).toBeDefined();
+    expect(context.good_morning_message?.tone).toBe("neutral");
+    expect(context.todoist_intelligence?.summary).toBeDefined();
+    expect(integrationService.fetchGmailSignals).not.toHaveBeenCalled();
+  });
+
+  it("prefers MYASSIST_DEMO_MODE over MYASSIST_USE_MOCK_CONTEXT", async () => {
+    process.env.MYASSIST_DEMO_MODE = "true";
+    process.env.MYASSIST_USE_MOCK_CONTEXT = "true";
+    const { source } = await fetchDailyContextLive("user-1");
+    expect(source).toBe("demo");
+  });
+
+  it("exposes Northwind-style demo signals in the curated dataset", () => {
+    const demo = getDemoDailyContext();
+    expect(demo.gmail_signals.some((g) => g.subject.includes("Offer"))).toBe(true);
+    expect(demo.calendar_today.some((e) => (e.summary ?? "").toLowerCase().includes("interview"))).toBe(true);
   });
 
   it("throws when user id is missing for live path", async () => {
