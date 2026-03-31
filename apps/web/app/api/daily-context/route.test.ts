@@ -70,6 +70,7 @@ describe("GET /api/daily-context", () => {
     expect(res.status).toBe(200);
     const json = (await res.json()) as { run_date: string };
     expect(json.run_date).toBe("2026-03-25");
+    expect((json as { unified_daily_briefing?: unknown }).unified_daily_briefing).toBeDefined();
     expect(res.headers.get("x-myassist-context-source")).toBe("live");
     expect(writeLastDailyContext).toHaveBeenCalled();
     expect(readLastDailyContext).not.toHaveBeenCalled();
@@ -93,6 +94,7 @@ describe("GET /api/daily-context", () => {
     expect(res.headers.get("x-myassist-context-source")).toBe("cache");
     const json = (await res.json()) as { run_date: string };
     expect(json.run_date).toBe("2026-03-25");
+    expect((json as { unified_daily_briefing?: unknown }).unified_daily_briefing).toBeDefined();
     expect(writeLastDailyContext).not.toHaveBeenCalled();
   });
 
@@ -135,11 +137,13 @@ describe("GET /api/daily-context", () => {
       provider: string;
       calendar_today: Array<{ summary: string }>;
       calendar_intelligence: { summary: string; counts: { eventsInWindow: number } };
+      unified_daily_briefing?: { summary: string };
     };
     expect(json.provider).toBe("google_calendar");
     expect(json.calendar_today).toHaveLength(1);
     expect(json.calendar_intelligence.counts.eventsInWindow).toBe(1);
     expect(json.calendar_intelligence.summary.length).toBeGreaterThan(0);
+    expect(json.unified_daily_briefing?.summary).toBeTruthy();
   });
 
   it("returns a provider-scoped gmail slice when requested", async () => {
@@ -161,12 +165,14 @@ describe("GET /api/daily-context", () => {
       source: string;
       gmail_signals: Array<{ subject: string }>;
       daily_intelligence: { summary: { generatedDeterministicSummary: string } };
+      unified_daily_briefing?: { summary: string };
     };
     expect(json.provider).toBe("gmail");
     expect(json.source).toBe("live");
     expect(json.gmail_signals).toHaveLength(1);
     expect(json.gmail_signals[0]?.subject).toBe("Follow up");
     expect(json.daily_intelligence.summary.generatedDeterministicSummary).toBeTruthy();
+    expect(json.unified_daily_briefing?.summary).toBeTruthy();
     expect(writeLastDailyContext).not.toHaveBeenCalled();
   });
 });

@@ -148,6 +148,19 @@ export function buildContextDigest(context: MyAssistDailyContext): string {
         summary: context.todoist_intelligence.summary,
       }
     : null;
+  const unifiedBriefing = context.unified_daily_briefing
+    ? {
+        counts: context.unified_daily_briefing.counts,
+        urgent: context.unified_daily_briefing.urgent.slice(0, 4),
+        important: context.unified_daily_briefing.important.slice(0, 4),
+        action_required: context.unified_daily_briefing.action_required.slice(0, 4),
+        job_related: context.unified_daily_briefing.job_related.slice(0, 4),
+        summary: context.unified_daily_briefing.summary,
+        ...(context.unified_daily_briefing.aiSummary
+          ? { aiSummary: context.unified_daily_briefing.aiSummary }
+          : {}),
+      }
+    : null;
   const digest = {
     run_date: context.run_date,
     urgent_counts: {
@@ -190,6 +203,7 @@ export function buildContextDigest(context: MyAssistDailyContext): string {
     ...(dailyIntel ? { daily_intelligence: dailyIntel } : {}),
     ...(calendarIntel ? { calendar_intelligence: calendarIntel } : {}),
     ...(todoistIntel ? { todoist_intelligence: todoistIntel } : {}),
+    ...(unifiedBriefing ? { unified_daily_briefing: unifiedBriefing } : {}),
   };
 
   return JSON.stringify(digest, null, 2);

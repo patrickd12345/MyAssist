@@ -13,6 +13,7 @@ import type { GmailPhaseBSignal } from "./integrations/gmailSignalDetection";
 import { getEmailTriageHints } from "./memoryStore";
 import { fetchTodoistTaskRecordsForUser } from "./todoistApiTasks";
 import { buildTodoistIntelligence } from "./todoistIntelligence";
+import { buildUnifiedDailyBriefing } from "./unifiedDailyBriefing";
 import { mapTodoistTaskPreview } from "./todoistPreview";
 import { bucketTodoistTasksFromApi } from "./todoistTaskBuckets";
 import type { MyAssistDailyContext } from "./types";
@@ -86,12 +87,14 @@ export async function fetchDailyContextLive(userId: string | null): Promise<{
       Date.now(),
       mockCtx.run_date,
     );
+    const seedContext: MyAssistDailyContext = {
+      ...mockCtx,
+      daily_intelligence: buildDailyIntelligence(mockCtx.gmail_signals),
+      calendar_intelligence,
+    };
+    const unified_daily_briefing = await buildUnifiedDailyBriefing(seedContext);
     return {
-      context: {
-        ...mockCtx,
-        daily_intelligence: buildDailyIntelligence(mockCtx.gmail_signals),
-        calendar_intelligence,
-      },
+      context: { ...seedContext, unified_daily_briefing },
       source: "mock",
     };
   }
@@ -139,11 +142,17 @@ export async function fetchDailyContextLive(userId: string | null): Promise<{
     buildDailyIntelligence(withJobHuntAnalysis.gmail_signals),
   );
 
+  const nextContext: MyAssistDailyContext = {
+    ...withJobHuntAnalysis,
+    ...(job_hunt_email_matches.length > 0 ? { job_hunt_email_matches } : {}),
+    daily_intelligence,
+  };
+  const unified_daily_briefing = await buildUnifiedDailyBriefing(nextContext);
+
   return {
     context: {
-      ...withJobHuntAnalysis,
-      ...(job_hunt_email_matches.length > 0 ? { job_hunt_email_matches } : {}),
-      daily_intelligence,
+      ...nextContext,
+      unified_daily_briefing,
     },
     source: "live",
   };
