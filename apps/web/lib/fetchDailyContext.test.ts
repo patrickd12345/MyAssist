@@ -36,6 +36,7 @@ describe("fetchDailyContextLive", () => {
     expect(Array.isArray(context.todoist_overdue)).toBe(true);
     expect(context.daily_intelligence?.summary.generatedDeterministicSummary).toBeDefined();
     expect(context.calendar_intelligence?.summary).toBeDefined();
+    expect(context.unified_daily_briefing?.summary).toBeDefined();
     expect(integrationService.fetchGmailSignals).not.toHaveBeenCalled();
   });
 
@@ -61,6 +62,7 @@ describe("fetchDailyContextLive", () => {
     expect(source).toBe("live");
     expect(context.gmail_signals[0]?.from).toContain("Alice");
     expect(context.gmail_signals[0]?.subject).toBe("Hello");
+    expect(context.unified_daily_briefing?.summary).toBeDefined();
   });
 
   it("derives subject from snippet when subject is empty or placeholder", async () => {

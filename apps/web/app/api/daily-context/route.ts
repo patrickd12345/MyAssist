@@ -12,6 +12,7 @@ import type { GmailPhaseBSignal } from "@/lib/integrations/gmailSignalDetection"
 import { buildCalendarIntelligence } from "@/lib/calendarIntelligence";
 import { mapGoogleCalendarEventsRaw } from "@/lib/calendarPreview";
 import { buildDailyIntelligence } from "@/lib/dailyIntelligence";
+import { buildUnifiedDailyBriefing } from "@/lib/unifiedDailyBriefing";
 import type { MyAssistDailyContext } from "@/lib/types";
 import { jsonLegacyApiError } from "@/lib/api/error-contract";
 
@@ -75,6 +76,18 @@ async function buildProviderSliceResponse(
       ? mapOAuthGmailSignals(live)
       : (cached?.gmail_signals ?? []);
     const daily_intelligence = buildDailyIntelligence(gmail_signals);
+    const unified_daily_briefing = await buildUnifiedDailyBriefing({
+      generated_at: fallbackGeneratedAt,
+      run_date: fallbackRunDate,
+      gmail_signals,
+      daily_intelligence,
+      calendar_today: cached?.calendar_today ?? [],
+      calendar_intelligence: cached?.calendar_intelligence,
+      todoist_overdue: cached?.todoist_overdue ?? [],
+      todoist_due_today: cached?.todoist_due_today ?? [],
+      todoist_upcoming_high_priority: cached?.todoist_upcoming_high_priority ?? [],
+      todoist_intelligence: cached?.todoist_intelligence,
+    });
     return NextResponse.json({
       provider,
       source: live ? "live" : "cache-fallback",
@@ -82,6 +95,7 @@ async function buildProviderSliceResponse(
       generated_at: fallbackGeneratedAt,
       gmail_signals,
       daily_intelligence,
+      unified_daily_briefing,
     });
   }
 
@@ -95,6 +109,18 @@ async function buildProviderSliceResponse(
       Date.now(),
       fallbackRunDate,
     );
+    const unified_daily_briefing = await buildUnifiedDailyBriefing({
+      generated_at: fallbackGeneratedAt,
+      run_date: fallbackRunDate,
+      gmail_signals: cached?.gmail_signals ?? [],
+      daily_intelligence: cached?.daily_intelligence,
+      calendar_today,
+      calendar_intelligence,
+      todoist_overdue: cached?.todoist_overdue ?? [],
+      todoist_due_today: cached?.todoist_due_today ?? [],
+      todoist_upcoming_high_priority: cached?.todoist_upcoming_high_priority ?? [],
+      todoist_intelligence: cached?.todoist_intelligence,
+    });
     return NextResponse.json({
       provider,
       source: live ? "live" : "cache-fallback",
@@ -102,20 +128,38 @@ async function buildProviderSliceResponse(
       generated_at: fallbackGeneratedAt,
       calendar_today,
       calendar_intelligence,
+      unified_daily_briefing,
     });
   }
 
   const liveTodoist = await fetchTodoistSlices(userId);
+  const todoist_overdue = liveTodoist?.todoist_overdue ?? (cached?.todoist_overdue ?? []);
+  const todoist_due_today = liveTodoist?.todoist_due_today ?? (cached?.todoist_due_today ?? []);
+  const todoist_upcoming_high_priority =
+    liveTodoist?.todoist_upcoming_high_priority ?? (cached?.todoist_upcoming_high_priority ?? []);
+  const todoist_intelligence = liveTodoist?.todoist_intelligence ?? cached?.todoist_intelligence;
+  const unified_daily_briefing = await buildUnifiedDailyBriefing({
+    generated_at: fallbackGeneratedAt,
+    run_date: fallbackRunDate,
+    gmail_signals: cached?.gmail_signals ?? [],
+    daily_intelligence: cached?.daily_intelligence,
+    calendar_today: cached?.calendar_today ?? [],
+    calendar_intelligence: cached?.calendar_intelligence,
+    todoist_overdue,
+    todoist_due_today,
+    todoist_upcoming_high_priority,
+    todoist_intelligence,
+  });
   return NextResponse.json({
     provider,
     source: liveTodoist ? "live" : "cache-fallback",
     run_date: fallbackRunDate,
     generated_at: fallbackGeneratedAt,
-    todoist_overdue: liveTodoist?.todoist_overdue ?? (cached?.todoist_overdue ?? []),
-    todoist_due_today: liveTodoist?.todoist_due_today ?? (cached?.todoist_due_today ?? []),
-    todoist_upcoming_high_priority:
-      liveTodoist?.todoist_upcoming_high_priority ?? (cached?.todoist_upcoming_high_priority ?? []),
-    todoist_intelligence: liveTodoist?.todoist_intelligence ?? cached?.todoist_intelligence,
+    todoist_overdue,
+    todoist_due_today,
+    todoist_upcoming_high_priority,
+    todoist_intelligence,
+    unified_daily_briefing,
   });
 }
 
@@ -151,6 +195,10 @@ export async function GET(request: NextRequest) {
       } catch {
         // Keep cached context if OAuth refresh fails.
       }
+      context = {
+        ...context,
+        unified_daily_briefing: await buildUnifiedDailyBriefing(context),
+      };
       const res = NextResponse.json(context);
       res.headers.set(MYASSIST_CONTEXT_SOURCE_HEADER, "cache");
       return res;
@@ -162,6 +210,7 @@ export async function GET(request: NextRequest) {
 
     const nudges = await getTaskNudges(userId);
     context.user_task_nudges = nudges;
+    context.unified_daily_briefing = await buildUnifiedDailyBriefing(context);
 
     const res = NextResponse.json(context);
     res.headers.set(MYASSIST_CONTEXT_SOURCE_HEADER, source);

@@ -12,6 +12,7 @@ import {
 } from "@/lib/assistant";
 import { CalendarIntelligencePanel } from "@/components/CalendarIntelligencePanel";
 import { DailyIntelligencePanel } from "@/components/DailyIntelligencePanel";
+import { UnifiedDailyBriefingPanel } from "@/components/UnifiedDailyBriefingPanel";
 import {
   MYASSIST_CONTEXT_SOURCE_HEADER,
   type DailyContextSource,
@@ -912,6 +913,7 @@ export function Dashboard({
               todoist_due_today?: MyAssistDailyContext["todoist_due_today"];
               todoist_upcoming_high_priority?: MyAssistDailyContext["todoist_upcoming_high_priority"];
               todoist_intelligence?: MyAssistDailyContext["todoist_intelligence"];
+              unified_daily_briefing?: MyAssistDailyContext["unified_daily_briefing"];
             }
           | { error?: string };
         if (!res.ok || ("error" in body && body.error)) {
@@ -927,6 +929,9 @@ export function Dashboard({
             if (body.daily_intelligence && typeof body.daily_intelligence === "object") {
               merged.daily_intelligence = body.daily_intelligence;
             }
+            if (body.unified_daily_briefing && typeof body.unified_daily_briefing === "object") {
+              merged.unified_daily_briefing = body.unified_daily_briefing;
+            }
             return merged;
           }
           if (
@@ -937,6 +942,9 @@ export function Dashboard({
             const merged: MyAssistDailyContext = { ...previous, calendar_today: body.calendar_today };
             if (body.calendar_intelligence && typeof body.calendar_intelligence === "object") {
               merged.calendar_intelligence = body.calendar_intelligence;
+            }
+            if (body.unified_daily_briefing && typeof body.unified_daily_briefing === "object") {
+              merged.unified_daily_briefing = body.unified_daily_briefing;
             }
             return merged;
           }
@@ -955,6 +963,9 @@ export function Dashboard({
               todoist_due_today: body.todoist_due_today,
               todoist_upcoming_high_priority: body.todoist_upcoming_high_priority,
               ...(body.todoist_intelligence ? { todoist_intelligence: body.todoist_intelligence } : {}),
+              ...(body.unified_daily_briefing
+                ? { unified_daily_briefing: body.unified_daily_briefing }
+                : {}),
             };
           }
           return previous;
@@ -1847,6 +1858,7 @@ export function Dashboard({
         ) : null}
         {!showSkeleton && displayData ? (
           <>
+            <UnifiedDailyBriefingPanel briefing={displayData.unified_daily_briefing} />
             <DailyIntelligencePanel intel={displayData.daily_intelligence} />
             <CalendarIntelligencePanel intel={displayData.calendar_intelligence} />
           </>

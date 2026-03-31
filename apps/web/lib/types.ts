@@ -165,6 +165,24 @@ export type DailyIntelligence = {
   summary: DailyIntelligenceSummary;
 };
 
+export type UnifiedDailyBriefing = {
+  urgent: string[];
+  important: string[];
+  action_required: string[];
+  job_related: string[];
+  schedule_summary: string;
+  tasks_summary: string;
+  email_summary: string;
+  summary: string;
+  aiSummary?: string;
+  counts: {
+    urgent: number;
+    important: number;
+    action_required: number;
+    job_related: number;
+  };
+};
+
 export type MyAssistDailyContext = {
   generated_at: string;
   run_date: string;
@@ -181,6 +199,7 @@ export type MyAssistDailyContext = {
   /** Phase B: buckets + deterministic summary; optional `aiSummary` when MYASSIST_DAILY_INTEL_AI is enabled. */
   daily_intelligence?: DailyIntelligence;
   todoist_intelligence?: TodoistIntelligence;
+  unified_daily_briefing?: UnifiedDailyBriefing;
 };
 
 export type TodoistSignalType =
