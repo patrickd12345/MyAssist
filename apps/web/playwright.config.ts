@@ -7,7 +7,9 @@ const e2eOrigin = `http://127.0.0.1:${e2ePort}`;
 
 export default defineConfig({
   testDir: "./tests/e2e",
-  fullyParallel: true,
+  /** File-backed user store (`MYASSIST_USER_STORE_FILE`) is shared; parallel workers race and flake registration. */
+  workers: 1,
+  fullyParallel: false,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
   reporter: process.env.CI ? "github" : "list",

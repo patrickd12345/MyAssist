@@ -151,3 +151,10 @@ If logs show **Array buffer allocation failed** or **Caching failed for pack** f
    - `Defer tomorrow`
    - `Defer next week`
 9. Ask the assistant to create a task, confirm a draft card appears, then click `Create task`.
+
+## Playwright E2E (`pnpm test:e2e`)
+
+- Runs against a dedicated dev server on **127.0.0.1:3005** with **`MYASSIST_USE_MOCK_CONTEXT=true`** (mock Gmail/Todoist/Calendar payload — not production tokens).
+- **`workers: 1`**: the Playwright user store file (`tests/e2e/.playwright-users.json`) is shared; parallel workers race and flake registration.
+- **`tests/e2e/dashboard-sanity.spec.ts`**: registers a user, checks **`/api/integrations/status`** and **`/api/daily-context`**, then walks **Overview → Tasks → Inbox → Calendar → Assistant** and asserts the Inbox shows mock email copy (e.g. `Example signal (mock)`).
+- A **connected** integration pill in production only means tokens exist in **`myassist.integration_tokens`**; the **Inbox** tab still depends on a successful **live Gmail read** in **`fetchDailyContextLive`** / daily-context. If Gmail returns no messages or the fetch fails, the Inbox can look empty while status stays connected.

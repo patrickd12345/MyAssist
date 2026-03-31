@@ -52,7 +52,7 @@ export function buildGoogleAuthUrl(input: {
     response_type: "code",
     access_type: "offline",
     include_granted_scopes: "true",
-    prompt: "consent",
+    prompt: "select_account consent",
     scope: googleScopesFor(input.provider),
     state: input.state,
   });

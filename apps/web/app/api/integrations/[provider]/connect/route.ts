@@ -27,6 +27,14 @@ export async function GET(
   const origin = resolvePublicOrigin(req);
   const userId = await getSessionUserId();
   if (!userId) return NextResponse.redirect(`${origin}/sign-in`);
+  
+  const { getUserById } = await import("@/lib/userStore");
+  const user = await getUserById(userId);
+  if (!user) {
+    // The user has a session cookie but no longer exists in the database.
+    return NextResponse.redirect(`${origin}/?integrations=error&reason=user_not_found`);
+  }
+
   const { provider } = await params;
   const state = createOAuthState(userId, provider);
 

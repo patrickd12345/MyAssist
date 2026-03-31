@@ -632,6 +632,7 @@ export function Dashboard({
   const [oauthReturnBanner, setOauthReturnBanner] = useState<{
     kind: "connected" | "error";
     provider?: string;
+    reason?: string;
   } | null>(null);
   const lastHeadlineKeyRef = useRef<string | null>(initialData?.generated_at ?? null);
   const [proactiveIntel, setProactiveIntel] = useState<{
@@ -686,11 +687,13 @@ export function Dashboard({
     const params = new URLSearchParams(window.location.search);
     const integration = params.get("integrations");
     const provider = params.get("provider");
+    const reason = params.get("reason");
     if (integration !== "connected" && integration !== "error") return;
 
     setOauthReturnBanner({
       kind: integration,
       provider: provider ?? undefined,
+      reason: reason ?? undefined,
     });
     const path = `${window.location.pathname}${window.location.hash ?? ""}`;
     window.history.replaceState({}, "", path);
@@ -1928,12 +1931,16 @@ export function Dashboard({
               <p className="font-semibold">
                 {oauthReturnBanner.kind === "connected"
                   ? "OAuth completed — integration status refreshed below."
-                  : "OAuth could not save this integration on the server."}
+                  : oauthReturnBanner.reason === "user_not_found"
+                    ? "Your session has expired or your account was reset. Please sign out and sign back in."
+                    : "OAuth could not save this integration on the server."}
               </p>
               <p className="mt-1 text-xs opacity-90">
                 {oauthReturnBanner.kind === "connected"
                   ? "If a pill still shows disconnected, production needs durable token storage (Supabase URL + secret in Vercel). The filesystem under .myassist-memory is not writable on serverless."
-                  : "Check Vercel function logs for this request. Ensure SUPABASE_URL (or NEXT_PUBLIC_SUPABASE_URL) and SUPABASE_SECRET_KEY are set, and MYASSIST_INTEGRATIONS_ENCRYPTION_KEY matches across deploys."}
+                  : oauthReturnBanner.reason === "user_not_found"
+                    ? "A recent database reset cleared your account, but your browser kept the old session cookie. Use the Sign Out button."
+                    : "Check Vercel function logs for this request. Ensure SUPABASE_URL (or NEXT_PUBLIC_SUPABASE_URL) and SUPABASE_SECRET_KEY are set, and MYASSIST_INTEGRATIONS_ENCRYPTION_KEY matches across deploys."}
                 {oauthReturnBanner.provider ? (
                   <span className="ml-1 font-mono">({oauthReturnBanner.provider})</span>
                 ) : null}

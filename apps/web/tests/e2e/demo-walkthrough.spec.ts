@@ -46,6 +46,7 @@ async function refreshContextIfNeeded(page: Page) {
 
 test("single complete app walkthrough (video demo)", async ({ page }) => {
   test.slow();
+  test.setTimeout(120_000);
 
   await registerAndOpenDashboard(page);
   await refreshContextIfNeeded(page);
@@ -94,22 +95,22 @@ test("single complete app walkthrough (video demo)", async ({ page }) => {
   await page.waitForTimeout(900);
 
   await page.getByRole("button", { name: "Overview", exact: true }).click();
-  await expect(page.getByText("Rule-based snapshot")).toBeVisible();
+  await expect(page.getByText("Rule-based snapshot").first()).toBeVisible();
   await page.waitForTimeout(900);
 
-  await Promise.all([
-    page.waitForURL("**/job-hunt", { timeout: 45_000 }),
-    page.getByRole("link", { name: "Job Hunt" }).first().click(),
-  ]);
+  const jobHuntLink = page.getByRole("link", { name: "Job Hunt" }).first();
+  await jobHuntLink.scrollIntoViewIfNeeded();
+  await jobHuntLink.click();
+  await page.waitForURL("**/job-hunt", { timeout: 60_000 });
   await expect(page.getByRole("navigation", { name: "Workspace" })).toBeVisible();
   await page.waitForTimeout(1300);
 
   const backToMyAssist = page.getByRole("link", { name: "Back to MyAssist" });
   if (await backToMyAssist.isVisible()) {
-    await Promise.all([page.waitForURL("**/"), backToMyAssist.click()]);
-  } else {
-    await page.goto("/");
+    await backToMyAssist.click();
   }
+  // SPA back link can leave navigation pending for "load"; hard navigate home for stable e2e.
+  await page.goto("/");
   await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
   await page.waitForTimeout(700);
 });

@@ -56,6 +56,12 @@ export async function GET(req: Request) {
     logServerEvent("error", "myassist_google_callback_failed", {
       error: error instanceof Error ? error.message : String(error),
     });
+
+    const isFkError = error instanceof Error && error.message.includes("violates foreign key constraint");
+    if (isFkError) {
+      return NextResponse.redirect(`${origin}/?integrations=error&reason=user_not_found`);
+    }
+
     return NextResponse.redirect(`${origin}/?integrations=error`);
   }
 }

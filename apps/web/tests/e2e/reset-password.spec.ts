@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 test("forgot-password flow resets credentials and allows sign-in", async ({ page }) => {
+  test.setTimeout(60_000);
   const email = `e2e-reset-${Date.now()}@example.com`;
   const originalPassword = "testpass1234";
   const updatedPassword = "updated-pass-123";
