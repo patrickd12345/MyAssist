@@ -317,8 +317,9 @@ export function InboxEmailRow({
         </div>
       ) : null}
       <div className="mt-3">
-        <label className="theme-muted text-[11px]">Assign to saved job</label>
+        <label htmlFor={`assign-job-${messageId}`} className="theme-muted text-[11px]">Assign to saved job</label>
         <select
+          id={`assign-job-${messageId}`}
           className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-zinc-100"
           defaultValue=""
           disabled={assignBusyKey !== null || savedJobsForAssign.length === 0}
