@@ -44,9 +44,12 @@ export function getMockDailyContext(): MyAssistDailyContext {
       {
         id: "mock-cal1",
         summary: "Example event (mock)",
+        title: "Example event (mock)",
         start: now.toISOString(),
         end: new Date(now.getTime() + 60 * 60 * 1000).toISOString(),
         location: null,
+        source: "google_calendar",
+        meetingLinkPresent: false,
       },
     ],
   };

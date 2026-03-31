@@ -15,6 +15,7 @@ describe("fetchDailyContextLive", () => {
   beforeEach(() => {
     process.env.MYASSIST_ENABLE_EMAIL_IMPORTANCE_AI = "0";
     delete process.env.MYASSIST_USE_MOCK_CONTEXT;
+    delete process.env.MYASSIST_DAILY_INTEL_AI;
     vi.spyOn(integrationService, "fetchGmailSignals").mockResolvedValue(null);
     vi.spyOn(integrationService, "fetchCalendarEvents").mockResolvedValue(null);
     vi.spyOn(todoistToken, "resolveTodoistApiToken").mockResolvedValue(undefined);
@@ -33,6 +34,8 @@ describe("fetchDailyContextLive", () => {
     expect(source).toBe("mock");
     expect(context.run_date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(Array.isArray(context.todoist_overdue)).toBe(true);
+    expect(context.daily_intelligence?.summary.generatedDeterministicSummary).toBeDefined();
+    expect(context.calendar_intelligence?.summary).toBeDefined();
     expect(integrationService.fetchGmailSignals).not.toHaveBeenCalled();
   });
 
@@ -83,6 +86,7 @@ describe("fetchDailyContextLive", () => {
 
     const { context } = await fetchDailyContextLive("test-user-1");
     expect(context.calendar_today).toEqual([]);
+    expect(context.calendar_intelligence?.summary).toMatch(/No calendar events/);
   });
 
   it("posts job-hunt signals only after job-hunt analysis enrichment", async () => {

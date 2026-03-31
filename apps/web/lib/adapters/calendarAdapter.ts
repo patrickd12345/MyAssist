@@ -41,7 +41,7 @@ async function withGoogleAccessToken(userId: string): Promise<string> {
     return token.access_token;
   }
   if (!token.refresh_token) return token.access_token;
-  const refreshed = await refreshGoogleToken(token.refresh_token);
+  const refreshed = await refreshGoogleToken(token.refresh_token, token);
   await upsertIntegrationToken(userId, "google_calendar", refreshed);
   await markIntegrationRefreshUsed(userId, "google_calendar");
   return refreshed.access_token ?? token.access_token;

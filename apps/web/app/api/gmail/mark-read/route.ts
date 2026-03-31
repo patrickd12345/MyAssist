@@ -45,6 +45,17 @@ export async function POST(req: Request) {
     if (unread) {
       const direct = await integrationService.markEmailUnread(userId, { messageId, threadId });
       if (direct.ok) return NextResponse.json({ ok: true, mode: "oauth" });
+      if (direct.reason === "insufficient_scope") {
+        return NextResponse.json(
+          {
+            ok: false,
+            error:
+              "Gmail MVP uses read-only OAuth. Mark unread in Gmail requires https://www.googleapis.com/auth/gmail.modify (future phase).",
+            code: "insufficient_scope",
+          },
+          { status: 422 },
+        );
+      }
       return NextResponse.json(
         {
           ok: false,
@@ -56,6 +67,17 @@ export async function POST(req: Request) {
 
     const direct = await integrationService.markEmailRead(userId, { messageId, threadId });
     if (direct.ok) return NextResponse.json({ ok: true, mode: "oauth" });
+    if (direct.reason === "insufficient_scope") {
+      return NextResponse.json(
+        {
+          ok: false,
+          error:
+            "Gmail MVP uses read-only OAuth. Mark read in Gmail requires https://www.googleapis.com/auth/gmail.modify (future phase).",
+          code: "insufficient_scope",
+        },
+        { status: 422 },
+      );
+    }
 
     const webhook = resolveMyAssistRuntimeEnv().gmailMarkReadWebhookUrl;
     if (!webhook) {

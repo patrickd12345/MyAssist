@@ -6,6 +6,10 @@ export type IntegrationTokenPayload = {
   token_type?: string;
   scope?: string;
   expires_at?: number;
+  /** Google `sub` from userinfo (OAuth). */
+  provider_account_id?: string;
+  /** Google account email from userinfo when available. */
+  provider_account_email?: string;
   raw?: Record<string, unknown>;
 };
 

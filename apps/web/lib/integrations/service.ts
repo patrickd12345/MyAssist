@@ -1,7 +1,28 @@
 import "server-only";
 
 import { getIntegrationToken, listIntegrationStatuses, markIntegrationRefreshUsed, revokeIntegration, upsertIntegrationToken } from "./tokenStore";
-import { exchangeGoogleCode, refreshGoogleToken } from "./providers/google";
+import {
+  exchangeGoogleCode,
+  fetchGoogleOAuthUserInfo,
+  mergeGoogleTokenPayload,
+  refreshGoogleToken,
+} from "./providers/google";
+import {
+  fetchGmailInboxPage,
+  GMAIL_SIGNALS_DEFAULT_QUERY,
+  GMAIL_SIGNALS_FETCH_MAX_RESULTS,
+} from "./gmailInboxFetch";
+import {
+  dedupeNormalizedGmailMessages,
+  normalizeGmailInboxPreview,
+  normalizedToLegacySignalRecord,
+} from "./gmailNormalize";
+import { detectSignals, type GmailPhaseBSignal } from "./gmailSignalDetection";
+import {
+  CALENDAR_FETCH_MAX_PER_CALENDAR,
+  CALENDAR_FETCH_MAX_TOTAL,
+  CALENDAR_INTELLIGENCE_WINDOW_DAYS,
+} from "../calendarPreview";
 import type { IntegrationProvider, IntegrationTokenPayload } from "./types";
 
 async function withGoogleToken(
@@ -14,7 +35,7 @@ async function withGoogleToken(
     return token.access_token;
   }
   if (!token.refresh_token) return token.access_token;
-  const refreshed = await refreshGoogleToken(token.refresh_token);
+  const refreshed = await refreshGoogleToken(token.refresh_token, token);
   await upsertIntegrationToken(userId, provider, refreshed);
   await markIntegrationRefreshUsed(userId, provider);
   return refreshed.access_token ?? token.access_token;
@@ -47,8 +68,48 @@ export const integrationService = {
     code: string;
     redirectUri: string;
   }) {
-    const token = await exchangeGoogleCode({ code: input.code, redirectUri: input.redirectUri });
-    await upsertProviderToken(input.userId, input.provider, token);
+    const incoming = await exchangeGoogleCode({ code: input.code, redirectUri: input.redirectUri });
+    const existing = await getIntegrationToken(input.userId, input.provider);
+    let merged = mergeGoogleTokenPayload(existing, incoming);
+    if (merged.access_token) {
+      const profile = await fetchGoogleOAuthUserInfo(merged.access_token);
+      if (profile?.sub || profile?.email) {
+        merged = mergeGoogleTokenPayload(merged, {
+          provider_account_id: profile.sub,
+          provider_account_email: profile.email,
+        });
+      }
+    }
+    await upsertProviderToken(input.userId, input.provider, merged);
+  },
+
+  /**
+   * Minimal Gmail API check: lists up to 3 message ids (read-only). For developer verification after OAuth.
+   */
+  async verifyGmailConnection(userId: string) {
+    const access = await withGoogleToken(userId, "gmail");
+    if (!access) return { ok: false as const, reason: "disconnected" as const };
+    const listRes = await fetch(
+      "https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=3",
+      { headers: { Authorization: `Bearer ${access}` }, cache: "no-store" },
+    );
+    if (!listRes.ok) {
+      if (listRes.status === 403) return { ok: false as const, reason: "insufficient_scope" as const };
+      return { ok: false as const, reason: `gmail-${listRes.status}` as const };
+    }
+    const list = (await listRes.json()) as { messages?: Array<{ id?: string }> };
+    const messageIds = (list.messages || []).map((m) => m.id).filter((id): id is string => Boolean(id));
+    const stored = await getIntegrationToken(userId, "gmail");
+    return {
+      ok: true as const,
+      messageIds,
+      profile:
+        stored?.provider_account_id || stored?.provider_account_email
+          ? { sub: stored.provider_account_id, email: stored.provider_account_email }
+          : undefined,
+      scopes:
+        typeof stored?.scope === "string" ? stored.scope.split(/\s+/).filter(Boolean) : undefined,
+    };
   },
 
   async markEmailRead(userId: string, input: { messageId?: string; threadId?: string }) {
@@ -80,7 +141,10 @@ export const integrationService = {
       body: JSON.stringify({ ids, removeLabelIds: ["UNREAD"] }),
       cache: "no-store",
     });
-    if (!res.ok) return { ok: false as const, reason: `gmail-${res.status}` };
+    if (!res.ok) {
+      if (res.status === 403) return { ok: false as const, reason: "insufficient_scope" };
+      return { ok: false as const, reason: `gmail-${res.status}` };
+    }
     return { ok: true as const };
   },
 
@@ -113,7 +177,10 @@ export const integrationService = {
       body: JSON.stringify({ ids, addLabelIds: ["UNREAD"] }),
       cache: "no-store",
     });
-    if (!res.ok) return { ok: false as const, reason: `gmail-${res.status}` };
+    if (!res.ok) {
+      if (res.status === 403) return { ok: false as const, reason: "insufficient_scope" };
+      return { ok: false as const, reason: `gmail-${res.status}` };
+    }
     return { ok: true as const };
   },
 
@@ -155,45 +222,51 @@ export const integrationService = {
   },
 
   async fetchGmailSignals(userId: string) {
+    const access = await withGoogleToken(userId, "gmail");
+    if (!access) return null;
+    const stored = await getIntegrationToken(userId, "gmail");
+    const result = await fetchGmailInboxPage(access, {
+      maxResults: GMAIL_SIGNALS_FETCH_MAX_RESULTS,
+      q: GMAIL_SIGNALS_DEFAULT_QUERY,
+    });
+    if (!result.ok) return null;
+    const normalizedAt = new Date().toISOString();
+    const normalized = result.messages.map((p) =>
+      normalizeGmailInboxPreview(p, {
+        providerAccountId: stored?.provider_account_id ?? null,
+        normalizedAt,
+      }),
+    );
+    const deduped = dedupeNormalizedGmailMessages(normalized);
+    const allSignals = detectSignals(deduped);
+    const byMessage = new Map<string, GmailPhaseBSignal[]>();
+    for (const s of allSignals) {
+      const list = byMessage.get(s.messageId) ?? [];
+      list.push(s);
+      byMessage.set(s.messageId, list);
+    }
+    return deduped.map((n) => {
+      const legacy = normalizedToLegacySignalRecord(n);
+      const phase_b_signals = byMessage.get(n.messageId) ?? [];
+      return phase_b_signals.length > 0 ? { ...legacy, phase_b_signals } : legacy;
+    });
+  },
+
+  /**
+   * Bounded inbox page (read-only). Uses shared list + metadata path; returns nextPageToken when Gmail provides it.
+   */
+  async fetchGmailInboxPageForUser(
+    userId: string,
+    input: { maxResults?: number; pageToken?: string; q?: string },
+  ) {
     const token = await withGoogleToken(userId, "gmail");
     if (!token) return null;
-    const listRes = await fetch(
-      "https://gmail.googleapis.com/gmail/v1/users/me/messages?q=in:inbox newer_than:10d&maxResults=20",
-      { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" },
-    );
-    if (!listRes.ok) return null;
-    const list = (await listRes.json()) as { messages?: Array<{ id: string; threadId?: string }> };
-    const out: Array<Record<string, unknown>> = [];
-    for (const m of list.messages || []) {
-      const detailsRes = await fetch(
-        `https://gmail.googleapis.com/gmail/v1/users/me/messages/${encodeURIComponent(
-          m.id,
-        )}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date`,
-        { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" },
-      );
-      if (!detailsRes.ok) continue;
-      const msg = (await detailsRes.json()) as {
-        id?: string;
-        threadId?: string;
-        snippet?: string;
-        labelIds?: string[];
-        payload?: { headers?: Array<{ name?: string; value?: string }> };
-      };
-      const headers = msg.payload?.headers || [];
-      const header = (name: string) =>
-        headers.find((h) => (h.name || "").toLowerCase() === name.toLowerCase())?.value || "";
-      const labelIds = Array.isArray(msg.labelIds) ? msg.labelIds.filter((x): x is string => typeof x === "string") : [];
-      out.push({
-        id: msg.id || m.id,
-        threadId: msg.threadId || m.threadId,
-        from: header("From"),
-        subject: header("Subject"),
-        date: header("Date"),
-        snippet: msg.snippet || "",
-        label_ids: labelIds,
-      });
-    }
-    return out;
+    return fetchGmailInboxPage(token, {
+      maxResults: input.maxResults,
+      pageToken: input.pageToken,
+      q: input.q,
+      defaultQuery: GMAIL_SIGNALS_DEFAULT_QUERY,
+    });
   },
 
   async fetchCalendarEvents(userId: string) {
@@ -202,14 +275,15 @@ export const integrationService = {
     const now = new Date();
     const dayStart = new Date(now);
     dayStart.setHours(0, 0, 0, 0);
-    const dayEnd = new Date(now);
+    const dayEnd = new Date(dayStart);
+    dayEnd.setDate(dayEnd.getDate() + (CALENDAR_INTELLIGENCE_WINDOW_DAYS - 1));
     dayEnd.setHours(23, 59, 59, 999);
     const qs = new URLSearchParams({
       singleEvents: "true",
       orderBy: "startTime",
       timeMin: dayStart.toISOString(),
       timeMax: dayEnd.toISOString(),
-      maxResults: "50",
+      maxResults: String(CALENDAR_FETCH_MAX_PER_CALENDAR),
     });
     const headers = { Authorization: `Bearer ${token}` };
 
@@ -268,6 +342,6 @@ export const integrationService = {
         - (Number.isNaN(bTime) ? Number.POSITIVE_INFINITY : bTime);
     });
 
-    return deduped.slice(0, 50);
+    return deduped.slice(0, CALENDAR_FETCH_MAX_TOTAL);
   },
 };

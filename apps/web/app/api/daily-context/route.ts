@@ -6,30 +6,14 @@ import { getTaskNudges } from "@/lib/memoryStore";
 import { getSessionUserId } from "@/lib/session";
 import { fetchTodoistTaskRecordsForUser } from "@/lib/todoistApiTasks";
 import { bucketTodoistTasksFromApi, todayCalendarDateInTaskZone } from "@/lib/todoistTaskBuckets";
+import type { GmailPhaseBSignal } from "@/lib/integrations/gmailSignalDetection";
+import { buildCalendarIntelligence } from "@/lib/calendarIntelligence";
+import { mapGoogleCalendarEventsRaw } from "@/lib/calendarPreview";
+import { buildDailyIntelligence } from "@/lib/dailyIntelligence";
 import type { MyAssistDailyContext } from "@/lib/types";
 import { jsonLegacyApiError } from "@/lib/api/error-contract";
 
 export const dynamic = "force-dynamic";
-
-function mapOAuthCalendarEvents(raw: Array<Record<string, unknown>>): MyAssistDailyContext["calendar_today"] {
-  return raw.map((e) => {
-    const startObj = (e.start as Record<string, unknown> | undefined) || {};
-    const endObj = (e.end as Record<string, unknown> | undefined) || {};
-    return {
-      id: typeof e.id === "string" ? e.id : null,
-      summary: typeof e.summary === "string" ? e.summary : "(untitled event)",
-      start:
-        (typeof startObj.dateTime === "string" && startObj.dateTime) ||
-        (typeof startObj.date === "string" && startObj.date) ||
-        null,
-      end:
-        (typeof endObj.dateTime === "string" && endObj.dateTime) ||
-        (typeof endObj.date === "string" && endObj.date) ||
-        null,
-      location: typeof e.location === "string" ? e.location : null,
-    };
-  });
-}
 
 type DailyContextProviderSlice = "gmail" | "google_calendar" | "todoist";
 
@@ -44,6 +28,9 @@ function mapOAuthGmailSignals(raw: Array<Record<string, unknown>>): MyAssistDail
       Array.isArray(labelRaw) && labelRaw.every((x) => typeof x === "string")
         ? (labelRaw as string[])
         : undefined;
+    const phaseRaw = g.phase_b_signals;
+    const phase_b_signals =
+      Array.isArray(phaseRaw) && phaseRaw.length > 0 ? (phaseRaw as GmailPhaseBSignal[]) : undefined;
     return {
       id: (typeof g.id === "string" ? g.id : null) ?? null,
       threadId: (typeof g.threadId === "string" ? g.threadId : null) ?? null,
@@ -52,6 +39,7 @@ function mapOAuthGmailSignals(raw: Array<Record<string, unknown>>): MyAssistDail
       snippet: typeof g.snippet === "string" ? g.snippet : "",
       date: typeof g.date === "string" ? g.date : "",
       ...(label_ids ? { label_ids } : {}),
+      ...(phase_b_signals ? { phase_b_signals } : {}),
     };
   });
 }
@@ -75,27 +63,37 @@ async function buildProviderSliceResponse(
 
   if (provider === "gmail") {
     const live = await integrationService.fetchGmailSignals(userId);
+    const gmail_signals = live
+      ? mapOAuthGmailSignals(live)
+      : (cached?.gmail_signals ?? []);
+    const daily_intelligence = buildDailyIntelligence(gmail_signals);
     return NextResponse.json({
       provider,
       source: live ? "live" : "cache-fallback",
       run_date: fallbackRunDate,
       generated_at: fallbackGeneratedAt,
-      gmail_signals: live
-        ? mapOAuthGmailSignals(live)
-        : (cached?.gmail_signals ?? []),
+      gmail_signals,
+      daily_intelligence,
     });
   }
 
   if (provider === "google_calendar") {
     const live = await integrationService.fetchCalendarEvents(userId);
+    const calendar_today = Array.isArray(live)
+      ? mapGoogleCalendarEventsRaw(live)
+      : (cached?.calendar_today ?? []);
+    const calendar_intelligence = buildCalendarIntelligence(
+      calendar_today,
+      Date.now(),
+      fallbackRunDate,
+    );
     return NextResponse.json({
       provider,
       source: live ? "live" : "cache-fallback",
       run_date: fallbackRunDate,
       generated_at: fallbackGeneratedAt,
-      calendar_today: Array.isArray(live)
-        ? mapOAuthCalendarEvents(live)
-        : (cached?.calendar_today ?? []),
+      calendar_today,
+      calendar_intelligence,
     });
   }
 
@@ -135,9 +133,10 @@ export async function GET(request: NextRequest) {
       try {
         const oauthCalendar = await integrationService.fetchCalendarEvents(userId);
         if (Array.isArray(oauthCalendar)) {
-          const mapped = mapOAuthCalendarEvents(oauthCalendar);
+          const mapped = mapGoogleCalendarEventsRaw(oauthCalendar);
           if (mapped.length > 0 || context.calendar_today.length === 0) {
-            context = { ...context, calendar_today: mapped };
+            const calendar_intelligence = buildCalendarIntelligence(mapped, Date.now(), context.run_date);
+            context = { ...context, calendar_today: mapped, calendar_intelligence };
           }
         }
       } catch {
@@ -160,6 +159,6 @@ export async function GET(request: NextRequest) {
     return res;
   } catch (e) {
     const message = e instanceof Error ? e.message : "Unknown error";
-    return jsonLegacyApiError(String(message ), 502);
+    return jsonLegacyApiError(String(message), 502);
   }
 }

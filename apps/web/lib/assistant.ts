@@ -1,5 +1,7 @@
 import { buildDailySynthesisFromContext } from "./services/dailySynthesisService";
 import type { CommunicationDraftType } from "./services/communicationDraftService";
+import { buildCalendarIntelligencePromptBlock } from "./calendarIntelligencePrompt";
+import { buildDailyIntelligencePromptBlock } from "./dailyIntelligencePrompt";
 import type { MyAssistDailyContext, SituationBrief, TodoistTask } from "./types";
 
 export type { CommunicationDraftType } from "./services/communicationDraftService";
@@ -137,6 +139,8 @@ export function buildHeadlineFallback(context: MyAssistDailyContext): string {
 export function buildContextDigest(context: MyAssistDailyContext): string {
   const firstEvent = context.calendar_today.find((event) => Boolean(event.start));
   const firstSignal = context.gmail_signals[0];
+  const dailyIntel = buildDailyIntelligencePromptBlock(context);
+  const calendarIntel = buildCalendarIntelligencePromptBlock(context);
   const digest = {
     run_date: context.run_date,
     urgent_counts: {
@@ -176,6 +180,8 @@ export function buildContextDigest(context: MyAssistDailyContext): string {
           snippet: firstSignal.snippet.slice(0, 160),
         }
       : null,
+    ...(dailyIntel ? { daily_intelligence: dailyIntel } : {}),
+    ...(calendarIntel ? { calendar_intelligence: calendarIntel } : {}),
   };
 
   return JSON.stringify(digest, null, 2);

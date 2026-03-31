@@ -10,6 +10,8 @@ import {
   type CommunicationDraftType,
   type DraftLanguage,
 } from "@/lib/assistant";
+import { CalendarIntelligencePanel } from "@/components/CalendarIntelligencePanel";
+import { DailyIntelligencePanel } from "@/components/DailyIntelligencePanel";
 import {
   MYASSIST_CONTEXT_SOURCE_HEADER,
   type DailyContextSource,
@@ -903,7 +905,9 @@ export function Dashboard({
         const body = (await res.json()) as
           | {
               gmail_signals?: MyAssistDailyContext["gmail_signals"];
+              daily_intelligence?: MyAssistDailyContext["daily_intelligence"];
               calendar_today?: MyAssistDailyContext["calendar_today"];
+              calendar_intelligence?: MyAssistDailyContext["calendar_intelligence"];
               todoist_overdue?: MyAssistDailyContext["todoist_overdue"];
               todoist_due_today?: MyAssistDailyContext["todoist_due_today"];
               todoist_upcoming_high_priority?: MyAssistDailyContext["todoist_upcoming_high_priority"];
@@ -915,14 +919,25 @@ export function Dashboard({
         setData((previous) => {
           if (!previous) return previous;
           if (provider === "gmail" && "gmail_signals" in body && Array.isArray(body.gmail_signals)) {
-            return { ...previous, gmail_signals: body.gmail_signals };
+            const merged: MyAssistDailyContext = {
+              ...previous,
+              gmail_signals: body.gmail_signals,
+            };
+            if (body.daily_intelligence && typeof body.daily_intelligence === "object") {
+              merged.daily_intelligence = body.daily_intelligence;
+            }
+            return merged;
           }
           if (
             provider === "google_calendar" &&
             "calendar_today" in body &&
             Array.isArray(body.calendar_today)
           ) {
-            return { ...previous, calendar_today: body.calendar_today };
+            const merged: MyAssistDailyContext = { ...previous, calendar_today: body.calendar_today };
+            if (body.calendar_intelligence && typeof body.calendar_intelligence === "object") {
+              merged.calendar_intelligence = body.calendar_intelligence;
+            }
+            return merged;
           }
           if (
             provider === "todoist" &&
@@ -1827,6 +1842,12 @@ export function Dashboard({
               <p className="theme-muted mt-1 text-sm">{summarizeEmails(displayData.gmail_signals)}</p>
             </div>
           </div>
+        ) : null}
+        {!showSkeleton && displayData ? (
+          <>
+            <DailyIntelligencePanel intel={displayData.daily_intelligence} />
+            <CalendarIntelligencePanel intel={displayData.calendar_intelligence} />
+          </>
         ) : null}
       </section>
 

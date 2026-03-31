@@ -1,11 +1,15 @@
 import "server-only";
 
+import { buildCalendarIntelligence } from "./calendarIntelligence";
+import { mapGoogleCalendarEventsRaw } from "./calendarPreview";
+import { buildDailyIntelligence, enrichDailyIntelligenceWithAi } from "./dailyIntelligence";
 import { MYASSIST_CONTEXT_SOURCE_HEADER, type DailyContextSource } from "./dailyContextShared";
 import { getMockDailyContext } from "./mockDailyContext";
 import { syncContactsFromJobHuntEmailMatches } from "./jobHuntEmailAssignment";
 import { postJobHuntEmailSignals } from "./jobHuntEmailSignals";
 import { enrichGmailSignalsWithJobHuntAnalysis } from "./services/jobHuntIntelligenceService";
 import { integrationService } from "./integrations/service";
+import type { GmailPhaseBSignal } from "./integrations/gmailSignalDetection";
 import { getEmailTriageHints } from "./memoryStore";
 import { fetchTodoistTaskRecordsForUser } from "./todoistApiTasks";
 import { bucketTodoistTasksFromApi } from "./todoistTaskBuckets";
@@ -35,26 +39,6 @@ async function fetchTodoistSlicesForUser(
   return bucketTodoistTasksFromApi(tasks);
 }
 
-function mapCalendarFromOAuth(raw: Array<Record<string, unknown>>): MyAssistDailyContext["calendar_today"] {
-  return raw.map((e) => {
-    const startObj = (e.start as Record<string, unknown> | undefined) || {};
-    const endObj = (e.end as Record<string, unknown> | undefined) || {};
-    return {
-      id: typeof e.id === "string" ? e.id : null,
-      summary: typeof e.summary === "string" ? e.summary : "(untitled event)",
-      start:
-        (typeof startObj.dateTime === "string" && startObj.dateTime) ||
-        (typeof startObj.date === "string" && startObj.date) ||
-        null,
-      end:
-        (typeof endObj.dateTime === "string" && endObj.dateTime) ||
-        (typeof endObj.date === "string" && endObj.date) ||
-        null,
-      location: typeof e.location === "string" ? e.location : null,
-    };
-  });
-}
-
 function mapGmailFromOAuth(raw: Array<Record<string, unknown>>): MyAssistDailyContext["gmail_signals"] {
   return raw.map((g) => {
     const labelRaw = g.label_ids;
@@ -62,6 +46,9 @@ function mapGmailFromOAuth(raw: Array<Record<string, unknown>>): MyAssistDailyCo
       Array.isArray(labelRaw) && labelRaw.every((x) => typeof x === "string")
         ? (labelRaw as string[])
         : undefined;
+    const phaseRaw = g.phase_b_signals;
+    const phase_b_signals =
+      Array.isArray(phaseRaw) && phaseRaw.length > 0 ? (phaseRaw as GmailPhaseBSignal[]) : undefined;
     return {
       id: (typeof g.id === "string" ? g.id : null) ?? null,
       threadId: (typeof g.threadId === "string" ? g.threadId : null) ?? null,
@@ -70,6 +57,7 @@ function mapGmailFromOAuth(raw: Array<Record<string, unknown>>): MyAssistDailyCo
       snippet: flattenText(g.snippet),
       date: typeof g.date === "string" ? g.date : flattenText(g.date),
       ...(label_ids ? { label_ids } : {}),
+      ...(phase_b_signals && phase_b_signals.length > 0 ? { phase_b_signals } : {}),
     };
   });
 }
@@ -83,7 +71,20 @@ export async function fetchDailyContextLive(userId: string | null): Promise<{
   source: DailyContextSource;
 }> {
   if (shouldUseMockContext()) {
-    return { context: enrichGmailSignalsWithJobHuntAnalysis(getMockDailyContext()), source: "mock" };
+    const mockCtx = enrichGmailSignalsWithJobHuntAnalysis(getMockDailyContext());
+    const calendar_intelligence = buildCalendarIntelligence(
+      mockCtx.calendar_today,
+      Date.now(),
+      mockCtx.run_date,
+    );
+    return {
+      context: {
+        ...mockCtx,
+        daily_intelligence: buildDailyIntelligence(mockCtx.gmail_signals),
+        calendar_intelligence,
+      },
+      source: "mock",
+    };
   }
 
   const trimmed = userId?.trim() ?? "";
@@ -98,16 +99,19 @@ export async function fetchDailyContextLive(userId: string | null): Promise<{
   ]);
 
   const gmail_signals = gmailRaw ? mapGmailFromOAuth(gmailRaw) : [];
-  const calendar_today = Array.isArray(calendarRaw) ? mapCalendarFromOAuth(calendarRaw) : [];
+  const calendar_today = Array.isArray(calendarRaw) ? mapGoogleCalendarEventsRaw(calendarRaw) : [];
 
-  const now = new Date().toISOString();
+  const nowDate = new Date();
+  const now = nowDate.toISOString();
   const run_date = now.slice(0, 10);
+  const calendar_intelligence = buildCalendarIntelligence(calendar_today, nowDate.getTime(), run_date);
 
   let base: MyAssistDailyContext = {
     generated_at: now,
     run_date,
     gmail_signals,
     calendar_today,
+    calendar_intelligence,
     todoist_overdue: todoistSlices?.todoist_overdue ?? [],
     todoist_due_today: todoistSlices?.todoist_due_today ?? [],
     todoist_upcoming_high_priority: todoistSlices?.todoist_upcoming_high_priority ?? [],
@@ -121,10 +125,15 @@ export async function fetchDailyContextLive(userId: string | null): Promise<{
     await syncContactsFromJobHuntEmailMatches(trimmed, job_hunt_email_matches);
   }
 
+  const daily_intelligence = await enrichDailyIntelligenceWithAi(
+    buildDailyIntelligence(withJobHuntAnalysis.gmail_signals),
+  );
+
   return {
     context: {
       ...withJobHuntAnalysis,
       ...(job_hunt_email_matches.length > 0 ? { job_hunt_email_matches } : {}),
+      daily_intelligence,
     },
     source: "live",
   };

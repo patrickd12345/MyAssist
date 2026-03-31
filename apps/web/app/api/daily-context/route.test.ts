@@ -115,6 +115,31 @@ describe("GET /api/daily-context", () => {
     expect(json.calendar_today).toHaveLength(1);
     expect(json.calendar_today[0]?.summary).toBe("Live calendar event");
     expect(json.calendar_today[0]?.location).toBe("Zoom");
+    const withIntel = json as { calendar_intelligence?: { summary: string } };
+    expect(withIntel.calendar_intelligence?.summary).toBeTruthy();
+  });
+
+  it("returns a provider-scoped google_calendar slice with intelligence", async () => {
+    fetchCalendarEvents.mockResolvedValueOnce([
+      {
+        id: "evt-2",
+        summary: "Planning",
+        start: { dateTime: "2026-03-25T15:00:00.000Z" },
+        end: { dateTime: "2026-03-25T16:00:00.000Z" },
+      },
+    ]);
+    const req = new NextRequest("http://localhost/api/daily-context?provider=google_calendar");
+    const res = await GET(req);
+    expect(res.status).toBe(200);
+    const json = (await res.json()) as {
+      provider: string;
+      calendar_today: Array<{ summary: string }>;
+      calendar_intelligence: { summary: string; counts: { eventsInWindow: number } };
+    };
+    expect(json.provider).toBe("google_calendar");
+    expect(json.calendar_today).toHaveLength(1);
+    expect(json.calendar_intelligence.counts.eventsInWindow).toBe(1);
+    expect(json.calendar_intelligence.summary.length).toBeGreaterThan(0);
   });
 
   it("returns a provider-scoped gmail slice when requested", async () => {
@@ -135,11 +160,13 @@ describe("GET /api/daily-context", () => {
       provider: string;
       source: string;
       gmail_signals: Array<{ subject: string }>;
+      daily_intelligence: { summary: { generatedDeterministicSummary: string } };
     };
     expect(json.provider).toBe("gmail");
     expect(json.source).toBe("live");
     expect(json.gmail_signals).toHaveLength(1);
     expect(json.gmail_signals[0]?.subject).toBe("Follow up");
+    expect(json.daily_intelligence.summary.generatedDeterministicSummary).toBeTruthy();
     expect(writeLastDailyContext).not.toHaveBeenCalled();
   });
 });

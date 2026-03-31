@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { jsonLegacyApiError } from '@/lib/api/error-contract';
-import { googleClientId } from "@/lib/integrations/providers/google";
+import { GMAIL_MVP_OAUTH_SCOPES, googleClientId } from "@/lib/integrations/providers/google";
 import { resolvePublicOrigin } from "@/lib/integrations/origin";
 import { getSessionUserId } from "@/lib/session";
 
@@ -35,6 +35,8 @@ export async function GET(req: Request) {
     requestUrl: req.url,
     clientIdSuffix,
     hasGoogleClientId: Boolean(cid),
+    gmailMvpScopes: [...GMAIL_MVP_OAUTH_SCOPES],
+    gmailVerifyPath: "/api/integrations/gmail/verify",
     hint:
       "Add `redirectUri` exactly (scheme, host, path — no trailing slash) to the Web application OAuth client that matches this deployment's client ID.",
   });

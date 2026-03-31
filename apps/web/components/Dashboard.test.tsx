@@ -1,7 +1,7 @@
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { JobHuntAction, MyAssistDailyContext } from "@/lib/types";
+import type { CalendarIntelligence, JobHuntAction, MyAssistDailyContext } from "@/lib/types";
 import { Dashboard } from "./Dashboard";
 
 vi.mock("next/navigation", () => ({
@@ -79,6 +79,29 @@ const onlyRecentEmailContext: MyAssistDailyContext = {
 const emptyGmailContext: MyAssistDailyContext = {
   ...sampleContext,
   gmail_signals: [],
+};
+
+const sampleCalendarIntel: CalendarIntelligence = {
+  signals: [{ type: "meeting_today", detail: "Something today." }],
+  summary: "1 event(s) in window. Something runs today.",
+  counts: {
+    eventsInWindow: 1,
+    timedEventsInWindow: 1,
+    minutesUntilNextMeeting: 45,
+  },
+};
+
+const sampleDailyIntel: NonNullable<MyAssistDailyContext["daily_intelligence"]> = {
+  urgent: [],
+  important: [],
+  action_required: [],
+  job_related: [],
+  calendar_related: [],
+  summary: {
+    countsByType: {},
+    topPriorities: ["First priority line"],
+    generatedDeterministicSummary: "Urgent: 0. Important: 0.",
+  },
 };
 
 function mockAssistantFetch() {
@@ -536,5 +559,62 @@ describe("Dashboard", () => {
       expect(screen.getByText("Action failed")).toBeInTheDocument();
     });
     expect(screen.getByText(/email_not_found/i)).toBeInTheDocument();
+  });
+
+  it("shows daily intelligence bucket summary when daily_intelligence is present", () => {
+    render(
+      <Dashboard
+        initialData={{ ...sampleContext, daily_intelligence: sampleDailyIntel }}
+        initialError={null}
+        initialSource="live"
+      />,
+    );
+    const region = screen.getByLabelText("Daily intelligence");
+    expect(region).toBeInTheDocument();
+    expect(within(region).getByText("Urgent: 0. Important: 0.")).toBeInTheDocument();
+    expect(within(region).getByText("First priority line")).toBeInTheDocument();
+  });
+
+  it("shows empty daily intelligence copy when daily_intelligence is absent", () => {
+    render(<Dashboard initialData={sampleContext} initialError={null} initialSource="live" />);
+    const region = screen.getByLabelText("Daily intelligence");
+    expect(region).toBeInTheDocument();
+    expect(within(region).getByText(/No inbox triage snapshot on this load/)).toBeInTheDocument();
+  });
+
+  it("shows calendar intelligence when calendar_intelligence is present", () => {
+    render(
+      <Dashboard
+        initialData={{ ...sampleContext, calendar_intelligence: sampleCalendarIntel }}
+        initialError={null}
+        initialSource="live"
+      />,
+    );
+    const region = screen.getByLabelText("Calendar intelligence");
+    expect(region).toBeInTheDocument();
+    expect(within(region).getByText(/1 event\(s\) in window/)).toBeInTheDocument();
+  });
+
+  it("shows empty calendar intelligence copy when calendar_intelligence is absent", () => {
+    render(<Dashboard initialData={sampleContext} initialError={null} initialSource="live" />);
+    const region = screen.getByLabelText("Calendar intelligence");
+    expect(region).toBeInTheDocument();
+    expect(within(region).getByText(/No calendar snapshot on this load/)).toBeInTheDocument();
+  });
+
+  it("shows optional AI note when aiSummary is set", () => {
+    const withAi: NonNullable<MyAssistDailyContext["daily_intelligence"]> = {
+      ...sampleDailyIntel,
+      summary: { ...sampleDailyIntel.summary, aiSummary: "Concise AI recap." },
+    };
+    render(
+      <Dashboard
+        initialData={{ ...sampleContext, daily_intelligence: withAi }}
+        initialError={null}
+        initialSource="live"
+      />,
+    );
+    expect(screen.getByText(/AI note:/)).toBeInTheDocument();
+    expect(screen.getByText(/Concise AI recap\./)).toBeInTheDocument();
   });
 });

@@ -46,6 +46,8 @@ export type MyAssistRuntimeEnv = {
   todoistClientSecret: string;
   myassistUseMockContext: string;
   myassistEnableEmailImportanceAi: string;
+  /** When "1" / "true", optional ai-core one-line summary for `daily_intelligence` (deterministic path always runs). */
+  myassistDailyIntelAi: string;
   myassistDisableJobHuntSignals: string;
   jobHuntSignalsUrl: string;
   jobHuntDataPath: string;
@@ -100,6 +102,7 @@ export function resolveMyAssistRuntimeEnv(env: EnvSource = process.env): MyAssis
   const todoistClientSecret = readFirst(env, ["TODOIST_CLIENT_SECRET", "MYASSIST_TODOIST_CLIENT_SECRET"]);
   const myassistUseMockContext = readFirst(env, ["MYASSIST_USE_MOCK_CONTEXT"]);
   const myassistEnableEmailImportanceAi = readFirst(env, ["MYASSIST_ENABLE_EMAIL_IMPORTANCE_AI"]);
+  const myassistDailyIntelAi = readFirst(env, ["MYASSIST_DAILY_INTEL_AI"]);
   const myassistDisableJobHuntSignals = readFirst(env, ["MYASSIST_DISABLE_JOB_HUNT_SIGNALS"]);
   const jobHuntSignalsUrl = readFirst(env, ["JOB_HUNT_SIGNALS_URL"]);
   const jobHuntDataPath = readFirst(env, ["JOB_HUNT_DATA_PATH"]);
@@ -144,6 +147,7 @@ export function resolveMyAssistRuntimeEnv(env: EnvSource = process.env): MyAssis
     todoistClientSecret,
     myassistUseMockContext,
     myassistEnableEmailImportanceAi,
+    myassistDailyIntelAi,
     myassistDisableJobHuntSignals,
     jobHuntSignalsUrl,
     jobHuntDataPath,
