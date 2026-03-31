@@ -80,4 +80,17 @@ describe("todoistApiTasks", () => {
     vi.stubGlobal("fetch", vi.fn(async () => ({ ok: false, status: 401 })));
     await expect(fetchTodoistTaskRecordsForUser("u")).resolves.toBe(null);
   });
+
+  it("applies bounded fetch behavior (page and total caps)", async () => {
+    const page = Array.from({ length: 100 }, (_, i) => ({ id: `t-${i}`, content: `Task ${i}` }));
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ results: page, next_cursor: "c1" }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ results: page, next_cursor: "c2" }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ results: page, next_cursor: "c3" }) });
+    vi.stubGlobal("fetch", fetchMock);
+    const tasks = await fetchTodoistTaskRecordsForUser("u");
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(tasks).toHaveLength(250);
+  });
 });

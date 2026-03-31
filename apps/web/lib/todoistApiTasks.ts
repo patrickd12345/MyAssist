@@ -4,7 +4,9 @@ import { resolveTodoistApiToken } from "./todoistToken";
 
 const TODOIST_TASKS_LIST_URL = "https://api.todoist.com/api/v1/tasks";
 
-const MAX_TASK_PAGES = 25;
+const TODOIST_PAGE_LIMIT = 100;
+const MAX_TASK_PAGES = 3;
+const MAX_TOTAL_TASKS = 250;
 
 /**
  * Todoist GET /api/v1/tasks returns paginated JSON `{ results: Task[], next_cursor: string | null }`.
@@ -42,7 +44,7 @@ export async function fetchTodoistTaskRecordsForUser(userId: string): Promise<Re
 
   for (let page = 0; page < MAX_TASK_PAGES; page++) {
     const url = new URL(TODOIST_TASKS_LIST_URL);
-    url.searchParams.set("limit", "200");
+    url.searchParams.set("limit", String(TODOIST_PAGE_LIMIT));
     if (cursor) url.searchParams.set("cursor", cursor);
 
     const res = await fetch(url.toString(), {
@@ -55,11 +57,12 @@ export async function fetchTodoistTaskRecordsForUser(userId: string): Promise<Re
     const slice = tasksFromTodoistListJson(json);
     if (slice === null) return null;
     all.push(...slice);
+    if (all.length >= MAX_TOTAL_TASKS) break;
 
     const next = nextCursorFromTodoistListJson(json);
     if (!next) break;
     cursor = next;
   }
 
-  return all;
+  return all.slice(0, MAX_TOTAL_TASKS);
 }
