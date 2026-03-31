@@ -1,0 +1,3 @@
+## 2024-03-31 - Icon-only Buttons and Form Input Associations
+**Learning:** Found an accessibility issue pattern where icon-only buttons (like Nudge buttons in TaskList) were missing `aria-label` attributes, making them inaccessible to screen readers. In addition, there was a select input in InboxEmailRow missing the necessary `id` to associate with its `htmlFor` label attribute. Proper use of unique IDs (using variables like `messageId`) for form associations is necessary.
+**Action:** Always verify that interactive icon-only elements contain `aria-label` tags describing their function, and verify that form inputs (`<select>`, `<input>`) have corresponding `<label>` tags linked together via `id` and `htmlFor`.

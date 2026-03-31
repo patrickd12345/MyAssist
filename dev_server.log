@@ -1,0 +1,87 @@
+
+> web@0.1.0 dev
+> cross-env NODE_OPTIONS=--max-old-space-size=6144 next dev
+
+   ▲ Next.js 15.2.6
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.0.2:3000
+
+ ✓ Starting...
+ ○ Compiling /instrumentation ...
+ ⚠ ../../node_modules/.pnpm/require-in-the-middle@7.5.2/node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+../../node_modules/.pnpm/require-in-the-middle@7.5.2/node_modules/require-in-the-middle/index.js
+../../node_modules/.pnpm/@opentelemetry+instrumentation@0.57.2_@opentelemetry+api@1.9.0/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+../../node_modules/.pnpm/@opentelemetry+instrumentation@0.57.2_@opentelemetry+api@1.9.0/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+../../node_modules/.pnpm/@opentelemetry+instrumentation@0.57.2_@opentelemetry+api@1.9.0/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+../../node_modules/.pnpm/@opentelemetry+instrumentation@0.57.2_@opentelemetry+api@1.9.0/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+../../node_modules/.pnpm/@sentry+node@9.47.1/node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+../../node_modules/.pnpm/@sentry+node@9.47.1/node_modules/@sentry/node/build/cjs/index.js
+../../node_modules/.pnpm/@sentry+nextjs@9.47.1_@opentelemetry+context-async-hooks@1.30.1_@opentelemetry+api@1.9._5c8da209f1edce4bc09c2e700f1a99b2/node_modules/@sentry/nextjs/build/cjs/index.server.js
+ ✓ Ready in 8.1s
+ ⚠ ../../node_modules/.pnpm/require-in-the-middle@7.5.2/node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+../../node_modules/.pnpm/require-in-the-middle@7.5.2/node_modules/require-in-the-middle/index.js
+../../node_modules/.pnpm/@opentelemetry+instrumentation@0.57.2_@opentelemetry+api@1.9.0/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+../../node_modules/.pnpm/@opentelemetry+instrumentation@0.57.2_@opentelemetry+api@1.9.0/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+../../node_modules/.pnpm/@opentelemetry+instrumentation@0.57.2_@opentelemetry+api@1.9.0/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+../../node_modules/.pnpm/@opentelemetry+instrumentation@0.57.2_@opentelemetry+api@1.9.0/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+../../node_modules/.pnpm/@sentry+node@9.47.1/node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+../../node_modules/.pnpm/@sentry+node@9.47.1/node_modules/@sentry/node/build/cjs/index.js
+../../node_modules/.pnpm/@sentry+nextjs@9.47.1_@opentelemetry+context-async-hooks@1.30.1_@opentelemetry+api@1.9._5c8da209f1edce4bc09c2e700f1a99b2/node_modules/@sentry/nextjs/build/cjs/index.server.js
+ ⨯ ./lib/env/runtime.ts
+Error:   [31mx[0m You're importing a component that needs "server-only". That only works in a Server Component which is not supported in the pages/ directory. Read more: https://nextjs.org/docs/app/building-your-
+  [31m|[0m application/rendering/server-components
+  [31m|[0m
+  [31m|[0m
+   ,-[[36;1;4m/app/apps/web/lib/env/runtime.ts[0m:1:1]
+ [2m1[0m | import "server-only";
+   : [35;1m^^^^^^^^^^^^^^^^^^^^^[0m
+ [2m2[0m |
+ [2m3[0m | type EnvSource = NodeJS.ProcessEnv;
+   `----
+
+Import trace for requested module:
+./lib/env/runtime.ts
+./lib/todoistTaskBuckets.ts
+./components/TaskList.tsx
+./components/Dashboard.tsx
+ ⨯ ./lib/env/runtime.ts
+Error:   [31mx[0m You're importing a component that needs "server-only". That only works in a Server Component which is not supported in the pages/ directory. Read more: https://nextjs.org/docs/app/building-your-
+  [31m|[0m application/rendering/server-components
+  [31m|[0m
+  [31m|[0m
+   ,-[[36;1;4m/app/apps/web/lib/env/runtime.ts[0m:1:1]
+ [2m1[0m | import "server-only";
+   : [35;1m^^^^^^^^^^^^^^^^^^^^^[0m
+ [2m2[0m |
+ [2m3[0m | type EnvSource = NodeJS.ProcessEnv;
+   `----
+
+Import trace for requested module:
+./lib/env/runtime.ts
+./lib/todoistTaskBuckets.ts
+./components/TaskList.tsx
+./components/Dashboard.tsx
+ ⨯ ./lib/env/runtime.ts
+Error:   [31mx[0m You're importing a component that needs "server-only". That only works in a Server Component which is not supported in the pages/ directory. Read more: https://nextjs.org/docs/app/building-your-
+  [31m|[0m application/rendering/server-components
+  [31m|[0m
+  [31m|[0m
+   ,-[[36;1;4m/app/apps/web/lib/env/runtime.ts[0m:1:1]
+ [2m1[0m | import "server-only";
+   : [35;1m^^^^^^^^^^^^^^^^^^^^^[0m
+ [2m2[0m |
+ [2m3[0m | type EnvSource = NodeJS.ProcessEnv;
+   `----
+
+Import trace for requested module:
+./lib/env/runtime.ts
+./lib/todoistTaskBuckets.ts
+./components/TaskList.tsx
+./components/Dashboard.tsx
+ GET / 500 in 22140ms
