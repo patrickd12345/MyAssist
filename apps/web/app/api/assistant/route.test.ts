@@ -1,4 +1,4 @@
-import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/memoryStore", () => ({
   getResolvedItems: vi.fn(async () => []),
@@ -22,17 +22,18 @@ const minimalContext = {
   calendar_today: [],
 };
 
+/** Shared stub for `@bookiji-inc/ai-runtime` Ollama and gateway HTTP. */
 const mockFetch = vi.fn();
 
+let POST: (req: Request) => Promise<Response>;
+
+beforeAll(async () => {
+  vi.stubGlobal("fetch", mockFetch);
+  const mod = await import("./route");
+  POST = mod.POST;
+});
+
 describe("POST /api/assistant", () => {
-  let POST: (req: Request) => Promise<Response>;
-
-  beforeAll(async () => {
-    vi.stubGlobal("fetch", mockFetch);
-    const mod = await import("./route");
-    POST = mod.POST;
-  });
-
   beforeEach(() => {
     mockFetch.mockReset();
   });
@@ -273,5 +274,75 @@ describe("POST /api/assistant", () => {
     const json = (await res.json()) as { code: string; message: string; requestId: string };
     expect(json.code).toBe("assistant_route_failed");
     expect(json.requestId).toBe("req_parse_failure");
+  });
+});
+
+describe("POST /api/assistant (AI_MODE=gateway)", () => {
+  const prevAi = process.env.AI_MODE;
+  const prevBase = process.env.VERCEL_AI_BASE_URL;
+  const prevKey = process.env.VERCEL_VIRTUAL_KEY;
+  const prevOpenAiModel = process.env.OPENAI_MODEL;
+
+  beforeAll(() => {
+    process.env.AI_MODE = "gateway";
+    process.env.VERCEL_AI_BASE_URL = "https://gateway.example.com";
+    process.env.VERCEL_VIRTUAL_KEY = "vk-test";
+    process.env.OPENAI_MODEL = "gpt-4o-mini";
+  });
+
+  afterAll(() => {
+    if (prevAi === undefined) delete process.env.AI_MODE;
+    else process.env.AI_MODE = prevAi;
+    if (prevBase === undefined) delete process.env.VERCEL_AI_BASE_URL;
+    else process.env.VERCEL_AI_BASE_URL = prevBase;
+    if (prevKey === undefined) delete process.env.VERCEL_VIRTUAL_KEY;
+    else process.env.VERCEL_VIRTUAL_KEY = prevKey;
+    if (prevOpenAiModel === undefined) delete process.env.OPENAI_MODEL;
+    else process.env.OPENAI_MODEL = prevOpenAiModel;
+  });
+
+  beforeEach(() => {
+    mockFetch.mockReset();
+  });
+
+  it("returns gateway chat reply when gateway returns OpenAI-compatible JSON", async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          choices: [
+            {
+              message: {
+                content: JSON.stringify({
+                  answer: "Ship from gateway.",
+                  actions: ["a"],
+                  followUps: ["b?"],
+                }),
+              },
+            },
+          ],
+        }),
+        { status: 200 },
+      ),
+    );
+
+    const res = await POST(
+      new Request("http://localhost/api/assistant", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          kind: "chat",
+          message: "What now?",
+          context: minimalContext,
+        }),
+      }),
+    );
+    expect(res.status).toBe(200);
+    const json = (await res.json()) as { mode: string; answer: string; provider: string };
+    expect(json.mode).toBe("gateway");
+    expect(json.provider).toBe("gateway");
+    expect(json.answer).toContain("gateway");
+
+    const call = mockFetch.mock.calls[0] as [string, RequestInit];
+    expect(call[0]).toBe("https://gateway.example.com/v1/chat/completions");
   });
 });

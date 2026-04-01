@@ -22,6 +22,12 @@ test.describe("Dashboard sanity (E2E server + mock daily context)", () => {
       });
     });
 
+    await test.step("OAuth return query: banner visible and search params stripped", async () => {
+      await page.goto("/?integrations=connected&provider=google");
+      await expect(page.getByText(/OAuth completed/)).toBeVisible({ timeout: 15_000 });
+      await expect(page).not.toHaveURL(/integrations=/);
+    });
+
     await test.step("GET /api/integrations/status", async () => {
       const res = await page.request.get("/api/integrations/status");
       expect(res.status(), "integrations status should be 200 when signed in").toBe(200);

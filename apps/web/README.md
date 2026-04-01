@@ -60,6 +60,20 @@ The Vercel project linked to production should use this app as the deploy root:
 
 ## Local run
 
+Preferred local path uses Infisical:
+
+1. Run `infisical init` once from `apps/web`.
+2. Populate the `Bookiji Inc` project paths `/platform` and `/myassist` for `dev`.
+3. Start the app from `apps/web`:
+
+   ```sh
+   pnpm dev:infisical
+   ```
+
+`pnpm dev:infisical` exports `/platform` and `/myassist` separately and merges them before launching `pnpm dev`, so shared Supabase keys and app-specific OAuth/auth keys both arrive even though Infisical CLI path injection is single-folder oriented.
+
+Fallback local path:
+
 1. Copy `apps/web/.env.example` to `apps/web/.env.local`.
 2. Configure provider OAuth credentials and optional local model settings.
 3. Start the app from repo root:
@@ -70,6 +84,8 @@ The Vercel project linked to production should use this app as the deploy root:
 
 4. Open `http://localhost:3000`.
 5. Connect Gmail, Google Calendar, and Todoist from the Integrations section.
+
+If Next.js reports that port **3000** is in use and falls back to **3001+**, stop other dev servers on **3000–3003** so the app binds to **3000**. Google OAuth redirect URIs are registered for `http://localhost:3000/api/integrations/google/callback`; a different port causes `redirect_uri_mismatch` unless that exact origin is added in Google Cloud Console.
 
 ## Environment variables
 
@@ -89,9 +105,18 @@ Set in `apps/web/.env.local`:
 - `GOOGLE_CLIENT_SECRET`: Google OAuth client secret for Gmail + Calendar connect flow
 - `TODOIST_CLIENT_ID`: Todoist OAuth client id for direct task actions
 - `TODOIST_CLIENT_SECRET`: Todoist OAuth client secret
-- `OLLAMA_BASE_URL`: optional local Ollama base URL, default `http://127.0.0.1:11434`
+- `AI_MODE`: `ollama` (default), `gateway` (OpenAI-compatible API via `VERCEL_AI_BASE_URL` + key), or `fallback` (deterministic assistant only). On Vercel, `ollama` with default `127.0.0.1` cannot reach a laptop Ollama — use `gateway` or a remote `OLLAMA_BASE_URL`. See [`docs/commercial-pilot-readiness.md`](../docs/commercial-pilot-readiness.md).
+- `VERCEL_AI_BASE_URL` / `AI_GATEWAY_BASE_URL`, `VERCEL_VIRTUAL_KEY` / `OPENAI_API_KEY`: gateway inference when `AI_MODE=gateway`
+- `OLLAMA_BASE_URL`: Ollama base URL, default `http://127.0.0.1:11434`
 - `OLLAMA_MODEL`: optional Ollama model name, default `llama3.2:3b`
 - `TODOIST_API_TOKEN`: optional global fallback for Todoist REST if the user has not completed Todoist OAuth; dashboard actions need **either** OAuth **or** this token **or** a per-user token in the user registry (see `resolveTodoistApiToken` behavior in code)
+
+Infisical-first minimum local set:
+
+- `/platform`: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `SHARED_DB_TIER=dev`, `SHARED_DB_ENV_STRICT=1`
+- `/myassist`: `AUTH_SECRET`, `AUTH_URL`, `MYASSIST_INTEGRATIONS_ENCRYPTION_KEY`, `MYASSIST_GMAIL_CLIENT_ID`, `MYASSIST_GMAIL_CLIENT_SECRET`
+
+The file `apps/web/.infisical.json` is local machine state from `infisical init` and should not be committed.
 
 Notes:
 
@@ -143,8 +168,9 @@ If logs show **Array buffer allocation failed** or **Caching failed for pack** f
 4. Confirm the page shows live Todoist, Gmail, and Calendar data.
 5. Open the assistant console and ask a question.
 6. Confirm `/api/assistant` answers with:
-   - `mode: "ollama"` when the local model is reachable, or
-   - `mode: "fallback"` when it is not
+   - `mode: "gateway"` when `AI_MODE=gateway` and keys are set, or
+   - `mode: "ollama"` when the local (or remote) Ollama URL is reachable, or
+   - `mode: "fallback"` when AI is unavailable or `AI_MODE=fallback`
 7. Click `Complete` on a Todoist task and confirm it disappears from the dashboard.
 8. Press and hold `Complete` on a Todoist task and confirm a defer menu appears with:
    - `Defer this afternoon` when the current time is morning
