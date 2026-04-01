@@ -13,6 +13,7 @@ Live execution tracker for the unified live operational window model.
 
 ## Next
 
+- [ ] **Environment hardening / dev-prod separation:** Infisical paths, `SHARED_DB_TIER` / `sharedDbEnv`, `bootstrap.sharedDb` + instrumentation, integration route tests, `dev-with-infisical` — see Monday **PostImpl_Stabilize** item and working tree under `apps/web/lib/env/`.
 - [ ] Improve local setup reliability and runbook quality.
 - [ ] Tighten the assistant voice, action proposals, and conversational depth.
 - [ ] Finalize adapter/service boundaries: `gmailAdapter`, `calendarAdapter`, `todoistAdapter`, `unifiedTodayService`, `crossSystemActionService`.
@@ -25,6 +26,7 @@ Live execution tracker for the unified live operational window model.
 
 ## Done
 
+- [x] **MVP commercial-pilot closure checkpoint (2026-03-31):** Git tag `myassist-mvp-closure-2026-03-31` on `main` — docs (`commercial-pilot-readiness` AI paths, Today scope), `.env.example` AI block, gateway Vitest, OAuth E2E step; Monday QA_Proof item created.
 - [x] **Vercel preview / OAuth:** Cleared project **Vercel Authentication** (`ssoProtection`) on `my-assist` via REST API so `*.vercel.app` URLs are reachable without the platform SSO wall; smoke-tested `GET /sign-in` → **200** on latest Production deployment.
 - [x] Built `apps/web` unified Today dashboard and JSON copy flow.
 - [x] Provider-canonical daily context: live Gmail, Calendar, and Todoist reads; source model `live` | `mock` | `cache`; optional mock via `MYASSIST_USE_MOCK_CONTEXT`.
