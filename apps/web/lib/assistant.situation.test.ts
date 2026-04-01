@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildFallbackReply,
   buildSituationBriefFallback,
   buildSituationDigest,
 } from "./assistant";
@@ -81,5 +82,37 @@ describe("buildSituationBriefFallback", () => {
     expect(brief.defer_recommendations.length).toBeGreaterThan(0);
     expect(brief.next_actions.length).toBeGreaterThan(0);
     expect(brief.confidence_and_limits).toContain("current task");
+  });
+
+  it("uses Todoist priority when selecting top task cues", () => {
+    const brief = buildSituationBriefFallback({
+      ...contextFixture,
+      todoist_overdue: [
+        { id: "t1", content: "Lower priority overdue", priority: 1, due: { date: "2026-03-23" } },
+        { id: "t2", content: "Highest priority overdue", priority: 4, due: { date: "2026-03-23" } },
+      ],
+      todoist_due_today: [],
+      todoist_upcoming_high_priority: [],
+    });
+    expect(brief.top_priorities[0]).toBe("Highest priority overdue");
+  });
+});
+
+describe("buildFallbackReply", () => {
+  it("references highest-priority task when asked what to prioritize", () => {
+    const reply = buildFallbackReply(
+      {
+        ...contextFixture,
+        todoist_overdue: [],
+        todoist_due_today: [],
+        todoist_upcoming_high_priority: [
+          { id: "t9", content: "P4 strategic task", priority: 4 },
+          { id: "t8", content: "P3 strategic task", priority: 3 },
+        ],
+      },
+      "What should I prioritize first?",
+    );
+    expect(reply.answer).toContain("P4 strategic task");
+    expect(reply.actions[0]).toBe("P4 strategic task");
   });
 });
