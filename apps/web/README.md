@@ -150,6 +150,19 @@ npm run web:lint
 npm run web:build
 ```
 
+From `apps/web` (optional env audit without printing secret values):
+
+```sh
+pnpm check:env
+pnpm check:env:prod
+```
+
+To evaluate **production-like** checks with vars from `.env.local` (Node 20+), from `apps/web`:
+
+```sh
+node --env-file=.env.local ./node_modules/tsx/dist/cli.mjs scripts/check-env-readiness.ts --production-like
+```
+
 ## Troubleshooting (Next.js dev)
 
 If the dev server throws **Cannot find module './NNN.js'** under `apps/web/.next/server`, the webpack cache is out of date. Stop `next dev`, run `npm run web:clean` from the repo root (or delete the `apps/web/.next` folder), then start dev again.

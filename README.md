@@ -10,6 +10,7 @@ Personal operations system as a unified live operational window over Gmail, Goog
 - `docs/architecture.md`: provider-canonical boundaries and module layout.
 - `docs/commercial-pilot-readiness.md`: hosted deployment checklist (Supabase storage, Sentry, env vars).
 - `docs/myassist-operational-signoff.md`: pilot sign-off for live AI path, live Today after OAuth, adapter boundaries.
+- `apps/web`: `pnpm check:env` / `pnpm check:env:prod` — env readiness report (no secret values printed).
 - `PROJECT_TRACKER.md`: execution tracker aligned to the live-window model.
 
 ## Tooling preference

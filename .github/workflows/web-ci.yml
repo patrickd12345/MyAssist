@@ -37,6 +37,12 @@ jobs:
         env:
           CI: true
 
+      - name: Env readiness (development profile)
+        working-directory: apps/web
+        run: pnpm check:env
+        env:
+          CI: true
+
       - name: Production build
         working-directory: apps/web
         run: pnpm build

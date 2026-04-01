@@ -14,7 +14,7 @@ Live execution tracker for the unified live operational window model.
 ## Next
 
 - [x] **Environment hardening / dev-prod separation (first pass):** `sharedDbEnv` + `bootstrap.sharedDb` on Node boot, `assertMyAssistRuntimeEnv` for prod/strict Supabase, `pnpm dev:infisical` merge script, OAuth integration route tests, `SHARED_DB_*` ref vars in `.env.example`.
-- [ ] Improve local setup reliability and runbook quality.
+- [ ] Improve local setup reliability and runbook quality (includes `pnpm check:env` in [`docs/myassist-operational-signoff.md`](docs/myassist-operational-signoff.md) section 0).
 - [ ] Tighten the assistant voice, action proposals, and conversational depth.
 - [ ] Finalize adapter/service boundaries: `gmailAdapter`, `calendarAdapter`, `todoistAdapter`, `unifiedTodayService`, `crossSystemActionService`.
 - [ ] Harden OAuth and secret handling without adding multi-tenant complexity.

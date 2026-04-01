@@ -2,6 +2,15 @@
 
 Use this checklist to close the remaining **Now** items in [`PROJECT_TRACKER.md`](../PROJECT_TRACKER.md): live AI path, live Today view after OAuth, and stable adapter boundaries.
 
+## 0. Env readiness (automated, no secrets printed)
+
+From `apps/web`:
+
+- `pnpm check:env` — development profile; exits **0** when critical items for that profile are satisfied (does not print values).
+- `pnpm check:env:prod` — production-like profile (`--production-like`); use with `node --env-file=.env.local` or Vercel-exported env to validate before deploy. Exits **1** if auth or Supabase requirements fail.
+
+Implementation: [`apps/web/lib/env/envReadiness.ts`](../apps/web/lib/env/envReadiness.ts), CLI [`apps/web/scripts/check-env-readiness.ts`](../apps/web/scripts/check-env-readiness.ts).
+
 ## 1. Live Ollama vs gateway
 
 **Local (Ollama)**

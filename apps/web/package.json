@@ -19,11 +19,13 @@
     "test": "vitest run",
     "test:hosted-smoke": "cross-env RUN_MYASSIST_HOSTED_SMOKE=1 node --env-file=.env.local node_modules/vitest/vitest.mjs run lib/hostedRuntimeSmoke.test.ts",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "check:env": "tsx scripts/check-env-readiness.ts",
+    "check:env:prod": "tsx scripts/check-env-readiness.ts --production-like"
   },
   "dependencies": {
-    "@bookiji-inc/error-contract": "workspace:*",
     "@bookiji-inc/ai-runtime": "workspace:*",
+    "@bookiji-inc/error-contract": "workspace:*",
     "@bookiji-inc/observability": "workspace:*",
     "@sentry/nextjs": "^9.47.1",
     "@supabase/supabase-js": "2.100.1",
@@ -52,6 +54,7 @@
     "jsdom": "^29.0.1",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
+    "tsx": "^4.21.0",
     "typescript": "^5",
     "vitest": "^4.1.1"
   }
