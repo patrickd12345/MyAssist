@@ -7,6 +7,8 @@
   "scripts": {
     "vercel-build": "pnpm --filter web run build",
     "dev": "npm --prefix apps/web run dev",
+    "dev:infisical": "npm --prefix apps/web run dev:infisical",
+    "dev:all": "node scripts/dev-all.mjs",
     "web:dev": "npm --prefix apps/web run dev",
     "web:build": "npm --prefix apps/web run build",
     "web:lint": "npm --prefix apps/web run lint",
@@ -24,6 +26,7 @@
     "job-hunt:typecheck": "npm --prefix apps/job-hunt-manager run typecheck"
   },
   "devDependencies": {
+    "concurrently": "^9.2.1",
     "form-data": "^4.0.5",
     "sqlite3": "^5.1.7",
     "zod": "3.25.76"

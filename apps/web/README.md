@@ -37,7 +37,7 @@ The dashboard and APIs require a local account (email + password). Unauthenticat
 
 1. Open `/sign-in`, choose **Register**, and create an account (password at least 8 characters).
 2. Credentials are stored in `apps/web/.myassist-memory/users.json` (hashed passwords only).
-3. Set `AUTH_SECRET` (or `NEXTAUTH_SECRET`) in `apps/web/.env.local` — use a long random string in production.
+3. **`AUTH_SECRET` (or `NEXTAUTH_SECRET`):** In team workflows, keep this in **Infisical** (`/myassist` for local dev) and start with **`pnpm dev:infisical`** (from `apps/web` or repo root) so secrets inject at process start. For ad-hoc runs without Infisical, set it in `apps/web/.env.local` — use a long random string in production.
 4. Optional: set `AUTH_URL` to the public origin (e.g. `http://localhost:3000` locally).
 5. For Vitest and local scripting only, `MYASSIST_AUTH_DISABLED=true` skips login checks (see `vitest.setup.ts`).
 
@@ -60,22 +60,32 @@ The Vercel project linked to production should use this app as the deploy root:
 
 ## Local run
 
-Preferred local path uses Infisical:
+**Default (repo root):** `pnpm dev:all` — runs **this Next app** and **job-hunt digest** together, with **one** Infisical merge (when `apps/web/.infisical.json` + CLI allow) applied to **both** processes. Implementation: `scripts/dev-all.mjs` + `scripts/infisical-merge.mjs` at the repo root.
 
-1. Run `infisical init` once from `apps/web`.
-2. Populate the `Bookiji Inc` project paths `/platform` and `/myassist` for `dev`.
-3. Start the app from `apps/web`:
+**Infisical (recommended for team secrets):**
+
+1. Run `infisical init` once from `apps/web` (creates `.infisical.json`; gitignored).
+2. In the Infisical project (e.g. `Bookiji Inc`), populate paths **`/platform`** and **`/myassist`** for environment **`dev`** — including **`AUTH_SECRET`**, Supabase keys, OAuth client ids, and encryption keys as needed.
+3. Start everything from the repo root:
+
+   ```sh
+   pnpm dev:all
+   ```
+
+   Web-only (same Infisical merge behavior, no digest):
 
    ```sh
    pnpm dev:infisical
    ```
 
-`pnpm dev:infisical` exports `/platform` and `/myassist` separately and merges them before launching `pnpm dev`, so shared Supabase keys and app-specific OAuth/auth keys both arrive even though Infisical CLI path injection is single-folder oriented.
+`pnpm dev:infisical` uses the same merge helper and exports `/platform` and `/myassist` before launching `next dev`, so shared Supabase keys and app-specific OAuth/auth keys both arrive even though Infisical CLI path injection is single-folder oriented.
 
-Fallback local path:
+**Note:** `pnpm dev` / `npm run web:dev` **without** `dev:infisical` only loads **`apps/web/.env.local`** (and defaults). If `AUTH_SECRET` is empty there, the app still boots in development using the built-in dev fallback, but **production-like checks** and **stable sessions** expect a real secret from Infisical or `.env.local`.
+
+Fallback local path (no Infisical):
 
 1. Copy `apps/web/.env.example` to `apps/web/.env.local`.
-2. Configure provider OAuth credentials and optional local model settings.
+2. Configure provider OAuth credentials and optional local model settings (including `AUTH_SECRET`).
 3. Start the app from repo root:
 
    ```sh
@@ -89,9 +99,9 @@ If Next.js reports that port **3000** is in use and falls back to **3001+**, sto
 
 ## Environment variables
 
-Set in `apps/web/.env.local`:
+Prefer **Infisical** for team-local and shared keys (`pnpm dev:infisical`); mirror the same names into Vercel for deploys. Alternatively set in `apps/web/.env.local`:
 
-- `AUTH_SECRET` (or `NEXTAUTH_SECRET`): secret for Auth.js session cookies (required for `next build` / production; dev-only fallback when unset in development)
+- `AUTH_SECRET` (or `NEXTAUTH_SECRET`): secret for Auth.js session cookies (required for `next build` / production; dev-only fallback when unset in development). **Store in Infisical** `/myassist` for normal local dev.
 - `MYASSIST_REGISTRATION_INVITE_CODE`: optional; when set, registration must send the same value as `inviteCode` in the JSON body
 - `AUTH_URL`: public site URL (recommended; e.g. `http://localhost:3000`)
 - `NEXTAUTH_URL`: optional alias for app public URL (used as OAuth redirect base when `AUTH_URL` is unset)

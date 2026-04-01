@@ -13,7 +13,8 @@ Live execution tracker for the unified live operational window model.
 
 ## Next
 
-- [x] **Environment hardening / dev-prod separation (first pass):** `sharedDbEnv` + `bootstrap.sharedDb` on Node boot, `assertMyAssistRuntimeEnv` for prod/strict Supabase, `pnpm dev:infisical` merge script, OAuth integration route tests, `SHARED_DB_*` ref vars in `.env.example`.
+- [x] **Environment hardening / dev-prod separation (first pass):** `sharedDbEnv` + `bootstrap.sharedDb` on Node boot, `assertMyAssistRuntimeEnv` for prod/strict Supabase, `pnpm dev:infisical` merge script (also **`pnpm dev:infisical`** at repo root), OAuth integration route tests, `SHARED_DB_*` ref vars in `.env.example`. **Infisical** is the documented team default for secrets (`AUTH_SECRET`, Supabase, OAuth); README + root README point to it.
+- [x] **`pnpm dev:all` single entry:** `scripts/dev-all.mjs` runs Next + job-hunt digest with shared `scripts/infisical-merge.mjs` (optional Infisical, graceful fallback); `apps/web/scripts/dev-with-infisical.mjs` uses the same merge helper.
 - [ ] Improve local setup reliability and runbook quality (includes `pnpm check:env` in [`docs/myassist-operational-signoff.md`](docs/myassist-operational-signoff.md) section 0).
 - [ ] Tighten the assistant voice, action proposals, and conversational depth.
 - [ ] Finalize adapter/service boundaries: `gmailAdapter`, `calendarAdapter`, `todoistAdapter`, `unifiedTodayService`, `crossSystemActionService`.

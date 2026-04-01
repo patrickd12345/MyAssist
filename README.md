@@ -63,10 +63,11 @@ Purpose:
 
 Setup:
 
-1. In `apps/web`, copy `apps/web/.env.example` to `apps/web/.env.local`.
-2. Configure OAuth for Gmail, Google Calendar, and Todoist in `apps/web/.env.local` (see `apps/web/README.md`). Optional: set `MYASSIST_USE_MOCK_CONTEXT=true` for demo data without provider connections. Optional: local model (Ollama) settings for the assistant.
-3. From repo root run `npm run web:dev`.
-4. Open `http://localhost:3000`.
+1. **One command (repo root):** `pnpm dev:all` — starts **Next** (`apps/web`) and the **job-hunt digest** dev server, with **optional** Infisical merge (`/platform` + `/myassist`) when `apps/web/.infisical.json` exists and the CLI works; otherwise it falls back to `apps/web/.env.local` and existing env. See `scripts/dev-all.mjs` and `scripts/infisical-merge.mjs`.
+2. **Secrets (recommended):** [Infisical](https://infisical.com) — run `infisical init` once from `apps/web`, then store keys under `/platform` and `/myassist` for env `dev`. Details: `apps/web/README.md`.
+3. **Without Infisical:** Copy `apps/web/.env.example` to `apps/web/.env.local` and fill values.
+4. Configure OAuth for Gmail, Google Calendar, and Todoist when needed (`apps/web/README.md`). Optional: `MYASSIST_USE_MOCK_CONTEXT=true`, Ollama, etc.
+5. Open `http://localhost:3000` after `pnpm dev:all` is running.
 
 Assistant behavior:
 

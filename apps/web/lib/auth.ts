@@ -1,13 +1,11 @@
+import { createHash } from "node:crypto";
 import { PHASE_PRODUCTION_BUILD } from "next/constants";
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { compare } from "bcryptjs";
 import { findUserByEmail } from "./userStore";
-import { resolveMyAssistRuntimeEnv } from "./env/runtime";
+import { MYASSIST_DEV_AUTH_SECRET_FALLBACK, resolveMyAssistRuntimeEnv } from "./env/runtime";
 import { logServerEvent } from "./serverLog";
-
-const FALLBACK_SECRET =
-  "myassist-dev-only-auth-secret-min-32-chars-do-not-use-in-production";
 
 /**
  * Auth.js reads `process.env.AUTH_SECRET`. We only synthesize it for dev/test and for the
@@ -15,7 +13,8 @@ const FALLBACK_SECRET =
  * string at module load — that can be bundled as a constant and ignore Vercel runtime env.
  *
  * Production runtime: set `AUTH_SECRET` (or `NEXTAUTH_SECRET`) in the Vercel project
- * (Production + Preview as needed). See apps/web/.env.example.
+ * (Production + Preview as needed). Local team dev: load secrets from Infisical (`pnpm dev:infisical`
+ * from `apps/web` or repo root). See `apps/web/README.md` and `apps/web/.env.example`.
  */
 function patchAuthSecretForNonProductionContexts(): void {
   const runtime = resolveMyAssistRuntimeEnv(process.env);
@@ -25,27 +24,51 @@ function patchAuthSecretForNonProductionContexts(): void {
   if (runtime.nodeEnv === "development") {
     logServerEvent("warn", "myassist_auth_secret_fallback", {
       message:
-        "AUTH_SECRET is unset; using a local fallback. Set AUTH_SECRET in apps/web/.env.local for stable sessions.",
+        "AUTH_SECRET is unset; using a local fallback. Prefer Infisical (`pnpm dev:infisical`) or set AUTH_SECRET in apps/web/.env.local for stable sessions.",
     });
-    process.env.AUTH_SECRET = FALLBACK_SECRET;
+    process.env.AUTH_SECRET = MYASSIST_DEV_AUTH_SECRET_FALLBACK;
     return;
   }
   if (runtime.nodeEnv === "test") {
-    process.env.AUTH_SECRET = FALLBACK_SECRET;
+    process.env.AUTH_SECRET = MYASSIST_DEV_AUTH_SECRET_FALLBACK;
     return;
   }
   if (runtime.nextPhase === PHASE_PRODUCTION_BUILD) {
-    process.env.AUTH_SECRET = FALLBACK_SECRET;
+    process.env.AUTH_SECRET = MYASSIST_DEV_AUTH_SECRET_FALLBACK;
   }
 }
 
 patchAuthSecretForNonProductionContexts();
+
+/**
+ * Bind the session cookie name to the current signing secret so stale JWTs from a prior secret
+ * are not decrypted (avoids JWTSessionError / "no matching decryption secret"; users appear
+ * signed out until they sign in again).
+ */
+function sessionTokenCookieName(): string {
+  const raw = process.env["AUTH_SECRET"] ?? process.env["NEXTAUTH_SECRET"] ?? "";
+  const suffix = createHash("sha256").update(raw).digest("hex").slice(0, 16);
+  return `authjs.session-token.${suffix}`;
+}
+
+const useSecureCookies = process.env.NODE_ENV === "production";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
   // Bracket access + live env: avoid a one-shot string that ignores Vercel runtime injection.
   secret: process.env["AUTH_SECRET"] ?? process.env["NEXTAUTH_SECRET"],
   session: { strategy: "jwt" },
+  cookies: {
+    sessionToken: {
+      name: sessionTokenCookieName(),
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: useSecureCookies,
+      },
+    },
+  },
   pages: {
     signIn: "/sign-in",
   },

@@ -1,6 +1,31 @@
 import "server-only";
 
+import { PHASE_PRODUCTION_BUILD } from "next/constants";
+
 type EnvSource = NodeJS.ProcessEnv;
+
+/**
+ * Same value as `lib/auth.ts` dev fallback. Auth.js patches `process.env` when that module loads;
+ * `instrumentation` runs earlier, so bootstrap must apply this explicitly before `assertMyAssistRuntimeEnv`.
+ */
+export const MYASSIST_DEV_AUTH_SECRET_FALLBACK =
+  "myassist-dev-only-auth-secret-min-32-chars-do-not-use-in-production";
+
+/**
+ * Ensures `AUTH_SECRET` is set for dev/test/build phases when unset, matching `patchAuthSecretForNonProductionContexts` in `lib/auth.ts`.
+ */
+export function ensureAuthSecretEnvForInstrumentation(env: EnvSource = process.env): void {
+  if (readFirst(env, ["AUTH_SECRET", "NEXTAUTH_SECRET"])) return;
+  const nodeEnv = readFirst(env, ["NODE_ENV"]);
+  const nextPhase = readFirst(env, ["NEXT_PHASE"]);
+  if (
+    nodeEnv === "development" ||
+    nodeEnv === "test" ||
+    nextPhase === PHASE_PRODUCTION_BUILD
+  ) {
+    env.AUTH_SECRET = MYASSIST_DEV_AUTH_SECRET_FALLBACK;
+  }
+}
 
 function readFirst(env: EnvSource, keys: string[], fallback = ""): string {
   for (const key of keys) {
@@ -171,6 +196,7 @@ export function isMyAssistDemoModeEnabled(env: EnvSource = process.env): boolean
 }
 
 export function assertMyAssistRuntimeEnv(env: EnvSource = process.env): MyAssistRuntimeEnv {
+  ensureAuthSecretEnvForInstrumentation(env);
   const runtime = resolveMyAssistRuntimeEnv(env);
   if (!runtime.authSecret) {
     throw new Error("Missing required auth secret: AUTH_SECRET (or NEXTAUTH_SECRET).");

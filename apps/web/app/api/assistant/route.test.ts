@@ -155,6 +155,27 @@ describe("POST /api/assistant", () => {
     expect(json.answer).toContain("Ship");
   });
 
+  it("falls back to buildFallbackReply when chat Ollama request fails", async () => {
+    mockFetch.mockRejectedValueOnce(new Error("fetch failed: ECONNREFUSED"));
+
+    const res = await POST(
+      new Request("http://localhost/api/assistant", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          kind: "chat",
+          message: "What can I safely defer?",
+          context: minimalContext,
+        }),
+      }),
+    );
+    expect(res.status).toBe(200);
+    const json = (await res.json()) as { mode: string; fallbackReason?: string; answer: string };
+    expect(json.mode).toBe("fallback");
+    expect(json.fallbackReason).toBe("fetch failed: ECONNREFUSED");
+    expect(json.answer).toContain("Park");
+  });
+
   it("routes chief-of-staff day summary chat prompts to situation brief path", async () => {
     const briefJson = {
       pressure_summary: "Operational pressure is high.",
