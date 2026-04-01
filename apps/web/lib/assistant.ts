@@ -59,6 +59,27 @@ function taskTitle(task: TodoistTask | undefined): string | null {
   return typeof task.content === "string" ? task.content : null;
 }
 
+function taskPriorityValue(task: TodoistTask | undefined): number {
+  if (!task) return 1;
+  return typeof task.priority === "number" ? task.priority : 1;
+}
+
+function pickTopTaskByPriority(context: MyAssistDailyContext): TodoistTask | undefined {
+  const candidates = [
+    ...context.todoist_overdue.map((task, idx) => ({ task, urgency: 3, idx })),
+    ...context.todoist_due_today.map((task, idx) => ({ task, urgency: 2, idx })),
+    ...context.todoist_upcoming_high_priority.map((task, idx) => ({ task, urgency: 1, idx })),
+  ];
+  candidates.sort((a, b) => {
+    if (a.urgency !== b.urgency) return b.urgency - a.urgency;
+    const pa = taskPriorityValue(a.task);
+    const pb = taskPriorityValue(b.task);
+    if (pa !== pb) return pb - pa;
+    return a.idx - b.idx;
+  });
+  return candidates[0]?.task;
+}
+
 function firstName(from: string): string {
   const cleaned = from.replace(/".*?"/g, "").replace(/<.*?>/g, "").trim();
   return cleaned || from;
@@ -311,12 +332,14 @@ export function buildSituationDigest(context: MyAssistDailyContext): string {
 }
 
 export function buildSituationBriefFallback(context: MyAssistDailyContext): SituationBrief {
+  const topTask = pickTopTaskByPriority(context);
   const topOverdue = taskTitle(context.todoist_overdue[0]);
   const topDue = taskTitle(context.todoist_due_today[0]);
+  const topTaskTitle = taskTitle(topTask);
   const topEvent = context.calendar_today.find((event) => Boolean(event.start));
   const topEmail = context.gmail_signals[0];
 
-  const priorities = [topOverdue, topDue, topEvent?.summary, topEmail?.subject]
+  const priorities = [topTaskTitle, topOverdue, topDue, topEvent?.summary, topEmail?.subject]
     .filter((value): value is string => Boolean(value))
     .slice(0, 4);
 
@@ -365,6 +388,8 @@ export function buildFallbackReply(context: MyAssistDailyContext, question: stri
   }
 
   const q = question.toLowerCase();
+  const topTask = pickTopTaskByPriority(context);
+  const topTaskTitle = taskTitle(topTask);
   const topOverdue = taskTitle(context.todoist_overdue[0]);
   const topDue = taskTitle(context.todoist_due_today[0]);
   const topMeeting = context.calendar_today.find((item) => item.start);
@@ -374,11 +399,16 @@ export function buildFallbackReply(context: MyAssistDailyContext, question: stri
     return {
       mode: "fallback",
       answer: topOverdue
-        ? `Lead with ${topOverdue} — it is overdue, and clearing it stops drag from compounding.`
-        : topDue
-          ? `Lead with ${topDue}; it is due today and needs a bounded block before the calendar and inbox pile on.`
-          : "No burning task in this snapshot — carve one deep block before admin and email eat the day.",
-      actions: [topOverdue ?? topDue ?? "Block 45 minutes for deep work", topMeeting?.summary ?? "Confirm the next calendar anchor"].filter(
+        ? `Start with ${topOverdue}. It is already overdue, so closing it removes drag before the day fragments.`
+        : topTaskTitle
+          ? `Start with ${topTaskTitle}. Its Todoist priority is elevated in your current task set, so it should be protected before reactive work.`
+          : topDue
+            ? `Start with ${topDue}. It is due today and should get a protected block before meetings and inbox pressure expand.`
+            : "No obvious task fire is visible, so start with one meaningful block before admin or email takes over.",
+      actions: [
+        topOverdue ?? topTaskTitle ?? topDue ?? "Create a 45-minute focus block",
+        topMeeting?.summary ?? "Review the next calendar anchor",
+      ].filter(
         (value): value is string => Boolean(value),
       ).slice(0, 2),
       followUps: ["What can I safely defer?", "How tight is my inbox right now?"],
