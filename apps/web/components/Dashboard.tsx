@@ -681,28 +681,6 @@ export function Dashboard({
     void loadIntegrationStatuses();
   }, [loadIntegrationStatuses]);
 
-  /** OAuth callback redirects with `?integrations=connected|error` — refetch pills and show feedback (easy to miss in the URL). */
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const params = new URLSearchParams(window.location.search);
-    const integration = params.get("integrations");
-    const provider = params.get("provider");
-    const reason = params.get("reason");
-    if (integration !== "connected" && integration !== "error") return;
-
-    setOauthReturnBanner({
-      kind: integration,
-      provider: provider ?? undefined,
-      reason: reason ?? undefined,
-    });
-    const path = `${window.location.pathname}${window.location.hash ?? ""}`;
-    window.history.replaceState({}, "", path);
-
-    void loadIntegrationStatuses();
-    const delayed = window.setTimeout(() => void loadIntegrationStatuses(), 600);
-    return () => window.clearTimeout(delayed);
-  }, [loadIntegrationStatuses]);
-
   useEffect(() => {
     if (theme === "light") {
       document.documentElement.removeAttribute("data-theme");
@@ -1038,6 +1016,33 @@ export function Dashboard({
     },
     [],
   );
+
+  /** OAuth callback redirects with `?integrations=connected|error` — refetch pills, reload daily context on success, show feedback (easy to miss in the URL). */
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const integration = params.get("integrations");
+    const provider = params.get("provider");
+    const reason = params.get("reason");
+    if (integration !== "connected" && integration !== "error") return;
+
+    setOauthReturnBanner({
+      kind: integration,
+      provider: provider ?? undefined,
+      reason: reason ?? undefined,
+    });
+    const path = `${window.location.pathname}${window.location.hash ?? ""}`;
+    window.history.replaceState({}, "", path);
+
+    void loadIntegrationStatuses();
+    const delayed = window.setTimeout(() => void loadIntegrationStatuses(), 600);
+
+    if (integration === "connected") {
+      void refresh();
+    }
+
+    return () => window.clearTimeout(delayed);
+  }, [loadIntegrationStatuses, refresh]);
 
   const loadActionHistory = useCallback(async () => {
     setActionHistoryLoading(true);

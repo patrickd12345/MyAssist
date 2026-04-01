@@ -1,6 +1,10 @@
 import type * as SentryNext from "@sentry/nextjs";
 
 export async function register() {
+  if (process.env.NEXT_RUNTIME === "nodejs") {
+    const { runMyAssistSharedDbBootstrap } = await import("./lib/env/bootstrap.sharedDb");
+    runMyAssistSharedDbBootstrap();
+  }
   if (!process.env.SENTRY_DSN?.trim() && !process.env.NEXT_PUBLIC_SENTRY_DSN?.trim()) {
     return;
   }

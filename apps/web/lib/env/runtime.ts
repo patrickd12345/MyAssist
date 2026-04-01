@@ -175,5 +175,17 @@ export function assertMyAssistRuntimeEnv(env: EnvSource = process.env): MyAssist
   if (!runtime.authSecret) {
     throw new Error("Missing required auth secret: AUTH_SECRET (or NEXTAUTH_SECRET).");
   }
+  const strictTier = env.SHARED_DB_ENV_STRICT === "1" || env.SHARED_DB_ENV_STRICT === "true";
+  const requiresHostedSupabase = env.NODE_ENV === "production" || strictTier;
+  if (requiresHostedSupabase && !runtime.supabaseProjectUrl) {
+    throw new Error(
+      "Missing required Supabase URL: set SUPABASE_URL (or NEXT_PUBLIC_SUPABASE_URL / VITE_SUPABASE_URL)."
+    );
+  }
+  if (requiresHostedSupabase && !runtime.supabaseSecretKey) {
+    throw new Error(
+      "Missing required Supabase server key: set SUPABASE_SECRET_KEY (or SUPABASE_SERVICE_ROLE_KEY)."
+    );
+  }
   return runtime;
 }

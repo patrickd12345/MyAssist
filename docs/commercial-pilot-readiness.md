@@ -38,6 +38,10 @@ Chat, headline, and situation-brief paths use [`apps/web/lib/aiRuntime.ts`](../a
 
 Primary UX is **refresh after OAuth return** and **after user actions** (task complete, provider slice refresh), not background polling. The dashboard strips `?integrations=connected` and refetches daily context on success (see [`apps/web/components/Dashboard.tsx`](../apps/web/components/Dashboard.tsx)). **Background polling is out of scope** for this MVP unless product requirements change.
 
+## Shared Supabase tier guardrails (optional)
+
+On Node server boot, [`apps/web/lib/env/bootstrap.sharedDb.ts`](../apps/web/lib/env/bootstrap.sharedDb.ts) logs a safe landscape line and runs [`validateSharedDbUrlMatchesDeploymentTier`](../apps/web/lib/env/sharedDbEnv.ts) when `SHARED_DB_DEV_PROJECT_REF` and `SHARED_DB_PROD_PROJECT_REF` are both set (compare hostname ref to `VERCEL_ENV`-derived tier). Set `SHARED_DB_ENV_STRICT=1` to throw on mismatch. `SHARED_DB_TIER` (optional `dev`/`prod`) is cross-checked with the resolved tier when set.
+
 ## Production configuration checklist
 
 | Variable | Purpose |
@@ -49,6 +53,7 @@ Primary UX is **refresh after OAuth return** and **after user actions** (task co
 | `MYASSIST_INTEGRATIONS_ENCRYPTION_KEY` | **Strongly recommended** in production (32-byte base64 or any string; see [apps/web/.env.example](../apps/web/.env.example)). Stable across deploys so tokens remain decryptable. |
 | Google / Todoist OAuth client config | Redirect URIs must match the **deployed** origin. **Google (Gmail + Calendar)** uses a single URI: `{origin}/api/integrations/google/callback`. **Todoist** uses `{origin}/api/integrations/todoist/callback`. |
 | `AI_MODE`, `VERCEL_AI_BASE_URL`, gateway keys, `OLLAMA_*` | See **AI inference (hosted vs local)** above; required for non-fallback assistant on the deployed host. |
+| `SHARED_DB_TIER`, `SHARED_DB_ENV_STRICT`, `SHARED_DB_DEV_PROJECT_REF`, `SHARED_DB_PROD_PROJECT_REF` | Optional; strict dev/prod Supabase URL alignment (see **Shared Supabase tier guardrails**). |
 | `SENTRY_DSN` and/or `NEXT_PUBLIC_SENTRY_DSN` | Optional; error reporting ([Sentry Next.js](https://docs.sentry.io/platforms/javascript/guides/nextjs/)). |
 | `SENTRY_ENVIRONMENT` | Optional; defaults to `VERCEL_ENV` or `NODE_ENV`. |
 
