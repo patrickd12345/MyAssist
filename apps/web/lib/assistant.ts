@@ -70,12 +70,35 @@ function safeDateValue(value: string | null): number {
   return Number.isNaN(parsed) ? Number.POSITIVE_INFINITY : parsed;
 }
 
+function dedupePromptLines(items: string[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const item of items) {
+    const key = item.trim().toLowerCase();
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    out.push(item);
+  }
+  return out;
+}
+
 export function buildSuggestedPrompts(context: MyAssistDailyContext): string[] {
   const prompts: string[] = [
     "What should I focus on first today?",
     "What can I safely defer?",
     "Summarize my day like a chief of staff.",
   ];
+
+  const briefing = context.unified_daily_briefing;
+  if (briefing !== undefined && briefing.counts.action_required > 0) {
+    prompts.push("How do I triage the action-required pile without losing the day?");
+  }
+  if (briefing !== undefined && briefing.counts.urgent > 0) {
+    prompts.push("What belongs in the urgent email bucket first?");
+  }
+  if (context.calendar_today.length > 4) {
+    prompts.push("How do I protect time between these calendar blocks?");
+  }
 
   const overdue = taskTitle(context.todoist_overdue[0]);
   const dueToday = taskTitle(context.todoist_due_today[0]);
@@ -85,25 +108,34 @@ export function buildSuggestedPrompts(context: MyAssistDailyContext): string[] {
   if (dueToday) prompts.push(`How should I handle this due-today task: ${dueToday}`);
   if (signal) prompts.push(`How urgent is this email thread: ${signal}?`);
 
-  return prompts.slice(0, 5);
+  return dedupePromptLines(prompts).slice(0, 5);
 }
 
 export function buildWelcomeReply(context: MyAssistDailyContext): AssistantReply {
   const syn = buildDailySynthesisFromContext(context);
+  const urgentTotal = context.todoist_overdue.length + context.todoist_due_today.length;
+  const thinSnapshot =
+    urgentTotal === 0 && context.gmail_signals.length === 0 && context.calendar_today.length === 0;
+
   const focusLine =
     syn.topPriorities.length > 0 ? `Priority: ${syn.topPriorities.slice(0, 2).join(" · ")}.` : "";
-  const answer = [syn.oneLineSummary, focusLine].filter(Boolean).join(" ");
+  let answer = [syn.oneLineSummary, focusLine].filter(Boolean).join(" ");
+  if (thinSnapshot) {
+    const thinNote =
+      "Snapshot is thin on tasks, calendar, and inbox pulls — refresh connections or open panels if something should be here.";
+    answer = answer ? `${answer} ${thinNote}` : thinNote;
+  }
 
   const actions =
     syn.actionNow.length > 0
-      ? syn.actionNow.slice(0, 3)
-      : syn.topPriorities.slice(0, 3);
+      ? syn.actionNow.slice(0, 2)
+      : syn.topPriorities.slice(0, 2);
 
   return {
     mode: "fallback",
-    answer: answer || "Snapshot loaded; use the panels for detail.",
-    actions: actions.length > 0 ? actions : buildSuggestedPrompts(context).slice(0, 3),
-    followUps: buildSuggestedPrompts(context).slice(0, 3),
+    answer: answer || "Board loaded. Use the panels for live detail.",
+    actions: actions.length > 0 ? actions : buildSuggestedPrompts(context).slice(0, 2),
+    followUps: buildSuggestedPrompts(context).slice(0, 2),
     taskDraft: null,
   };
 }
@@ -114,26 +146,26 @@ export function buildHeadlineFallback(context: MyAssistDailyContext): string {
   const signals = context.gmail_signals.length;
 
   if (urgent >= 8) {
-    return "Heavy day. Clear urgent drag before taking on new work.";
+    return "Heavy load on the task board — clear the drag before new commitments stick.";
   }
 
   if (urgent > 0 && meetings > 0) {
-    return "Mixed pressure across tasks and calendar. Protect the next block before the day fragments.";
+    return "Tasks and calendar both want attention; lock the next block before the day splinters.";
   }
 
   if (signals > 6) {
-    return "Inbox pressure is rising. Stay out of reactive loops until priorities are set.";
+    return "Inbox noise is up — set priorities before answering anything.";
   }
 
   if (meetings > 4) {
-    return "Calendar weight is high. Use the gaps deliberately.";
+    return "Calendar-dense day; treat gaps as inventory, not leftovers.";
   }
 
   if (urgent > 0) {
-    return "A few live obligations are on deck. Close them early and keep the day clean.";
+    return "Live obligations on the clock — close them while the runway is still yours.";
   }
 
-  return "The board is relatively clear. Use the runway for meaningful work.";
+  return "Light operational surface — spend it on leverage, not busywork.";
 }
 
 export function buildContextDigest(context: MyAssistDailyContext): string {
@@ -291,8 +323,8 @@ export function buildSituationBriefFallback(context: MyAssistDailyContext): Situ
   return {
     pressure_summary:
       context.todoist_overdue.length + context.todoist_due_today.length >= 6
-        ? "Operational pressure is high across commitments. Triage before inbox drift."
-        : "Pressure is moderate. Protect priority work before reactive tasks expand.",
+        ? "High load across Todoist and commitments — triage before Gmail pulls you sideways."
+        : "Moderate pressure; defend one priority block before reactive work expands.",
     top_priorities:
       priorities.length > 0
         ? priorities
@@ -315,7 +347,7 @@ export function buildSituationBriefFallback(context: MyAssistDailyContext): Situ
       topEvent?.summary ? `Prepare for: ${topEvent.summary}` : "Set one 45-minute focus block.",
     ],
     confidence_and_limits:
-      "This brief is generated from current task, calendar, and email signals only; unseen context may change priorities.",
+      "Built only from the current task, calendar, and Gmail snapshot — no guessing beyond that.",
     memory_insights: [],
   };
 }
@@ -325,13 +357,9 @@ export function buildFallbackReply(context: MyAssistDailyContext, question: stri
   if (draft) {
     return {
       mode: "fallback",
-      answer: `I drafted a Todoist task from your request. Review it, then confirm the write if it looks right.`,
-      actions: ["Create this task", "Refine the wording", "Adjust the due date"],
-      followUps: [
-        "Make it more specific.",
-        "Add a due time.",
-        "Lower the priority.",
-      ],
+      answer: `Todoist draft below — nothing written yet. Tweak it, then create when it matches what you meant.`,
+      actions: ["Create this task", "Refine the wording"],
+      followUps: ["Make it more specific.", "Add a due time."],
       taskDraft: draft,
     };
   }
@@ -346,17 +374,14 @@ export function buildFallbackReply(context: MyAssistDailyContext, question: stri
     return {
       mode: "fallback",
       answer: topOverdue
-        ? `Start with ${topOverdue}. It is already overdue, so closing it removes drag before the day fragments.`
+        ? `Lead with ${topOverdue} — it is overdue, and clearing it stops drag from compounding.`
         : topDue
-          ? `Start with ${topDue}. It is due today and should get a protected block before meetings and inbox pressure expand.`
-          : "No obvious task fire is visible, so start with one meaningful block before admin or email takes over.",
-      actions: [topOverdue ?? topDue ?? "Create a 45-minute focus block", topMeeting?.summary ?? "Review the next calendar anchor"].filter(
+          ? `Lead with ${topDue}; it is due today and needs a bounded block before the calendar and inbox pile on.`
+          : "No burning task in this snapshot — carve one deep block before admin and email eat the day.",
+      actions: [topOverdue ?? topDue ?? "Block 45 minutes for deep work", topMeeting?.summary ?? "Confirm the next calendar anchor"].filter(
         (value): value is string => Boolean(value),
-      ),
-      followUps: [
-        "What can I safely defer?",
-        "How should I handle my email pressure?",
-      ],
+      ).slice(0, 2),
+      followUps: ["What can I safely defer?", "How tight is my inbox right now?"],
       taskDraft: null,
     };
   }
@@ -366,16 +391,10 @@ export function buildFallbackReply(context: MyAssistDailyContext, question: stri
       mode: "fallback",
       answer:
         context.gmail_signals.length > 5
-          ? "Defer broad inbox cleanup and respond only to the highest-signal thread. The rest should stay batched."
-          : "Defer low-value admin and preserve your attention for overdue or due-today commitments.",
-      actions: [
-        "Batch inbox review into one contained window",
-        "Avoid adding new commitments before triage is complete",
-      ],
-      followUps: [
-        "Which email thread is the real signal?",
-        "Summarize my day like a chief of staff.",
-      ],
+          ? "Park bulk inbox sweeps. Answer the highest-signal Gmail thread first; batch the rest."
+          : "Park low-value admin until overdue and due-today Todoist work is honest.",
+      actions: ["Batch inbox into one window", "No new commitments until triage is done"],
+      followUps: ["Which thread is the real signal?", "Summarize my day like a chief of staff."],
       taskDraft: null,
     };
   }
@@ -384,13 +403,10 @@ export function buildFallbackReply(context: MyAssistDailyContext, question: stri
     return {
       mode: "fallback",
       answer: topSignal
-        ? `The top visible email signal is "${topSignal.subject}" from ${firstName(topSignal.from)}. Treat it as the first thread to evaluate, not a reason to live in the inbox.`
-        : "No major email signal is visible in the current pull.",
-      actions: topSignal ? [`Review thread: ${topSignal.subject}`] : [],
-      followUps: [
-        "What should I focus on first today?",
-        "What can I safely defer?",
-      ],
+        ? `Top Gmail signal: "${topSignal.subject}" (${firstName(topSignal.from)}). Open that thread first — not every ping.`
+        : "No strong Gmail signal in this pull; inbox may be quiet or sync may need a refresh.",
+      actions: topSignal ? [`Open: ${topSignal.subject}`] : [],
+      followUps: ["What should I focus on first today?", "What can I safely defer?"],
       taskDraft: null,
     };
   }
@@ -399,13 +415,10 @@ export function buildFallbackReply(context: MyAssistDailyContext, question: stri
     return {
       mode: "fallback",
       answer: topMeeting
-        ? `Your nearest calendar anchor is ${topMeeting.summary}. Use it as the boundary for your first work block.`
-        : "The schedule is relatively open in this snapshot, which gives you room to drive proactive work.",
-      actions: topMeeting ? [`Prepare for: ${topMeeting.summary}`] : ["Create a proactive work block"],
-      followUps: [
-        "What should I finish before that meeting?",
-        "Summarize my day like a chief of staff.",
-      ],
+        ? `Next calendar anchor: ${topMeeting.summary}. Let it bookend your first work slice.`
+        : "Calendar looks open in this snapshot — use the white space for proactive Todoist work, not drift.",
+      actions: topMeeting ? [`Prep: ${topMeeting.summary}`] : ["Block proactive work on the calendar"],
+      followUps: ["What should I finish before that meeting?", "Summarize my day like a chief of staff."],
       taskDraft: null,
     };
   }
@@ -414,7 +427,7 @@ export function buildFallbackReply(context: MyAssistDailyContext, question: stri
     mode: "fallback",
     answer: buildWelcomeReply(context).answer,
     actions: buildWelcomeReply(context).actions,
-    followUps: buildSuggestedPrompts(context).slice(0, 3),
+    followUps: buildSuggestedPrompts(context).slice(0, 2),
     taskDraft: null,
   };
 }

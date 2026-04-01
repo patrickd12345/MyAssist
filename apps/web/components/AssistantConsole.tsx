@@ -214,15 +214,15 @@ export function AssistantConsole({
           <div>
             <p className="section-title text-xs font-semibold">Live assistant</p>
             <h2 className="theme-ink mt-2 text-2xl font-semibold tracking-[-0.03em]">
-              Ask questions, challenge the plan, and pressure-test the day
+              Sharp operator on email, calendar, and Todoist
             </h2>
             <p className="theme-muted mt-3 max-w-3xl text-sm leading-7">
-              This layer reads the same daily context, then answers with a local model when available and
-              falls back to deterministic guidance when it is not.
+              Same daily snapshot as the dashboard. Local model when reachable; tight rule-based answers when
+              not — no invented inbox or calendar facts.
             </p>
           </div>
           <div className="theme-chip rounded-full px-4 py-2 text-xs font-medium">
-            Interactive operator channel
+            Life-ops cockpit
           </div>
         </div>
       ) : null}
@@ -376,7 +376,7 @@ export function AssistantConsole({
 
         <div className="space-y-4">
           <div className="glass-panel rounded-[28px] p-4">
-            <p className="section-title text-xs font-semibold">Quick asks</p>
+            <p className="section-title text-xs font-semibold">Start here</p>
             <div className="mt-4 flex flex-wrap gap-2">
               {promptIdeas.map((prompt) => (
                 <button
@@ -400,27 +400,27 @@ export function AssistantConsole({
                 id="assistant-input"
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
-                placeholder="Ask what to do first, what to defer, how to handle a meeting, or turn an item into a plan."
+                placeholder="First move, what to defer, next meeting, or draft a Todoist task — grounded in today's snapshot."
                 className={`theme-input w-full rounded-[22px] px-4 py-3 text-sm leading-6 outline-none transition ${
                   compact ? "min-h-28" : "min-h-32"
                 }`}
               />
               <div className="flex items-center justify-between gap-3">
                 <p className="theme-muted text-xs leading-6">
-                  It uses local Ollama when reachable and falls back to rule logic otherwise.
+                  Local model when Ollama is up; otherwise deterministic rules on the same context.
                 </p>
                 <button
                   type="submit"
                   disabled={pending || input.trim() === ""}
                   className="theme-button-primary rounded-full px-4 py-2.5 text-sm font-semibold transition disabled:opacity-50"
                 >
-                  {pending ? "Thinking..." : "Ask"}
+                  {pending ? "Working the snapshot…" : "Ask"}
                 </button>
               </div>
             </form>
             {error ? (
-              <p className="theme-subpanel theme-muted mt-3 rounded-[18px] px-3 py-2 text-xs">
-                {error}
+              <p className="theme-subpanel theme-muted mt-3 rounded-[18px] px-3 py-2 text-xs" role="alert">
+                Could not reach the assistant: {error}
               </p>
             ) : null}
           </div>

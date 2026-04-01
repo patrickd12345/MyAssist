@@ -23,6 +23,12 @@ import { resolveMyAssistRuntimeEnv } from "@/lib/env/runtime";
 import { logAiServerEvent, logServerEvent } from "@/lib/serverLog";
 import { getSessionUserId } from "@/lib/session";
 import { isMyAssistDailyContext } from "@/lib/validateContext";
+import {
+  buildAssistantChatSystemPrompt,
+  buildChiefOfStaffFollowUps,
+  buildHeadlineSystemPrompt,
+  buildSituationAnalystSystemPrompt,
+} from "@/lib/assistantPrompts";
 import type { MyAssistDailyContext, SituationBrief } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -209,10 +215,7 @@ async function createChiefOfStaffChatReply(
 ): Promise<AssistantRouteResponse> {
   const result = await createSituationBrief(context, userId, energyLevel);
   const actions = result.brief.next_actions.slice(0, 2);
-  const followUps = [
-    "What should I focus on first today?",
-    "What can I safely defer?",
-  ];
+  const followUps = buildChiefOfStaffFollowUps(context);
 
   return {
     mode: result.mode,
@@ -248,24 +251,7 @@ async function createReply(context: MyAssistDailyContext, message: string, userI
       messages: [
         {
           role: "system",
-          content: [
-            "You are MyAssist, a sharp executive operator for a busy founder.",
-            "Use the supplied daily context snapshot and historical memory to answer.",
-            "Do not invent facts.",
-            "Be direct, useful, and a little forceful. No therapy tone. No fluff.",
-            "If the user asks about past context, use the Rolling Memory JSON to inform your answer.",
-            "Keep answers short because this is a life assistant, not a strategy memo.",
-            "If the user asks to create a task, return a taskDraft.",
-            "Answer in JSON with keys: answer, actions, followUps, taskDraft.",
-            "answer: one concise paragraph.",
-            "actions: array of 1 to 2 concrete action strings.",
-            "followUps: array of 1 to 2 short suggested questions.",
-            "taskDraft: null unless the user is clearly asking to create a task.",
-            "taskDraft.content: concise Todoist task title.",
-            "taskDraft.dueString: human due phrase like tomorrow at 9am if present, else null.",
-            "taskDraft.description: optional short note, else null.",
-            "taskDraft.priority: 1-4 if clearly implied, else null.",
-          ].join(" "),
+          content: buildAssistantChatSystemPrompt(),
         },
         {
           role: "user",
@@ -332,29 +318,7 @@ async function createSituationBrief(
         messages: [
           {
             role: "system",
-            content: [
-              "You are MyAssist Situation Analyst.",
-              "Produce one structured daily chief-of-staff brief from the provided snapshot and memory.",
-              "Use only provided data. Do not invent meetings, tasks, or emails.",
-              "Use rolling memory to recognize repeated unresolved priorities, risks, and commitments across days.",
-              "If a risk or priority has appeared repeatedly, escalate it instead of treating it like a brand-new observation.",
-              "Rolling memory may include snoozed/deferred tasks with reasons (e.g. needs focus time, blocked on someone else, low priority).",
-              "If the same task or pattern appears often with snooze reasons like needs focus time, recommend breaking the work into smaller steps or scheduling a protected deep-work block in next_actions.",
-              "If snooze reasons indicate waiting on others, suggest a concrete follow-up or escalation in next_actions or defer_recommendations.",
-              energyInstructions,
-              "Return valid JSON with keys:",
-              "pressure_summary (string),",
-              "top_priorities (array of 3 to 5 strings),",
-              "conflicts_and_risks (array of 2 to 4 strings),",
-              "defer_recommendations (array of 2 to 4 strings),",
-              "next_actions (array of 3 to 5 strings),",
-              "confidence_and_limits (string),",
-              "memory_insights (array of 0 to 3 strings).",
-              "Keep each array item concise and actionable.",
-              "Prefer action-oriented phrasing over raw email subject lines when possible.",
-            ]
-              .filter((line) => line.trim() !== "")
-              .join(" "),
+            content: buildSituationAnalystSystemPrompt(energyInstructions),
           },
           {
             role: "user",
@@ -424,32 +388,7 @@ async function createHeadline(context: MyAssistDailyContext): Promise<HeadlineAp
   const messages: Array<{ role: "system" | "user"; content: string }> = [
     {
       role: "system",
-      content: [
-        "You are generating a \"New Day One-Liner\".",
-        "",
-        "From the provided JSON:",
-        "- Analyze overdue tasks",
-        "- Analyze tasks due today",
-        "- Analyze calendar events today",
-        "- Analyze important email signals",
-        "",
-        "Goal:",
-        "Produce ONE short sentence that summarizes the user's day at a high level.",
-        "",
-        "Rules:",
-        "- One sentence only",
-        "- No bullet points",
-        "- No greeting",
-        "- No explanation",
-        "- No addressing the user",
-        "- Do not name specific task titles or email subjects (those appear elsewhere on the page)",
-        "- Summarize using load level and counts only: describe the shape of the day, not a list of items",
-        "",
-        "Tone:",
-        "- Neutral",
-        "- Concise",
-        "- Operational",
-      ].join("\n"),
+      content: buildHeadlineSystemPrompt(),
     },
     { role: "user", content: `JSON:\n${userBlock}` },
   ];
@@ -660,12 +599,12 @@ function parseAssistantReply(raw: string): Omit<AssistantReply, "mode"> {
     return {
       answer,
       actions: Array.isArray(parsed.actions)
-        ? parsed.actions.filter((item): item is string => typeof item === "string" && item.trim() !== "").slice(0, 3)
+        ? parsed.actions.filter((item): item is string => typeof item === "string" && item.trim() !== "").slice(0, 2)
         : [],
       followUps: Array.isArray(parsed.followUps)
         ? parsed.followUps
             .filter((item): item is string => typeof item === "string" && item.trim() !== "")
-            .slice(0, 3)
+            .slice(0, 2)
         : [],
       taskDraft: coerceTaskDraft(parsed.taskDraft),
     };
