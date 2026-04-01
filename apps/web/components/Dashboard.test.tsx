@@ -642,7 +642,8 @@ describe("Dashboard", () => {
     );
     const region = screen.getByLabelText("Daily intelligence");
     expect(region).toBeInTheDocument();
-    expect(within(region).getByText("Urgent: 0. Important: 0.")).toBeInTheDocument();
+    expect(within(region).getByText("Urgent")).toBeInTheDocument();
+    expect(within(region).getByText("Top subjects")).toBeInTheDocument();
     expect(within(region).getByText("First priority line")).toBeInTheDocument();
   });
 

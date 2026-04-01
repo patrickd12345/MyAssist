@@ -54,6 +54,7 @@ test.describe("Dashboard sanity (E2E server + mock daily context)", () => {
         timeout: 20_000,
       });
       await expect(page.getByText("Rule-based snapshot").first()).toBeVisible({ timeout: 25_000 });
+      await expect(page.getByLabel("Unified daily briefing").first()).toBeVisible({ timeout: 10_000 });
       await expect(page.getByLabel("Daily intelligence").first()).toBeVisible({ timeout: 10_000 });
     });
 
