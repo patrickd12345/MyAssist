@@ -4,10 +4,10 @@ Live execution tracker for the unified live operational window model.
 
 ## Now
 
-- [ ] Restore live Ollama connectivity **on the machine that runs Next** so local `/api/assistant` can answer in `ollama` mode; for **hosted** Vercel, set `AI_MODE=gateway` (or a reachable `OLLAMA_BASE_URL`) — see [`docs/commercial-pilot-readiness.md`](docs/commercial-pilot-readiness.md) **AI inference**.
-- [ ] Verify live Gmail/Calendar/Todoist reads in Today view: primary UX is **refresh after OAuth return and after actions** (no background polling in MVP); confirm in browser after real OAuth connect.
+- [ ] Restore live Ollama connectivity **on the machine that runs Next** so local `/api/assistant` can answer in `ollama` mode; for **hosted** Vercel, set `AI_MODE=gateway` (or a reachable `OLLAMA_BASE_URL`) — see [`docs/commercial-pilot-readiness.md`](docs/commercial-pilot-readiness.md) **AI inference**. **Sign-off:** [`docs/myassist-operational-signoff.md`](docs/myassist-operational-signoff.md) section 1.
+- [ ] Verify live Gmail/Calendar/Todoist reads in Today view: primary UX is **refresh after OAuth return and after actions** (no background polling in MVP); confirm in browser after real OAuth connect. **Sign-off:** [`docs/myassist-operational-signoff.md`](docs/myassist-operational-signoff.md) section 2.
 - [x] Rotate any secret that was exposed during setup and update the affected local or cloud config.
-- [ ] Keep provider adapter and service interfaces stable for hosted rollout.
+- [ ] Keep provider adapter and service interfaces stable for hosted rollout. **Sign-off:** [`docs/myassist-operational-signoff.md`](docs/myassist-operational-signoff.md) section 3.
 - [x] **Hosted readiness (Path A):** Supabase migration + dual-mode `userStore` / `tokenStore` when `SUPABASE_*` is set; Sentry hooks; [`docs/commercial-pilot-readiness.md`](docs/commercial-pilot-readiness.md) checklist and runbook.
 - [x] **MVP closure docs:** AI hosted vs local, runbook steps for context header + assistant `mode`, `.env.example` AI block, Vitest gateway chat path, E2E OAuth return banner step.
 
