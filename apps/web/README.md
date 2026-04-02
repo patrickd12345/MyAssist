@@ -212,6 +212,7 @@ If logs show **Array buffer allocation failed** or **Caching failed for pack** f
 - **`tests/e2e/dashboard-sanity.spec.ts`**: registers a user, checks **`/api/integrations/status`** and **`/api/daily-context`**, then walks **Overview → Tasks → Inbox → Calendar → Assistant** and asserts the Inbox shows mock email copy (e.g. `Example signal (mock)`).
 - **`tests/e2e/assistant-ask.spec.ts`**: Assistant tab, fill `#assistant-input`, submit with **Ask**, assert **`POST /api/assistant`** returns **200** and the question text appears in the thread.
 - **`tests/e2e/mobile-task-touch-targets.spec.ts`**: Pixel 5 viewport, Tasks tab, first **Complete** button bounding box height **>= 44px**.
+- **`tests/e2e/billing-status.spec.ts`**: **`GET /api/billing/status`** returns **`enabled: false`** when billing env is unset; after registration the dashboard has no **Subscribe / upgrade** or **Manage billing** buttons.
 - A **connected** integration pill in production only means tokens exist in **`myassist.integration_tokens`**; the **Inbox** tab still depends on a successful **live Gmail read** in **`fetchDailyContextLive`** / daily-context. If Gmail returns no messages or the fetch fails, the Inbox can look empty while status stays connected.
 
 Thorough verification methodology, command outputs, and residual risks: **[`docs/thorough-testing-report.md`](../../docs/thorough-testing-report.md)** and **[`docs/qa-manual-checklist.md`](../../docs/qa-manual-checklist.md)**.
