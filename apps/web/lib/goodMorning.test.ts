@@ -38,7 +38,7 @@ describe("buildGoodMorningMessageDeterministic", () => {
         counts: { urgent: 3, important: 0, action_required: 0, job_related: 0 },
       }),
     );
-    expect(out.message).toContain("3 urgent items today");
+    expect(out.message).toContain("briefing flags 3 urgent items");
   });
 
   it("busy schedule", () => {
@@ -48,7 +48,7 @@ describe("buildGoodMorningMessageDeterministic", () => {
         counts: { urgent: 0, important: 0, action_required: 0, job_related: 0 },
       }),
     );
-    expect(out.message).toContain("busy today with 5 meetings");
+    expect(out.message).toContain("today's calendar window has 5 events");
   });
 
   it("job day", () => {
@@ -67,8 +67,8 @@ describe("buildGoodMorningMessageDeterministic", () => {
         counts: { urgent: 1, important: 0, action_required: 0, job_related: 1 },
       }),
     );
-    expect(out.message).toMatch(/urgent item/);
-    expect(out.message).toMatch(/busy today with 4 meetings/);
+    expect(out.message).toMatch(/briefing flags 1 urgent item/);
+    expect(out.message).toMatch(/today's calendar window has 4 events/);
     expect(out.message).toMatch(/job-related update/);
   });
 });
@@ -87,7 +87,7 @@ describe("buildGoodMorningMessage", () => {
     const out = await buildGoodMorningMessage(
       briefing({ counts: { urgent: 2, important: 0, action_required: 0, job_related: 0 } }),
     );
-    expect(out.message).toContain("2 urgent items");
+    expect(out.message).toContain("briefing flags 2 urgent items");
     expect(spy).not.toHaveBeenCalled();
   });
 

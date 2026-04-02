@@ -294,8 +294,10 @@ describe("Dashboard", () => {
     );
     expect(screen.getByText("Good morning Pat")).toBeInTheDocument();
     expect(screen.getByText("Good morning — test line.")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Jump to tasks — urgent count from briefing/i })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Jump to calendar — meetings in view/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /Jump to tasks — urgent lines from briefing \(email and tasks, not calendar urgent\)/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Jump to calendar — events in today's pulled window/i })).toBeInTheDocument();
   });
 
   it("loads headline and situation brief from the assistant API", async () => {

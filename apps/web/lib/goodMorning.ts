@@ -5,7 +5,8 @@ import { executeChat } from "./aiRuntime";
 import { resolveMyAssistRuntimeEnv } from "./env/runtime";
 import type { GoodMorningMessage, UnifiedDailyBriefing } from "./types";
 
-const BUSY_MEETING_THRESHOLD = 4;
+/** Minimum calendar events before mentioning the calendar in the greeting (noise control for very light days). */
+const MIN_CALENDAR_EVENTS_IN_GREETING = 4;
 
 function goodMorningAiEnabled(): boolean {
   const v = resolveMyAssistRuntimeEnv().myassistDailyIntelAi.trim().toLowerCase();
@@ -22,11 +23,13 @@ export function buildGoodMorningMessageDeterministic(briefing: UnifiedDailyBrief
   const segments: string[] = [];
   if (urgentCount > 0) {
     segments.push(
-      `you have ${urgentCount} urgent item${urgentCount === 1 ? "" : "s"} today`,
+      `your briefing flags ${urgentCount} urgent item${urgentCount === 1 ? "" : "s"} (email and tasks — not calendar "urgent" markers)`,
     );
   }
-  if (meetingCount >= BUSY_MEETING_THRESHOLD) {
-    segments.push(`your schedule is busy today with ${meetingCount} meetings`);
+  if (meetingCount >= MIN_CALENDAR_EVENTS_IN_GREETING) {
+    segments.push(
+      `today's calendar window has ${meetingCount} event${meetingCount === 1 ? "" : "s"} (all blocks in the pull, not only meetings)`,
+    );
   }
   if (jobCount > 0) {
     segments.push(

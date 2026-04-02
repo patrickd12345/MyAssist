@@ -11,9 +11,12 @@ function truncateLine(text: string, max = 160): { display: string; full: string 
   return { display: `${t.slice(0, max - 1).trim()}…`, full: t };
 }
 
-function StatChip({ label, value }: { label: string; value: number }) {
+function StatChip({ label, value, title }: { label: string; value: number; title?: string }) {
   return (
-    <div className="flex min-w-[5.5rem] flex-col rounded-xl border border-[var(--line)] bg-[var(--surface-soft)] px-3 py-2 text-center sm:min-w-0 sm:flex-1">
+    <div
+      className="flex min-w-[5.5rem] flex-col rounded-xl border border-[var(--line)] bg-[var(--surface-soft)] px-3 py-2 text-center sm:min-w-0 sm:flex-1"
+      title={title}
+    >
       <span className="theme-muted text-[11px] font-medium uppercase tracking-[0.08em]">{label}</span>
       <span className="theme-ink mt-0.5 tabular-nums text-lg font-semibold leading-none">{value}</span>
     </div>
@@ -43,11 +46,19 @@ export function UnifiedDailyBriefingPanel({ briefing }: UnifiedDailyBriefingPane
       ) : (
         <div className="mt-4 space-y-5">
           <div className="flex flex-wrap gap-2 sm:gap-3">
-            <StatChip label="Urgent" value={briefing.counts.urgent} />
+            <StatChip
+              label="Urgent"
+              value={briefing.counts.urgent}
+              title="Email, tasks, and briefing signals — not Google Calendar urgent markers."
+            />
             <StatChip label="Important" value={briefing.counts.important} />
             <StatChip label="Action" value={briefing.counts.action_required} />
             <StatChip label="Job" value={briefing.counts.job_related} />
-            <StatChip label="Meetings" value={briefing.calendar_events_in_view} />
+            <StatChip
+              label="Calendar"
+              value={briefing.calendar_events_in_view}
+              title="Events in today's pulled window (includes blocks and holds, not only meetings)."
+            />
           </div>
 
           <div className="grid gap-3 sm:grid-cols-1 lg:grid-cols-3">

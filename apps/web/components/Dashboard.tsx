@@ -391,13 +391,13 @@ function CompactMetricsRow({ data }: { data: MyAssistDailyContext }) {
         label="Urgent"
         value={m.urgent}
         href="#tasks"
-        ariaLabel="Jump to tasks — urgent count from briefing"
+        ariaLabel="Jump to tasks — urgent lines from briefing (email and tasks, not calendar urgent)"
       />
       <CompactMetricCard
-        label="Meetings"
+        label="Calendar"
         value={m.meetings}
         href="#calendar"
-        ariaLabel="Jump to calendar — meetings in view"
+        ariaLabel="Jump to calendar — events in today's pulled window"
       />
       <CompactMetricCard
         label="Tasks due"
