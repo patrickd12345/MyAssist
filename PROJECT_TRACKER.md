@@ -15,11 +15,11 @@ Live execution tracker for the unified live operational window model.
 
 - [x] **Environment hardening / dev-prod separation (first pass):** `sharedDbEnv` + `bootstrap.sharedDb` on Node boot, `assertMyAssistRuntimeEnv` for prod/strict Supabase, `pnpm dev:infisical` merge script (also **`pnpm dev:infisical`** at repo root), OAuth integration route tests, `SHARED_DB_*` ref vars in `.env.example`. **Infisical** is the documented team default for secrets (`AUTH_SECRET`, Supabase, OAuth); README + root README point to it.
 - [x] **`pnpm dev:all` single entry:** `scripts/dev-all.mjs` runs Next + job-hunt digest with shared `scripts/infisical-merge.mjs` (optional Infisical, graceful fallback); `apps/web/scripts/dev-with-infisical.mjs` uses the same merge helper.
-- [ ] Improve local setup reliability and runbook quality (includes `pnpm check:env` in [`docs/myassist-operational-signoff.md`](docs/myassist-operational-signoff.md) section 0).
+- [x] **Env sign-off §0:** [`docs/myassist-operational-signoff.md`](docs/myassist-operational-signoff.md) section 0 documents `pnpm check:env` / `pnpm check:env:prod` (no secret values); billing-related checks apply when `BILLING_ENABLED=true` (see [`apps/web/lib/env/envReadiness.ts`](apps/web/lib/env/envReadiness.ts)).
 - [ ] Tighten the assistant voice, action proposals, and conversational depth.
 - [ ] Finalize adapter/service boundaries: `gmailAdapter`, `calendarAdapter`, `todoistAdapter`, `unifiedTodayService`, `crossSystemActionService`.
 - [ ] Harden OAuth and secret handling without adding multi-tenant complexity.
-- [ ] Keep interfaces stable so auth, billing, and BYOK can be added later without rewrites.
+- [ ] Keep interfaces stable for future multi-tenant auth and BYOK without rewrites (Stripe billing is optional and already wired; see [`PRODUCT_SCOPE.md`](PRODUCT_SCOPE.md)).
 
 ## Blocked
 
@@ -46,11 +46,12 @@ Live execution tracker for the unified live operational window model.
 - [x] Added explicit Todoist task completion from the dashboard with optimistic UI and rollback on failure.
 - [x] Added press-and-hold defer actions on task completion buttons for afternoon, tomorrow, and next week.
 - [x] Added AI-drafted Todoist task creation with explicit confirmation in the assistant console.
+- [x] **Stripe billing (Bookiji-style):** Checkout, Customer Portal, `POST /api/payments/webhook`, `myassist` subscription tables, production guards, dashboard **Subscription** panel + `GET /api/billing/status`; runbook [`docs/billing-stripe-runbook.md`](docs/billing-stripe-runbook.md).
 
 ## Risks
 
 - Local Ollama may be running in the desktop app but still unreachable from the web app process.
-- Premature auth, billing, or BYOK work would slow the local product without helping current validation.
+- Premature multi-tenant marketplace features or heavy BYOK scope would slow single-user validation.
 - Any drift toward local provider mirror tables would increase complexity and reliability risk.
 
 ## Definition of ready for commercial pilot
@@ -83,6 +84,6 @@ Live execution tracker for the unified live operational window model.
 
 ## Current scope rule
 
-- Build the local single-user version first.
-- Do not implement tenant auth, billing, quotas, or BYOK flows yet.
-- Do preserve boundaries so those can be added later without redoing the app or workflow core.
+- Ship the single-user / single-tenant MyAssist surface first (credential auth, no marketplace).
+- **Optional Stripe subscription** is in scope when `BILLING_ENABLED=true` (see [`PRODUCT_SCOPE.md`](PRODUCT_SCOPE.md), [`docs/billing-stripe-runbook.md`](docs/billing-stripe-runbook.md)); multi-vendor marketplace and `platform.entitlements` as authority for credential users remain out of scope.
+- Preserve adapter and service boundaries so stricter auth, quotas, or BYOK can land later without rewriting the live window.

@@ -8,6 +8,7 @@ From `apps/web`:
 
 - `pnpm check:env` — development profile; exits **0** when critical items for that profile are satisfied (does not print values).
 - `pnpm check:env:prod` — production-like profile (`--production-like`); use with `node --env-file=.env.local` or Vercel-exported env to validate before deploy. Exits **1** if auth or Supabase requirements fail.
+- When **`BILLING_ENABLED=true`**, the same checks also require Stripe server vars (secret, webhook secret, price id) per profile; see [`billing-stripe-runbook.md`](./billing-stripe-runbook.md).
 
 Implementation: [`apps/web/lib/env/envReadiness.ts`](../apps/web/lib/env/envReadiness.ts), CLI [`apps/web/scripts/check-env-readiness.ts`](../apps/web/scripts/check-env-readiness.ts).
 
