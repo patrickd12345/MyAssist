@@ -2,9 +2,6 @@
 .branches
 .temp
 
-# Superseded migration filename (removed from repo in favor of 20260402141000_*). Ignore local orphan if Windows could not delete the file.
-migrations/20260402135156_myassist_stripe_billing.sql
-
 # dotenvx
 .env.keys
 .env.local

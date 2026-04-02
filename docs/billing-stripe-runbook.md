@@ -15,7 +15,7 @@ npx supabase db push
 
 Canonical migration file: [`supabase/migrations/20260402141000_myassist_stripe_billing.sql`](../supabase/migrations/20260402141000_myassist_stripe_billing.sql).
 
-The duplicate migration `20260402135156_myassist_stripe_billing.sql` was removed from the repository; only [`20260402141000_myassist_stripe_billing.sql`](../supabase/migrations/20260402141000_myassist_stripe_billing.sql) should exist in `supabase/migrations/`. If a stale copy of the old filename still appears on disk (Windows file lock), delete it after closing programs that hold the file, or rely on [`supabase/.gitignore`](../supabase/.gitignore) so it stays untracked and out of commits.
+The superseded migration `20260402135156_myassist_stripe_billing.sql` was removed from the repository; only [`20260402141000_myassist_stripe_billing.sql`](../supabase/migrations/20260402141000_myassist_stripe_billing.sql) should exist under `supabase/migrations/`.
 
 If the Supabase CLI fails with **config parse errors** (invalid keys in `supabase/config.toml`), fix or regenerate config per Supabase docs, or apply the same SQL in the Supabase SQL editor as a last resort (still prefer CLI for repeatability).
 
