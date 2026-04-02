@@ -1,4 +1,5 @@
 import { Dashboard } from "@/components/Dashboard";
+import { getDashboardServerInitial } from "@/lib/serverDashboardInitial";
 import { getSessionUserDisplayFirstName, getSessionUserId } from "@/lib/session";
 import { redirect } from "next/navigation";
 
@@ -11,12 +12,13 @@ export default async function Home() {
   }
 
   const greetingFirstName = await getSessionUserDisplayFirstName();
+  const { initialData, initialError, initialSource } = await getDashboardServerInitial(userId);
 
   return (
     <Dashboard
-      initialData={null}
-      initialError={null}
-      initialSource="live"
+      initialData={initialData}
+      initialError={initialError}
+      initialSource={initialSource}
       greetingFirstName={greetingFirstName}
     />
   );

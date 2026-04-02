@@ -6,7 +6,6 @@ import {
   buildSituationBriefFallback,
   buildSituationDigest,
   type AssistantReply,
-  type TaskDraft,
 } from "@/lib/assistant";
 import { fetchDailyContextLive } from "@/lib/fetchDailyContext";
 import {
@@ -30,11 +29,14 @@ import {
   buildSituationAnalystSystemPrompt,
 } from "@/lib/assistantPrompts";
 import type { MyAssistDailyContext, SituationBrief } from "@/lib/types";
+import { parseAssistantStructuredReply } from "@/lib/assistantStructuredReply";
 
 export const dynamic = "force-dynamic";
 
 /** Chat path: try primary then these. Heavier models may OOM on low-RAM machines. */
 const OLLAMA_MODEL_FALLBACKS = ["phi3:mini", "llama3.1:8b", "mistral:latest"];
+const ASSISTANT_CHAT_TIMEOUT_MS = 8_000;
+const ASSISTANT_MULTI_MODEL_TOTAL_TIMEOUT_MS = 8_000;
 
 /** Headline path: lightweight-first so mode=ollama succeeds without huge RAM. Override with OLLAMA_HEADLINE_MODELS=comma,separated */
 const DEFAULT_HEADLINE_MODELS = [
@@ -243,23 +245,27 @@ async function createReply(context: MyAssistDailyContext, message: string, userI
   }
   try {
     const memoryPrompt = await getRollingMemoryPrompt(userId, context);
-    
-    const result = await executeChat({
-      format: "json",
-      temperature: 0.2,
-      maxTokens: 220,
-      messages: [
-        {
-          role: "system",
-          content: buildAssistantChatSystemPrompt(),
-        },
-        {
-          role: "user",
-          content: `Question:\n${message}\n\nDaily context snapshot:\n${buildContextDigest(context)}\n\nHistorical Rolling Memory:\n${memoryPrompt}`,
-        },
-      ],
-    });
-    const parsed = parseAssistantReply(result.text);
+
+    const result = await runAssistantChatWithTimeout(
+      executeChat({
+        format: "json",
+        temperature: 0.2,
+        maxTokens: 220,
+        messages: [
+          {
+            role: "system",
+            content: buildAssistantChatSystemPrompt(),
+          },
+          {
+            role: "user",
+            content: `Question:\n${message}\n\nDaily context snapshot:\n${buildContextDigest(context)}\n\nHistorical Rolling Memory:\n${memoryPrompt}`,
+          },
+        ],
+      }),
+      "assistant_chat_timeout",
+      ASSISTANT_CHAT_TIMEOUT_MS,
+    );
+    const parsed = parseAssistantStructuredReply(result.text);
     const response = {
       mode: result.mode,
       answer: parsed.answer,
@@ -306,8 +312,11 @@ async function createSituationBrief(
   const energyInstructions = buildEnergySituationInstructions(energyLevel);
   const candidateModels = getSituationCandidateModels();
   const attemptErrors: string[] = [];
+  const deadline = Date.now() + ASSISTANT_MULTI_MODEL_TOTAL_TIMEOUT_MS;
 
   for (const model of candidateModels) {
+    const remainingMs = deadline - Date.now();
+    if (remainingMs <= 0) break;
     try {
       const raw = await requestOllamaForModel(model, {
         format: "json",
@@ -331,7 +340,7 @@ async function createSituationBrief(
             ].join("\n"),
           },
         ],
-      });
+      }, remainingMs);
       const brief = parseSituationBrief(raw.text, context);
       const persisted = await storeSituationBrief(userId, context, brief);
       const response = {
@@ -399,14 +408,17 @@ async function createHeadline(context: MyAssistDailyContext): Promise<HeadlineAp
   };
 
   const attemptErrors: string[] = [];
+  const deadline = Date.now() + ASSISTANT_MULTI_MODEL_TOTAL_TIMEOUT_MS;
 
   for (const model of getHeadlineCandidateModels()) {
+    const remainingMs = deadline - Date.now();
+    if (remainingMs <= 0) break;
     try {
       const raw = await requestOllamaForModel(model, {
         format: undefined,
         options: headlineOptions,
         messages,
-      });
+      }, remainingMs);
       const answer = parseHeadlineAnswer(raw.text);
       const response = {
         mode: raw.mode,
@@ -474,14 +486,35 @@ async function requestOllamaForModel(
     options: { temperature: number; num_predict: number };
     messages: Array<{ role: "system" | "user"; content: string }>;
   },
+  timeoutMs: number,
 ): Promise<CanonicalAiMetadata & { text: string }> {
-  return executeChat({
-    model,
-    temperature: body.options.temperature,
-    maxTokens: body.options.num_predict,
-    format: body.format,
-    messages: body.messages,
+  return runAssistantChatWithTimeout(
+    executeChat({
+      model,
+      temperature: body.options.temperature,
+      maxTokens: body.options.num_predict,
+      format: body.format,
+      messages: body.messages,
+    }),
+    `assistant_model_timeout:${model}`,
+    timeoutMs,
+  );
+}
+
+async function runAssistantChatWithTimeout<T>(
+  promise: Promise<T>,
+  timeoutCode: string,
+  timeoutMs: number,
+): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(timeoutCode)), timeoutMs);
   });
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
 }
 
 function getSituationCandidateModels(): string[] {
@@ -574,66 +607,6 @@ function buildHeadlineDigest(context: MyAssistDailyContext): string {
   return JSON.stringify(summary, null, 2);
 }
 
-function parseAssistantReply(raw: string): Omit<AssistantReply, "mode"> {
-  const fallback = {
-    answer: "I could not generate a useful reply from the current context.",
-    actions: [] as string[],
-    followUps: [] as string[],
-    taskDraft: null as TaskDraft | null,
-  };
-
-  try {
-    const parsed = JSON.parse(raw) as {
-      answer?: unknown;
-      actions?: unknown;
-      followUps?: unknown;
-      taskDraft?: unknown;
-    };
-
-    const answer =
-      typeof parsed.answer === "string" && parsed.answer.trim() ? parsed.answer.trim() : null;
-    if (!answer) {
-      throw new Error("Assistant response did not include answer");
-    }
-
-    return {
-      answer,
-      actions: Array.isArray(parsed.actions)
-        ? parsed.actions.filter((item): item is string => typeof item === "string" && item.trim() !== "").slice(0, 2)
-        : [],
-      followUps: Array.isArray(parsed.followUps)
-        ? parsed.followUps
-            .filter((item): item is string => typeof item === "string" && item.trim() !== "")
-            .slice(0, 2)
-        : [],
-      taskDraft: coerceTaskDraft(parsed.taskDraft),
-    };
-  } catch {
-    const plainText = raw.trim();
-    if (!plainText) return fallback;
-
-    // Guardrail: avoid rendering raw context JSON when the model fails schema adherence.
-    if (looksLikeContextDump(plainText)) return fallback;
-
-    return {
-      answer: plainText,
-      actions: [],
-      followUps: [],
-      taskDraft: null,
-    };
-  }
-}
-
-function looksLikeContextDump(text: string): boolean {
-  if (!text.trim().startsWith("{")) return false;
-  return (
-    /"run_date"\s*:/.test(text) &&
-    (/"urgent_counts"\s*:/.test(text) ||
-      /"todoist_overdue"\s*:/.test(text) ||
-      /"gmail_signals"\s*:/.test(text))
-  );
-}
-
 function parseSituationBrief(raw: string, context: MyAssistDailyContext): SituationBrief {
   const fallback = buildSituationBriefFallback(context);
   try {
@@ -672,23 +645,3 @@ function parseSituationBrief(raw: string, context: MyAssistDailyContext): Situat
   }
 }
 
-function coerceTaskDraft(value: unknown): TaskDraft | null {
-  if (!value || typeof value !== "object") return null;
-  const draft = value as Record<string, unknown>;
-  const content = typeof draft.content === "string" ? draft.content.trim() : "";
-  if (!content) return null;
-
-  const priorityRaw = draft.priority;
-  const priority =
-    priorityRaw === 1 || priorityRaw === 2 || priorityRaw === 3 || priorityRaw === 4
-      ? priorityRaw
-      : null;
-
-  return {
-    content,
-    dueString: typeof draft.dueString === "string" && draft.dueString.trim() ? draft.dueString.trim() : null,
-    description:
-      typeof draft.description === "string" && draft.description.trim() ? draft.description.trim() : null,
-    priority,
-  };
-}

@@ -105,6 +105,7 @@ describe("enrichDailyIntelligenceWithAi", () => {
   const originalEnv = { ...process.env };
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
     process.env = { ...originalEnv };
   });
@@ -131,6 +132,32 @@ describe("enrichDailyIntelligenceWithAi", () => {
     const base = buildDailyIntelligence([gs("1", "X", "Y", [pb("important")])]);
     const out = await enrichDailyIntelligenceWithAi(base);
     expect(out.summary.aiSummary).toBe("Brief triage overview.");
+  });
+
+  it("skips aiSummary when there is nothing meaningful to summarize", async () => {
+    process.env.MYASSIST_DAILY_INTEL_AI = "true";
+    const spy = vi.spyOn(aiRuntime, "executeChat");
+    const base = buildDailyIntelligence([]);
+    const out = await enrichDailyIntelligenceWithAi(base);
+    expect(out.summary.aiSummary).toBeUndefined();
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it("falls back deterministically when executeChat hangs", async () => {
+    process.env.MYASSIST_DAILY_INTEL_AI = "true";
+    vi.useFakeTimers();
+    vi.spyOn(aiRuntime, "executeChat").mockImplementation(
+      () =>
+        new Promise(() => {
+          // Never resolve: validates timeout guard.
+        }),
+    );
+    const base = buildDailyIntelligence([gs("1", "X", "Y", [pb("important")])]);
+    const pending = enrichDailyIntelligenceWithAi(base);
+    await vi.advanceTimersByTimeAsync(60_000);
+    const out = await pending;
+    expect(out.summary.aiSummary).toBeUndefined();
+    vi.useRealTimers();
   });
 
   it("falls back deterministically when executeChat throws", async () => {

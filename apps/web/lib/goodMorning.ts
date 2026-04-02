@@ -1,5 +1,6 @@
 import "server-only";
 
+import { withTimeout } from "./asyncTimeout";
 import { executeChat } from "./aiRuntime";
 import { resolveMyAssistRuntimeEnv } from "./env/runtime";
 import type { GoodMorningMessage, UnifiedDailyBriefing } from "./types";
@@ -40,27 +41,33 @@ export function buildGoodMorningMessageDeterministic(briefing: UnifiedDailyBrief
   return { message, tone: "neutral", generatedAt };
 }
 
+const DAILY_CONTEXT_AI_CHAT_TIMEOUT_MS = 60_000;
+
 async function tryAiRewrite(briefing: UnifiedDailyBriefing, deterministicLine: string): Promise<string | null> {
-  const res = await executeChat({
-    temperature: 0.25,
-    maxTokens: 120,
-    messages: [
-      {
-        role: "system",
-        content:
-          "Rewrite the user's daily greeting as one short paragraph in the voice of an executive assistant. Keep facts and numbers. No markdown. No greeting to a name.",
-      },
-      {
-        role: "user",
-        content: JSON.stringify({
-          deterministic_greeting: deterministicLine,
-          urgent: briefing.counts.urgent,
-          meetings: briefing.calendar_events_in_view,
-          job_related: briefing.counts.job_related,
-        }),
-      },
-    ],
-  });
+  const res = await withTimeout(
+    executeChat({
+      temperature: 0.25,
+      maxTokens: 120,
+      messages: [
+        {
+          role: "system",
+          content:
+            "Rewrite the user's daily greeting as one short paragraph in the voice of an executive assistant. Keep facts and numbers. No markdown. No greeting to a name.",
+        },
+        {
+          role: "user",
+          content: JSON.stringify({
+            deterministic_greeting: deterministicLine,
+            urgent: briefing.counts.urgent,
+            meetings: briefing.calendar_events_in_view,
+            job_related: briefing.counts.job_related,
+          }),
+        },
+      ],
+    }),
+    DAILY_CONTEXT_AI_CHAT_TIMEOUT_MS,
+  );
+  if (!res) return null;
   const line = res.text.trim();
   return line.length > 0 ? line : null;
 }

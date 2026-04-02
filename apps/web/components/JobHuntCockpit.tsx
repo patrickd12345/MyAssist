@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { dailyContextFetchInit } from "@/lib/dailyContextClient";
 import type { CalendarEvent, JobHuntEmailMatch } from "@/lib/types";
 import type { SavedJobRow } from "@/lib/jobHuntUiTypes";
 import { NEW_TRACK_SELECT_VALUE } from "@/lib/jobHuntUiTypes";
@@ -195,7 +196,7 @@ export function JobHuntCockpit() {
   const loadEmailMatches = useCallback(async () => {
     setEmailMatchesLoading(true);
     try {
-      const res = await fetch("/api/daily-context", { cache: "no-store" });
+      const res = await fetch("/api/daily-context", dailyContextFetchInit());
       if (res.status === 401) {
         setEmailMatches([]);
         setCalendarEvents([]);

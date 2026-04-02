@@ -1,5 +1,6 @@
 import "server-only";
 
+import { withTimeout } from "./asyncTimeout";
 import { executeChat } from "./aiRuntime";
 import { resolveMyAssistRuntimeEnv } from "./env/runtime";
 import { isInterviewLikeCalendarEvent } from "./services/todayIntelligenceService";
@@ -50,32 +51,38 @@ function aiEnabled(): boolean {
   return v === "1" || v === "true";
 }
 
+const DAILY_CONTEXT_AI_CHAT_TIMEOUT_MS = 60_000;
+
 async function enrichUnifiedBriefingWithAi(briefing: UnifiedDailyBriefing): Promise<UnifiedDailyBriefing> {
   if (!aiEnabled()) return briefing;
   try {
-    const res = await executeChat({
-      temperature: 0.2,
-      maxTokens: 140,
-      messages: [
-        {
-          role: "system",
-          content:
-            "Write one short daily briefing sentence. Keep it concrete and action-first. Do not use markdown.",
-        },
-        {
-          role: "user",
-          content: JSON.stringify({
-            urgent: briefing.urgent.slice(0, 4),
-            important: briefing.important.slice(0, 4),
-            action_required: briefing.action_required.slice(0, 4),
-            schedule_summary: briefing.schedule_summary,
-            tasks_summary: briefing.tasks_summary,
-            email_summary: briefing.email_summary,
-            summary: briefing.summary,
-          }),
-        },
-      ],
-    });
+    const res = await withTimeout(
+      executeChat({
+        temperature: 0.2,
+        maxTokens: 140,
+        messages: [
+          {
+            role: "system",
+            content:
+              "Write one short daily briefing sentence. Keep it concrete and action-first. Do not use markdown.",
+          },
+          {
+            role: "user",
+            content: JSON.stringify({
+              urgent: briefing.urgent.slice(0, 4),
+              important: briefing.important.slice(0, 4),
+              action_required: briefing.action_required.slice(0, 4),
+              schedule_summary: briefing.schedule_summary,
+              tasks_summary: briefing.tasks_summary,
+              email_summary: briefing.email_summary,
+              summary: briefing.summary,
+            }),
+          },
+        ],
+      }),
+      DAILY_CONTEXT_AI_CHAT_TIMEOUT_MS,
+    );
+    if (!res) return briefing;
     const line = res.text.trim();
     if (!line) return briefing;
     return { ...briefing, aiSummary: line };

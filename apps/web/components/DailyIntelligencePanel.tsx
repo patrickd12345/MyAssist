@@ -15,9 +15,9 @@ function bucketTotal(intel: NonNullable<DailyIntelligence>): number {
 
 function BucketBadge({ label, n }: { label: string; n: number }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1.5 text-sm tabular-nums text-zinc-100">
-      <span className="font-medium text-zinc-400">{label}</span>
-      <span className="text-white/35" aria-hidden>
+    <span className="theme-ink inline-flex items-center gap-1.5 rounded-full border border-[var(--line)] bg-[var(--surface-soft)] px-3 py-1.5 text-sm tabular-nums">
+      <span className="theme-muted font-medium">{label}</span>
+      <span className="theme-muted opacity-50" aria-hidden>
         ·
       </span>
       <span className="font-semibold">{n}</span>
@@ -39,7 +39,7 @@ export function DailyIntelligencePanel({ intel }: DailyIntelligencePanelProps) {
 
   return (
     <div
-      className="glass-panel min-w-0 rounded-2xl border border-white/10 p-4 sm:p-6"
+      className="glass-panel min-w-0 rounded-2xl border border-[var(--line)] p-4 sm:p-6"
       aria-label="Daily intelligence"
     >
       <p className="theme-accent text-[11px] font-semibold uppercase tracking-[0.16em]">Inbox</p>
@@ -59,26 +59,26 @@ export function DailyIntelligencePanel({ intel }: DailyIntelligencePanelProps) {
           ) : (
             <>
               {!shouldHideVerboseSummary(intel) ? (
-                <p className="mt-4 whitespace-pre-line text-[15px] leading-7 text-zinc-100">
+                <p className="theme-ink mt-4 whitespace-pre-line text-[15px] leading-7">
                   {intel.summary.generatedDeterministicSummary}
                 </p>
               ) : null}
               {intel.summary.aiSummary?.trim() ? (
-                <div className="mt-4 rounded-2xl border border-violet-500/20 bg-violet-500/[0.08] px-4 py-3 sm:px-5 sm:py-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-violet-200/90">AI · Inbox</p>
-                  <p className="mt-2 text-[15px] leading-7 text-zinc-100">{intel.summary.aiSummary.trim()}</p>
+                <div className="mt-4 rounded-2xl border border-[var(--accent-strong)] bg-[var(--accent-soft)] px-4 py-3 sm:px-5 sm:py-4">
+                  <p className="theme-accent text-[11px] font-semibold uppercase tracking-[0.12em]">AI · Inbox</p>
+                  <p className="theme-ink mt-2 text-[15px] leading-7">{intel.summary.aiSummary.trim()}</p>
                 </div>
               ) : null}
               {intel.summary.topPriorities.length > 0 ? (
                 <div className="mt-5">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-400">Top subjects</p>
+                  <p className="theme-muted text-[11px] font-semibold uppercase tracking-[0.14em]">Top subjects</p>
                   <ul className="mt-3 space-y-2.5">
                     {intel.summary.topPriorities.slice(0, 6).map((line) => {
                       const short = line.length > 120 ? `${line.slice(0, 117)}…` : line;
                       return (
                         <li
                           key={line}
-                          className="rounded-xl border border-white/8 bg-white/[0.03] px-4 py-2.5 text-[15px] leading-6 text-zinc-100"
+                          className="theme-ink rounded-xl border border-[var(--line)] bg-[var(--surface-soft)] px-4 py-2.5 text-[15px] leading-6"
                         >
                           <span className="line-clamp-3" title={line}>
                             {short}

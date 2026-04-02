@@ -3,6 +3,7 @@ import { jsonLegacyApiError } from '@/lib/api/error-contract';
 import { getSessionUserId } from "@/lib/session";
 import { integrationService } from "@/lib/integrations/service";
 import { resolveTodoistApiToken } from "@/lib/todoistToken";
+import { logKpiProviderAction } from "@/lib/productKpi";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +24,7 @@ export async function POST(
   try {
     const integrated = await integrationService.completeTodoistTask(userId, taskId);
     if (integrated.ok) {
+      logKpiProviderAction({ provider: "todoist", action: "complete_task", ok: true });
       return NextResponse.json({ ok: true, taskId });
     }
 
@@ -44,12 +46,19 @@ export async function POST(
 
     if (!response.ok) {
       const text = await response.text();
+      logKpiProviderAction({
+        provider: "todoist",
+        action: "complete_task",
+        ok: false,
+        status: response.status,
+      });
       return jsonLegacyApiError(
         `Todoist close failed with ${response.status}: ${text.slice(0, 300)}`,
         response.status,
       );
     }
 
+    logKpiProviderAction({ provider: "todoist", action: "complete_task", ok: true });
     return NextResponse.json({ ok: true, taskId });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown Todoist error";

@@ -13,6 +13,13 @@ import {
 import { CalendarIntelligencePanel } from "@/components/CalendarIntelligencePanel";
 import { DailyIntelligencePanel } from "@/components/DailyIntelligencePanel";
 import { UnifiedDailyBriefingPanel } from "@/components/UnifiedDailyBriefingPanel";
+import { dailyContextFetchInit } from "@/lib/dailyContextClient";
+import {
+  AUTO_REFRESH_POLL_INTERVAL_MS,
+  getAutoRefreshStaleMs,
+  hasAnyConnectedIntegration,
+  isDailyContextStale,
+} from "@/lib/dailyContextAutoRefresh";
 import {
   MYASSIST_CONTEXT_SOURCE_HEADER,
   type DailyContextSource,
@@ -52,6 +59,13 @@ import { CommunicationDraftToolbar } from "./CommunicationDraftToolbar";
 import { AssistantConsole, type CommunicationDraftInjectPayload } from "./AssistantConsole";
 import { InboxEmailRow } from "./InboxEmailRow";
 import { TaskList } from "./TaskList";
+
+function dailyContextClientError(e: unknown): string {
+  if (e instanceof Error && e.name === "AbortError") {
+    return "Refresh timed out (daily context took too long). Try again or check integrations.";
+  }
+  return e instanceof Error ? e.message : "Request failed";
+}
 
 type ThemeKey = "light" | "neon" | "kpop-demon-hunters" | "zara-larsson";
 type DashboardTab = "overview" | "tasks" | "inbox" | "calendar" | "assistant";
@@ -650,6 +664,14 @@ export function Dashboard({
   const communicationDraftInjectKeyRef = useRef(0);
   const lastCommunicationDraftFingerprintRef = useRef<string | null>(null);
   const displayDataRef = useRef<MyAssistDailyContext | null>(null);
+  const dataRef = useRef<MyAssistDailyContext | null>(initialData);
+  const silentRefreshInFlightRef = useRef(false);
+  const [backgroundRefreshing, setBackgroundRefreshing] = useState(false);
+  const [lastSilentRefreshError, setLastSilentRefreshError] = useState<string | null>(null);
+
+  useEffect(() => {
+    dataRef.current = data;
+  }, [data]);
 
   useEffect(() => {
     const storedTheme =
@@ -849,19 +871,38 @@ export function Dashboard({
     [data],
   );
 
-  const refresh = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const refresh = useCallback(async (options?: { mode?: "blocking" | "silent" }) => {
+    const mode =
+      options?.mode ?? (dataRef.current !== null ? "silent" : "blocking");
+
+    if (mode === "silent") {
+      if (silentRefreshInFlightRef.current) return;
+      silentRefreshInFlightRef.current = true;
+      setBackgroundRefreshing(true);
+      setLastSilentRefreshError(null);
+    } else {
+      setLoading(true);
+      setError(null);
+    }
+
     try {
-      const res = await fetch("/api/daily-context", { cache: "no-store" });
+      const res = await fetch("/api/daily-context", dailyContextFetchInit());
       const headerSource = res.headers.get(MYASSIST_CONTEXT_SOURCE_HEADER);
       const j = (await res.json()) as { error?: string } & Partial<MyAssistDailyContext>;
       if (!res.ok) {
+        if (mode === "silent") {
+          setLastSilentRefreshError(j.error ?? `HTTP ${res.status}`);
+          return;
+        }
         setData(null);
         setError(j.error ?? `HTTP ${res.status}`);
         return;
       }
       if ("error" in j && j.error) {
+        if (mode === "silent") {
+          setLastSilentRefreshError(j.error);
+          return;
+        }
         setData(null);
         setError(j.error);
         return;
@@ -875,10 +916,19 @@ export function Dashboard({
       );
       setData(j as MyAssistDailyContext);
     } catch (e) {
-      setData(null);
-      setError(e instanceof Error ? e.message : "Request failed");
+      if (mode === "silent") {
+        setLastSilentRefreshError(dailyContextClientError(e));
+      } else {
+        setData(null);
+        setError(dailyContextClientError(e));
+      }
     } finally {
-      setLoading(false);
+      if (mode === "silent") {
+        setBackgroundRefreshing(false);
+        silentRefreshInFlightRef.current = false;
+      } else {
+        setLoading(false);
+      }
     }
   }, []);
 
@@ -886,7 +936,7 @@ export function Dashboard({
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/daily-context?source=cache", { cache: "no-store" });
+      const res = await fetch("/api/daily-context?source=cache", dailyContextFetchInit());
       const headerSource = res.headers.get(MYASSIST_CONTEXT_SOURCE_HEADER);
       const j = (await res.json()) as { error?: string } & Partial<MyAssistDailyContext>;
 
@@ -894,7 +944,7 @@ export function Dashboard({
         setData(null);
         setContextSource("live");
         // No on-disk snapshot (first visit, or serverless FS where cache does not persist). Pull live once.
-        await refresh();
+        await refresh({ mode: "blocking" });
         return;
       }
 
@@ -920,7 +970,7 @@ export function Dashboard({
       setData(j as MyAssistDailyContext);
     } catch (e) {
       setData(null);
-      setError(e instanceof Error ? e.message : "Request failed");
+      setError(dailyContextClientError(e));
     } finally {
       setLoading(false);
       setBootstrapped(true);
@@ -930,9 +980,10 @@ export function Dashboard({
   const refreshProviderSlice = useCallback(
     async (provider: ProviderSlice) => {
       try {
-        const res = await fetch(`/api/daily-context?provider=${encodeURIComponent(provider)}`, {
-          cache: "no-store",
-        });
+        const res = await fetch(
+          `/api/daily-context?provider=${encodeURIComponent(provider)}`,
+          dailyContextFetchInit(),
+        );
         const body = (await res.json()) as
           | {
               gmail_signals?: MyAssistDailyContext["gmail_signals"];
@@ -1010,7 +1061,11 @@ export function Dashboard({
         });
       } catch (cause) {
         setTaskActionError(
-          cause instanceof Error ? cause.message : `Could not refresh ${provider} data.`,
+          cause instanceof Error && cause.name === "AbortError"
+            ? "Refresh timed out — try again."
+            : cause instanceof Error
+              ? cause.message
+              : `Could not refresh ${provider} data.`,
         );
       }
     },
@@ -1273,6 +1328,26 @@ export function Dashboard({
     if (!bootstrapped) return;
     void loadActionHistory();
   }, [bootstrapped, loadActionHistory]);
+
+  useEffect(() => {
+    const staleMs = getAutoRefreshStaleMs();
+    const trySilentAutoRefresh = () => {
+      if (typeof document === "undefined" || document.visibilityState !== "visible") return;
+      const ctx = dataRef.current;
+      if (!ctx) return;
+      if (!isDailyContextStale(ctx, Date.now(), staleMs)) return;
+      if (!hasAnyConnectedIntegration(integrationStatuses)) return;
+      void refresh({ mode: "silent" });
+    };
+    document.addEventListener("visibilitychange", trySilentAutoRefresh);
+    const poll = window.setInterval(trySilentAutoRefresh, AUTO_REFRESH_POLL_INTERVAL_MS);
+    const landing = window.setTimeout(trySilentAutoRefresh, 1500);
+    return () => {
+      document.removeEventListener("visibilitychange", trySilentAutoRefresh);
+      window.clearInterval(poll);
+      window.clearTimeout(landing);
+    };
+  }, [integrationStatuses, refresh]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1732,7 +1807,10 @@ export function Dashboard({
       <section className="glass-panel-strong mb-6 min-w-0 overflow-hidden rounded-[32px] px-5 py-5 sm:px-7 sm:py-6">
         <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
           <div className="max-w-4xl">
-            <div className="flex flex-wrap items-center gap-2">
+            <div
+              className="flex flex-wrap items-center gap-2"
+              style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.5rem" }}
+            >
               <span className="signal-pill rounded-full px-3 py-1 text-[11px] font-semibold">
                 MyAssist
               </span>
@@ -1748,6 +1826,14 @@ export function Dashboard({
                 </span>
               ) : showSkeleton ? (
                 <span className="theme-chip rounded-full px-3 py-1 text-xs font-medium">Loading context…</span>
+              ) : null}
+              {data && backgroundRefreshing ? (
+                <span
+                  className="theme-chip rounded-full px-3 py-1 text-xs font-medium"
+                  aria-live="polite"
+                >
+                  Updating…
+                </span>
               ) : null}
             </div>
             <nav aria-label="Workspace" className="mt-4 flex flex-wrap gap-2">
@@ -1866,10 +1952,10 @@ export function Dashboard({
               <button
                 type="button"
                 onClick={() => void refresh()}
-                disabled={loading}
+                disabled={loading || backgroundRefreshing}
                 className="theme-button-secondary rounded-full px-5 py-3 text-sm font-semibold transition disabled:opacity-50"
               >
-                {loading ? "Refreshing..." : "Refresh"}
+                {loading ? "Refreshing..." : backgroundRefreshing ? "Updating…" : "Refresh"}
               </button>
               <button
                 type="button"
@@ -1894,32 +1980,35 @@ export function Dashboard({
           {showSkeleton ? <DashboardCompactMetricsSkeleton /> : null}
 
           {!showSkeleton && displayData ? (
+            <UnifiedDailyBriefingPanel briefing={displayData.unified_daily_briefing} />
+          ) : null}
+
+          <section className="glass-panel rounded-[24px] p-2">
+            <nav aria-label="Today sections" className="flex flex-wrap gap-2">
+              {dashboardTabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                    activeTab === tab.id ? "theme-button-primary" : "theme-button-secondary"
+                  }`}
+                  onClick={() => setActiveTab(tab.id)}
+                  aria-current={activeTab === tab.id ? "page" : undefined}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </nav>
+          </section>
+
+          {!showSkeleton && displayData ? (
             <>
-              <UnifiedDailyBriefingPanel briefing={displayData.unified_daily_briefing} />
               <CompactMetricsRow data={displayData} />
               <DailyIntelligencePanel intel={displayData.daily_intelligence} />
               <CalendarIntelligencePanel intel={displayData.calendar_intelligence} />
             </>
           ) : null}
         </div>
-      </section>
-
-      <section className="glass-panel mb-6 rounded-[24px] p-2">
-        <nav aria-label="Today sections" className="flex flex-wrap gap-2">
-          {dashboardTabs.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                activeTab === tab.id ? "theme-button-primary" : "theme-button-secondary"
-              }`}
-              onClick={() => setActiveTab(tab.id)}
-              aria-current={activeTab === tab.id ? "page" : undefined}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </nav>
       </section>
 
       {oauthReturnBanner ? (
@@ -2068,13 +2157,34 @@ export function Dashboard({
           <button
             type="button"
             onClick={() => void refresh()}
-            disabled={loading}
+            disabled={loading || backgroundRefreshing}
             className="theme-button-primary mt-4 rounded-full px-5 py-3 text-sm font-semibold transition disabled:opacity-50"
           >
-            {loading ? "Refreshing..." : "Refresh live context"}
+            {loading ? "Refreshing..." : backgroundRefreshing ? "Updating…" : "Refresh live context"}
           </button>
         </div>
       )}
+
+      {lastSilentRefreshError && !error ? (
+        <div
+          role="status"
+          className="glass-panel mb-6 rounded-[24px] border-amber-500/35 bg-amber-500/10 p-4 text-sm theme-ink"
+        >
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <p>
+              <span className="font-semibold">Background refresh failed.</span>{" "}
+              <span className="theme-muted">{lastSilentRefreshError}</span>
+            </p>
+            <button
+              type="button"
+              className="theme-button-secondary shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold"
+              onClick={() => setLastSilentRefreshError(null)}
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       {error && (
         <div role="alert" className="glass-panel mb-6 rounded-[24px] border-red-500/30 p-5 text-sm text-red-300">

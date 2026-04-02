@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myassist.local/schemas/mcp/list_action_candidates.output.schema.json",
+  "title": "list_action_candidates response",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["generated_at", "candidates"],
+  "properties": {
+    "generated_at": {
+      "type": "string",
+      "description": "ISO timestamp from the daily context snapshot."
+    },
+    "candidates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["action_id", "label", "kind"],
+        "properties": {
+          "action_id": {
+            "type": "string",
+            "description": "Stable id for approve_action: complete_task:<todoistTaskId> or email_to_task:<gmailMessageId>."
+          },
+          "label": {
+            "type": "string"
+          },
+          "kind": {
+            "enum": ["complete_task", "email_to_task"]
+          },
+          "metadata": {
+            "type": "object",
+            "properties": {
+              "bucket": {
+                "enum": ["overdue", "due_today"]
+              },
+              "source": {
+                "const": "gmail"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

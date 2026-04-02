@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myassist.local/schemas/mcp/execute_action.input.json",
+  "title": "execute_action input",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["action_id", "approval_token"],
+  "properties": {
+    "action_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Must match the action_id used with approve_action."
+    },
+    "approval_token": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Short-lived token from POST /api/mcp/approve or approve_action."
+    }
+  }
+}

@@ -79,6 +79,8 @@ export type GmailSignal = {
   subject: string;
   snippet: string;
   date: string;
+  /** Gmail `internalDate` (ms since epoch as string); preferred for received time when present. */
+  internalDate?: string;
   /** Gmail API label ids for this message (e.g. includes UNREAD when unread). */
   label_ids?: string[];
   importance_score?: number;

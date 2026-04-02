@@ -7,12 +7,14 @@ Interactive assistant UI as a unified live window over connected provider system
 - Shows a structured daily brief from live Gmail, Google Calendar, and Todoist reads.
 - Builds the unified Today view in app services and adapters.
 - Exposes an interactive assistant through `/api/assistant`.
+- Exposes bearer-authenticated MCP routes for the [`myassist-mcp`](../../apps/myassist-mcp/README.md) stdio server: `GET /api/mcp/daily-context`, `GET /api/mcp/action-candidates`, `POST /api/mcp/approve`, `POST /api/mcp/execute`. Configure either legacy `MYASSIST_MCP_TOKEN` + `MYASSIST_MCP_USER_ID` or optional `MYASSIST_MCP_CLIENTS_JSON` / `MYASSIST_MCP_CLIENTS_FILE` for multiple bearer-to-user mappings; optional `MYASSIST_ACTION_APPROVAL_SECRET` for signing approval tokens in production.
 - Uses local Ollama when reachable and deterministic fallback when not.
 - Uses a light-first visual theme by default, with optional dark/art themes.
 - Supports direct Todoist task completion from the dashboard.
 - Supports press-and-hold defer actions from the task button.
 - Supports AI-drafted task creation with explicit confirmation in the assistant console.
 - Avoids autonomous provider writes in v1.
+- Silently refreshes live daily context in the background when data is older than a threshold (default 10 minutes), the tab is visible, and at least one integration is connected — see `NEXT_PUBLIC_MYASSIST_AUTO_REFRESH_STALE_MS` in `.env.example`.
 
 ## Source of truth
 
@@ -131,6 +133,7 @@ The file `apps/web/.infisical.json` is local machine state from `infisical init`
 Notes:
 
 - **Daily context** default path (`GET /api/daily-context`) builds the Today payload from **live** provider APIs unless **`MYASSIST_DEMO_MODE=true`** (curated demo snapshot in `lib/demoDailyContext.ts`, no provider reads; header **`demo`**) or **`MYASSIST_USE_MOCK_CONTEXT=true`** (minimal mock; header **`mock`**). Demo mode takes precedence over mock. The response header `x-myassist-context-source` is **`live`**, **`demo`**, **`mock`**, or **`cache`** (`?source=cache` loads the last written snapshot from disk under `.myassist-memory` — useful for debugging, not a canonical data store). Demo responses are not written to that snapshot cache.
+- **Timeouts:** `fetchDailyContextLive` caps each parallel provider leg (Gmail, Calendar, Todoist) at **120s** (`withTimeout` in `lib/fetchDailyContext.ts`); optional daily-intelligence / briefing / good-morning AI summary calls cap at **60s** and skip the AI pass entirely when there is nothing meaningful to summarize. The dashboard uses `dailyContextFetchInit()` (`lib/dailyContextClient.ts`, `AbortSignal.timeout`, **180s**) so Refresh cannot spin forever if the route stalls. `/api/assistant` also caps model calls at **60s** and falls back cleanly instead of hanging the chat UI.
 - Provider data is fetched live on demand.
 - Writes are sent directly to provider APIs.
 - UI state should auto-refresh after successful writes.
@@ -206,4 +209,8 @@ If logs show **Array buffer allocation failed** or **Caching failed for pack** f
 - Runs against a dedicated dev server on **127.0.0.1:3005** with **`MYASSIST_USE_MOCK_CONTEXT=true`** (mock Gmail/Todoist/Calendar payload — not production tokens).
 - **`workers: 1`**: the Playwright user store file (`tests/e2e/.playwright-users.json`) is shared; parallel workers race and flake registration.
 - **`tests/e2e/dashboard-sanity.spec.ts`**: registers a user, checks **`/api/integrations/status`** and **`/api/daily-context`**, then walks **Overview → Tasks → Inbox → Calendar → Assistant** and asserts the Inbox shows mock email copy (e.g. `Example signal (mock)`).
+- **`tests/e2e/assistant-ask.spec.ts`**: Assistant tab, fill `#assistant-input`, submit with **Ask**, assert **`POST /api/assistant`** returns **200** and the question text appears in the thread.
+- **`tests/e2e/mobile-task-touch-targets.spec.ts`**: Pixel 5 viewport, Tasks tab, first **Complete** button bounding box height **>= 44px**.
 - A **connected** integration pill in production only means tokens exist in **`myassist.integration_tokens`**; the **Inbox** tab still depends on a successful **live Gmail read** in **`fetchDailyContextLive`** / daily-context. If Gmail returns no messages or the fetch fails, the Inbox can look empty while status stays connected.
+
+Thorough verification methodology, command outputs, and residual risks: **[`docs/thorough-testing-report.md`](../../docs/thorough-testing-report.md)** and **[`docs/qa-manual-checklist.md`](../../docs/qa-manual-checklist.md)**.

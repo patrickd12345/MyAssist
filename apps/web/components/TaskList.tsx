@@ -172,13 +172,13 @@ export function TaskList({
                   </span>
                 </div>
                 {canComplete ? (
-                  <div className="relative mt-4 flex justify-between items-center">
-                    <div className="flex gap-1 opacity-40 hover:opacity-100 transition-opacity">
+                  <div className="relative mt-4 flex flex-wrap items-start justify-between gap-2">
+                    <div className="flex gap-1 opacity-40 transition-opacity hover:opacity-100">
                       <button
                         type="button"
                         disabled={isPending || index === 0}
                         onClick={() => void onNudge?.(id, "up", taskContent(task))}
-                        className="rounded px-2 py-1 text-[10px] hover:bg-black/5 disabled:opacity-30 disabled:cursor-not-allowed"
+                        className="min-h-11 min-w-11 rounded px-2 py-1 text-[10px] hover:bg-black/5 disabled:cursor-not-allowed disabled:opacity-30"
                         title="Bump up one slot (AI will learn this preference)"
                       >
                         ▲
@@ -187,13 +187,13 @@ export function TaskList({
                         type="button"
                         disabled={isPending || index === sortedTasks.length - 1}
                         onClick={() => void onNudge?.(id, "down", taskContent(task))}
-                        className="rounded px-2 py-1 text-[10px] hover:bg-black/5 disabled:opacity-30 disabled:cursor-not-allowed"
+                        className="min-h-11 min-w-11 rounded px-2 py-1 text-[10px] hover:bg-black/5 disabled:cursor-not-allowed disabled:opacity-30"
                         title="Bump down one slot (AI will learn this preference)"
                       >
                         ▼
                       </button>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-1 flex-wrap items-center justify-end gap-2">
                       <button
                         type="button"
                         disabled={isPending}
@@ -212,7 +212,7 @@ export function TaskList({
                           event.preventDefault();
                           setMenuTaskId(id);
                         }}
-                        className="theme-button-secondary rounded-full px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50"
+                        className="theme-button-secondary min-h-11 rounded-full px-4 py-2.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         {isPending ? "Completing..." : "Complete"}
                       </button>
@@ -221,7 +221,7 @@ export function TaskList({
                           type="button"
                           disabled={isPending}
                           onClick={() => setMenuTaskId((current) => (current === id ? null : id))}
-                          className="theme-button-secondary rounded-full px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50"
+                          className="theme-button-secondary min-h-11 rounded-full px-4 py-2.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50"
                           aria-label="Open defer options"
                         >
                           Defer
@@ -232,7 +232,7 @@ export function TaskList({
                           type="button"
                           disabled={isPending || blockBusy}
                           onClick={() => void onBlockCalendar(id)}
-                          className="theme-button-secondary rounded-full px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50"
+                          className="theme-button-secondary min-h-11 rounded-full px-4 py-2.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50"
                           title="Create a focus block on Google Calendar when the task has a due time"
                         >
                           {blockBusy ? "Calendar…" : "Block"}

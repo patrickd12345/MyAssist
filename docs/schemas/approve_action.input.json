@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myassist.local/schemas/mcp/approve_action.input.json",
+  "title": "approve_action input",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["action_id"],
+  "properties": {
+    "action_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Exact action_id from list_action_candidates / GET /api/mcp/action-candidates."
+    }
+  }
+}

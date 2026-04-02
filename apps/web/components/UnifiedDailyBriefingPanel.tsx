@@ -13,18 +13,18 @@ function truncateLine(text: string, max = 160): { display: string; full: string 
 
 function StatChip({ label, value }: { label: string; value: number }) {
   return (
-    <div className="flex min-w-[5.5rem] flex-col rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-center sm:min-w-0 sm:flex-1">
-      <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-zinc-400">{label}</span>
-      <span className="mt-0.5 tabular-nums text-lg font-semibold leading-none text-zinc-50">{value}</span>
+    <div className="flex min-w-[5.5rem] flex-col rounded-xl border border-[var(--line)] bg-[var(--surface-soft)] px-3 py-2 text-center sm:min-w-0 sm:flex-1">
+      <span className="theme-muted text-[11px] font-medium uppercase tracking-[0.08em]">{label}</span>
+      <span className="theme-ink mt-0.5 tabular-nums text-lg font-semibold leading-none">{value}</span>
     </div>
   );
 }
 
 function BriefingBlock({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="min-w-0 rounded-2xl border border-white/10 bg-white/[0.04] p-4 shadow-inner shadow-black/20">
-      <h3 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-400">{title}</h3>
-      <div className="mt-2.5 text-[15px] leading-7 text-zinc-100">{children}</div>
+    <div className="min-w-0 rounded-2xl border border-[var(--line)] bg-[var(--surface-soft)] p-4 shadow-inner shadow-black/10 dark:shadow-black/20">
+      <h3 className="theme-muted text-[11px] font-semibold uppercase tracking-[0.14em]">{title}</h3>
+      <div className="theme-ink mt-2.5 text-[15px] leading-7">{children}</div>
     </div>
   );
 }
@@ -69,24 +69,24 @@ export function UnifiedDailyBriefingPanel({ briefing }: UnifiedDailyBriefingPane
           </div>
 
           {briefing.aiSummary?.trim() ? (
-            <div className="rounded-2xl border border-violet-500/20 bg-violet-500/[0.08] px-4 py-3 sm:px-5 sm:py-4">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-violet-200/90">AI summary</p>
-              <p className="mt-2 text-[15px] leading-7 text-zinc-100">{briefing.aiSummary.trim()}</p>
+            <div className="rounded-2xl border border-[var(--accent-strong)] bg-[var(--accent-soft)] px-4 py-3 sm:px-5 sm:py-4">
+              <p className="theme-accent text-[11px] font-semibold uppercase tracking-[0.12em]">AI summary</p>
+              <p className="theme-ink mt-2 text-[15px] leading-7">{briefing.aiSummary.trim()}</p>
             </div>
           ) : null}
 
           {briefing.urgent.length > 0 ? (
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-400">Focus now</p>
+              <p className="theme-muted text-[11px] font-semibold uppercase tracking-[0.14em]">Focus now</p>
               <ul className="mt-3 space-y-3">
                 {briefing.urgent.slice(0, 5).map((line) => {
                   const { display, full } = truncateLine(line, 140);
                   return (
                     <li
                       key={line}
-                      className="flex gap-3 rounded-xl border border-amber-500/15 bg-amber-500/[0.06] px-4 py-3 text-[15px] leading-6 text-zinc-50"
+                      className="theme-ink flex gap-3 rounded-xl border border-amber-500/25 bg-amber-500/[0.08] px-4 py-3 text-[15px] leading-6 dark:border-amber-500/15 dark:bg-amber-500/[0.06]"
                     >
-                      <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-amber-400/90" aria-hidden />
+                      <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-amber-500 dark:bg-amber-400/90" aria-hidden />
                       <span className="min-w-0 flex-1" title={full !== display ? full : undefined}>
                         {display}
                       </span>

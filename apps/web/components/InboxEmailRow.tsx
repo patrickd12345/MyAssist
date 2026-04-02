@@ -12,6 +12,36 @@ function firstName(from: string): string {
   return cleaned || from;
 }
 
+/** Prefer Gmail internalDate (ms) for receipt time; fall back to Date header string. */
+function resolveReceivedDate(g: GmailSignal): Date | null {
+  const internal = g.internalDate?.trim();
+  if (internal && /^\d+$/.test(internal)) {
+    const ms = Number(internal);
+    if (Number.isFinite(ms)) return new Date(ms);
+  }
+  const header = typeof g.date === "string" ? g.date.trim() : "";
+  if (!header) return null;
+  const parsed = Date.parse(header);
+  if (!Number.isNaN(parsed)) return new Date(parsed);
+  return null;
+}
+
+function formatReceivedShort(d: Date): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(d);
+}
+
+function formatReceivedLong(d: Date): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(d);
+}
+
 /** When labels are missing (older cache), assume unread so the primary action stays "Mark as read". */
 function gmailMessageIsUnread(g: GmailSignal): boolean {
   const ids = g.label_ids;
@@ -171,6 +201,10 @@ export function InboxEmailRow({
     pendingCrossActionKeys.includes(emailToTaskKey) || pendingCrossActionKeys.includes(emailToEventKey);
   const memoryBusy = pendingResolvedTexts.includes(subject);
   const badge = emphasis ? inboxPriorityBadge(g) : null;
+  const receivedAt = resolveReceivedDate(g);
+  const receivedShort = receivedAt ? formatReceivedShort(receivedAt) : null;
+  const receivedLong = receivedAt ? formatReceivedLong(receivedAt) : null;
+  const receivedIso = receivedAt ? receivedAt.toISOString() : undefined;
 
   return (
     <li
@@ -202,23 +236,34 @@ export function InboxEmailRow({
             {subject}
           </p>
         </div>
-        <div className="flex shrink-0 items-center gap-1">
-          {isGmailUnread ? (
-            <span
-              className="signal-pill shrink-0 rounded-full bg-sky-500/25 px-2 py-0.5 text-[10px] font-semibold theme-ink ring-1 ring-sky-500/45"
-              title="Unread in Gmail"
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          {receivedShort && receivedLong ? (
+            <time
+              dateTime={receivedIso}
+              className="theme-muted whitespace-nowrap text-[11px] tabular-nums leading-none"
+              title={receivedLong}
             >
-              New
-            </span>
+              {receivedShort}
+            </time>
           ) : null}
-          {badge ? (
-            <span
-              className="signal-pill rounded-full px-2 py-0.5 text-[10px] font-semibold"
-              title={badge === "Signals" ? "Job hunt or priority signal" : "High triage score"}
-            >
-              {badge}
-            </span>
-          ) : null}
+          <div className="flex items-center gap-1">
+            {isGmailUnread ? (
+              <span
+                className="signal-pill shrink-0 rounded-full bg-sky-500/25 px-2 py-0.5 text-[10px] font-semibold theme-ink ring-1 ring-sky-500/45"
+                title="Unread in Gmail"
+              >
+                New
+              </span>
+            ) : null}
+            {badge ? (
+              <span
+                className="signal-pill rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                title={badge === "Signals" ? "Job hunt or priority signal" : "High triage score"}
+              >
+                {badge}
+              </span>
+            ) : null}
+          </div>
         </div>
       </div>
       <p className="theme-accent mt-2 text-[11px] uppercase tracking-[0.14em]">{firstName(g.from)}</p>
@@ -316,38 +361,44 @@ export function InboxEmailRow({
           />
         </div>
       ) : null}
-      <div className="mt-3">
-        <label className="theme-muted text-[11px]">Assign to saved job</label>
-        <select
-          className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-zinc-100"
-          defaultValue=""
-          disabled={assignBusyKey !== null || savedJobsForAssign.length === 0}
-          onChange={(e) => {
-            const v = e.target.value;
-            e.target.value = "";
-            if (v) void assignEmailToJob(g, v);
-          }}
-        >
-          <option value="">
-            {savedJobsForAssign.length === 0
-              ? "No saved jobs found"
-              : assignBusyKey
-                ? "Assigning..."
-                : "Select a saved job..."}
-          </option>
-          {savedJobsForAssign.map((row) => {
-            const jid = row.saved.job_id;
-            const label = row.job?.company
-              ? `${row.job.company} · ${row.job.title} (${row.lifecycle.stage})`
-              : `${jid} (${row.lifecycle.stage})`;
-            return (
-              <option key={jid} value={jid}>
-                {label}
-              </option>
-            );
-          })}
-        </select>
-      </div>
+      {messageId &&
+      g.job_hunt_analysis &&
+      g.job_hunt_analysis.confidence >= INBOX_JOB_HUNT_MIN_CONFIDENCE &&
+      g.job_hunt_analysis.signals.length > 0 &&
+      !ignoredJobHuntMessageIds.includes(messageId) ? (
+        <div className="mt-3">
+          <label className="theme-muted text-[11px]">Assign to saved job</label>
+          <select
+            className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-zinc-100"
+            defaultValue=""
+            disabled={assignBusyKey !== null || savedJobsForAssign.length === 0}
+            onChange={(e) => {
+              const v = e.target.value;
+              e.target.value = "";
+              if (v) void assignEmailToJob(g, v);
+            }}
+          >
+            <option value="">
+              {savedJobsForAssign.length === 0
+                ? "No saved jobs found"
+                : assignBusyKey
+                  ? "Assigning..."
+                  : "Select a saved job..."}
+            </option>
+            {savedJobsForAssign.map((row) => {
+              const jid = row.saved.job_id;
+              const label = row.job?.company
+                ? `${row.job.company} · ${row.job.title} (${row.lifecycle.stage})`
+                : `${jid} (${row.lifecycle.stage})`;
+              return (
+                <option key={jid} value={jid}>
+                  {label}
+                </option>
+              );
+            })}
+          </select>
+        </div>
+      ) : null}
       <div className="mt-4 flex flex-wrap justify-end gap-2">
         <button
           type="button"

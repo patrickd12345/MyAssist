@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "myassist": {
+      "command": "npx",
+      "args": ["tsx", "src/server.ts"],
+      "cwd": "ABSOLUTE_PATH_TO_REPO/apps/myassist-mcp",
+      "env": {
+        "MYASSIST_WEB_URL": "http://127.0.0.1:3000",
+        "MYASSIST_MCP_TOKEN": "YOUR_GENERATED_SECRET_MATCHING_WEB_ENV"
+      }
+    }
+  }
+}

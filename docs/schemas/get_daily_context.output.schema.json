@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myassist.local/schemas/mcp/get_daily_context.output.schema.json",
+  "title": "MyAssistDailyContext (summary)",
+  "description": "Subset of fields for documentation; full shape is MyAssistDailyContext in apps/web/lib/types.ts",
+  "type": "object",
+  "required": ["generated_at", "run_date", "todoist_overdue", "todoist_due_today", "todoist_upcoming_high_priority", "gmail_signals", "calendar_today"],
+  "additionalProperties": true,
+  "properties": {
+    "generated_at": { "type": "string", "format": "date-time" },
+    "run_date": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+    "todoist_overdue": { "type": "array" },
+    "todoist_due_today": { "type": "array" },
+    "todoist_upcoming_high_priority": { "type": "array" },
+    "gmail_signals": { "type": "array" },
+    "calendar_today": { "type": "array" },
+    "calendar_intelligence": { "type": "object" },
+    "daily_intelligence": { "type": "object" },
+    "todoist_intelligence": { "type": "object" },
+    "user_task_nudges": { "type": "object" },
+    "unified_daily_briefing": { "type": "object" },
+    "good_morning_message": { "type": "object" },
+    "job_hunt_email_matches": { "type": "array" }
+  }
+}

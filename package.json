@@ -23,7 +23,9 @@
     "job-hunt:dev": "npm --prefix apps/job-hunt-manager run dev",
     "job-hunt:digest:dev": "npm --prefix apps/job-hunt-manager run digest:dev",
     "job-hunt:test": "npm --prefix apps/job-hunt-manager run test",
-    "job-hunt:typecheck": "npm --prefix apps/job-hunt-manager run typecheck"
+    "job-hunt:typecheck": "npm --prefix apps/job-hunt-manager run typecheck",
+    "myassist-mcp:dev": "npm --prefix apps/myassist-mcp run dev",
+    "myassist-mcp:typecheck": "npm --prefix apps/myassist-mcp run typecheck"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",

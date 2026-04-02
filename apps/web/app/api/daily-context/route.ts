@@ -17,6 +17,7 @@ import { buildUnifiedDailyBriefing } from "@/lib/unifiedDailyBriefing";
 import type { MyAssistDailyContext } from "@/lib/types";
 import { jsonLegacyApiError } from "@/lib/api/error-contract";
 import { isMyAssistDemoModeEnabled } from "@/lib/env/runtime";
+import { logKpiDailyContextServed } from "@/lib/productKpi";
 
 export const dynamic = "force-dynamic";
 
@@ -214,6 +215,7 @@ async function buildProviderSliceResponse(
 }
 
 export async function GET(request: NextRequest) {
+  const startedAt = Date.now();
   try {
     const userId = await getSessionUserId();
     if (!userId) {
@@ -253,14 +255,15 @@ export async function GET(request: NextRequest) {
       };
       const res = NextResponse.json(context);
       res.headers.set(MYASSIST_CONTEXT_SOURCE_HEADER, "cache");
+      logKpiDailyContextServed({
+        source: "cache",
+        duration_ms: Date.now() - startedAt,
+        path: "session",
+      });
       return res;
     }
 
     const { context, source } = await fetchDailyContextLive(userId);
-
-    if (source !== "demo") {
-      await writeLastDailyContext(userId, context);
-    }
 
     const nudges = await getTaskNudges(userId);
     context.user_task_nudges = nudges;
@@ -268,8 +271,17 @@ export async function GET(request: NextRequest) {
     context.unified_daily_briefing = unified_daily_briefing;
     context.good_morning_message = await buildGoodMorningMessage(unified_daily_briefing);
 
+    if (source !== "demo") {
+      await writeLastDailyContext(userId, context);
+    }
+
     const res = NextResponse.json(context);
     res.headers.set(MYASSIST_CONTEXT_SOURCE_HEADER, source);
+    logKpiDailyContextServed({
+      source,
+      duration_ms: Date.now() - startedAt,
+      path: "session",
+    });
     return res;
   } catch (e) {
     const message = e instanceof Error ? e.message : "Unknown error";

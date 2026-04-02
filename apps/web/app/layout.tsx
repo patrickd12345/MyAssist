@@ -26,7 +26,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${displaySans.variable} ${plexMono.variable} antialiased`}>
+      <body
+        className={`${displaySans.variable} ${plexMono.variable} antialiased`}
+        style={{
+          minHeight: "100vh",
+          backgroundColor: "var(--canvas, #f5f7fb)",
+          color: "var(--ink, #0f172a)",
+        }}
+      >
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var t=localStorage.getItem("myassist-theme");if(t==="neon"||t==="kpop-demon-hunters"||t==="zara-larsson")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(e){}})();`,

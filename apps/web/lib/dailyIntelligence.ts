@@ -1,5 +1,6 @@
 import "server-only";
 
+import { withTimeout } from "./asyncTimeout";
 import { executeChat } from "./aiRuntime";
 import { resolveMyAssistRuntimeEnv } from "./env/runtime";
 import type { GmailPhaseBSignalType } from "./integrations/gmailSignalDetection";
@@ -176,31 +177,49 @@ function dailyIntelAiEnabled(): boolean {
   return v === "1" || v === "true";
 }
 
+const DAILY_INTELLIGENCE_AI_TIMEOUT_MS = 60_000;
+
+function hasMeaningfulDailyIntelContent(intel: DailyIntelligence): boolean {
+  return (
+    intel.urgent.length > 0 ||
+    intel.important.length > 0 ||
+    intel.action_required.length > 0 ||
+    intel.job_related.length > 0 ||
+    intel.calendar_related.length > 0 ||
+    intel.summary.topPriorities.length > 0
+  );
+}
+
 /**
  * Optional ai-runtime one-liner via `@bookiji-inc/ai-runtime` (executeChat). Never required; on failure or when disabled, returns input unchanged.
  */
 export async function enrichDailyIntelligenceWithAi(intel: DailyIntelligence): Promise<DailyIntelligence> {
   if (!dailyIntelAiEnabled()) return intel;
+  if (!hasMeaningfulDailyIntelContent(intel)) return intel;
   try {
-    const res = await executeChat({
-      messages: [
-        {
-          role: "system",
-          content:
-            "Summarize the email triage snapshot in 2-3 short sentences. Stay generic; avoid repeating personal names. If counts are all zero, say there is nothing notable.",
-        },
-        {
-          role: "user",
-          content: JSON.stringify({
-            deterministic: intel.summary.generatedDeterministicSummary,
-            countsByType: intel.summary.countsByType,
-            topPriorities: intel.summary.topPriorities,
-          }),
-        },
-      ],
-      temperature: 0.2,
-      maxTokens: 220,
-    });
+    const res = await withTimeout(
+      executeChat({
+        messages: [
+          {
+            role: "system",
+            content:
+              "Summarize the email triage snapshot in 2-3 short sentences. Stay generic; avoid repeating personal names. If counts are all zero, say there is nothing notable.",
+          },
+          {
+            role: "user",
+            content: JSON.stringify({
+              deterministic: intel.summary.generatedDeterministicSummary,
+              countsByType: intel.summary.countsByType,
+              topPriorities: intel.summary.topPriorities,
+            }),
+          },
+        ],
+        temperature: 0.2,
+        maxTokens: 220,
+      }),
+      DAILY_INTELLIGENCE_AI_TIMEOUT_MS,
+    );
+    if (!res) return intel;
     const line = res.text.trim();
     if (!line) return intel;
     return {

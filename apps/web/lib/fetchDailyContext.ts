@@ -19,9 +19,13 @@ import { buildUnifiedDailyBriefing } from "./unifiedDailyBriefing";
 import { mapTodoistTaskPreview } from "./todoistPreview";
 import { bucketTodoistTasksFromApi } from "./todoistTaskBuckets";
 import type { MyAssistDailyContext } from "./types";
+import { withTimeout } from "./asyncTimeout";
 import { executeChat } from "./aiRuntime";
 import { isMyAssistDemoModeEnabled, resolveMyAssistRuntimeEnv } from "./env/runtime";
 import { logServerEvent } from "./serverLog";
+
+/** Per-provider ceiling so Gmail/Calendar/Todoist HTTP cannot block the whole daily-context response forever. */
+const DAILY_CONTEXT_PROVIDER_FETCH_TIMEOUT_MS = 120_000;
 
 export type { DailyContextSource };
 export { MYASSIST_CONTEXT_SOURCE_HEADER };
@@ -97,6 +101,9 @@ function mapGmailFromOAuth(raw: Array<Record<string, unknown>>): MyAssistDailyCo
     const phaseRaw = g.phase_b_signals;
     const phase_b_signals =
       Array.isArray(phaseRaw) && phaseRaw.length > 0 ? (phaseRaw as GmailPhaseBSignal[]) : undefined;
+    const internalDateRaw = g.internalDate;
+    const internalDate =
+      typeof internalDateRaw === "string" && internalDateRaw.trim() ? internalDateRaw.trim() : undefined;
     return {
       id: (typeof g.id === "string" ? g.id : null) ?? null,
       threadId: (typeof g.threadId === "string" ? g.threadId : null) ?? null,
@@ -104,6 +111,7 @@ function mapGmailFromOAuth(raw: Array<Record<string, unknown>>): MyAssistDailyCo
       subject: flattenText(g.subject),
       snippet: flattenText(g.snippet),
       date: typeof g.date === "string" ? g.date : flattenText(g.date),
+      ...(internalDate ? { internalDate } : {}),
       ...(label_ids ? { label_ids } : {}),
       ...(phase_b_signals && phase_b_signals.length > 0 ? { phase_b_signals } : {}),
     };
@@ -131,9 +139,48 @@ export async function fetchDailyContextLive(userId: string | null): Promise<{
   }
 
   const [gmailRaw, calendarRaw, todoistSlices] = await Promise.all([
-    integrationService.fetchGmailSignals(trimmed),
-    integrationService.fetchCalendarEvents(trimmed),
-    fetchTodoistSlicesForUser(trimmed),
+    (async () => {
+      const r = await withTimeout(
+        integrationService.fetchGmailSignals(trimmed),
+        DAILY_CONTEXT_PROVIDER_FETCH_TIMEOUT_MS,
+      );
+      if (r === undefined) {
+        logServerEvent("warn", "myassist_daily_context_provider_timeout", {
+          provider: "gmail",
+          ms: DAILY_CONTEXT_PROVIDER_FETCH_TIMEOUT_MS,
+        });
+        return null;
+      }
+      return r;
+    })(),
+    (async () => {
+      const r = await withTimeout(
+        integrationService.fetchCalendarEvents(trimmed),
+        DAILY_CONTEXT_PROVIDER_FETCH_TIMEOUT_MS,
+      );
+      if (r === undefined) {
+        logServerEvent("warn", "myassist_daily_context_provider_timeout", {
+          provider: "google_calendar",
+          ms: DAILY_CONTEXT_PROVIDER_FETCH_TIMEOUT_MS,
+        });
+        return null;
+      }
+      return r;
+    })(),
+    (async () => {
+      const r = await withTimeout(
+        fetchTodoistSlicesForUser(trimmed),
+        DAILY_CONTEXT_PROVIDER_FETCH_TIMEOUT_MS,
+      );
+      if (r === undefined) {
+        logServerEvent("warn", "myassist_daily_context_provider_timeout", {
+          provider: "todoist",
+          ms: DAILY_CONTEXT_PROVIDER_FETCH_TIMEOUT_MS,
+        });
+        return null;
+      }
+      return r;
+    })(),
   ]);
 
   const gmail_signals = gmailRaw ? mapGmailFromOAuth(gmailRaw) : [];

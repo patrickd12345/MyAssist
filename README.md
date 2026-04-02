@@ -10,6 +10,11 @@ Personal operations system as a unified live operational window over Gmail, Goog
 - `docs/architecture.md`: provider-canonical boundaries and module layout.
 - `docs/commercial-pilot-readiness.md`: hosted deployment checklist (Supabase storage, Sentry, env vars).
 - `docs/myassist-operational-signoff.md`: pilot sign-off for live AI path, live Today after OAuth, adapter boundaries.
+- `docs/thorough-testing-report.md`: layered verification (lint, tsc, Vitest, Playwright, build), matrix, gaps, re-run recipe; `docs/qa-manual-checklist.md` for manual passes.
+- `docs/product-kpis.md`: product KPI definitions and structured log event names.
+- `docs/mcp-myassist-tools.md` and `docs/schemas/`: MCP tool list and JSON schemas for interoperability.
+- `docs/owasp-llm-myassist.md`: OWASP LLM Top 10 mapping for MCP and assistant surfaces.
+- `apps/myassist-mcp/`: stdio MCP server (`get_daily_context`) calling the web app with bearer auth.
 - `apps/web`: `pnpm check:env` / `pnpm check:env:prod` — env readiness report (no secret values printed).
 - `PROJECT_TRACKER.md`: execution tracker aligned to the live-window model.
 

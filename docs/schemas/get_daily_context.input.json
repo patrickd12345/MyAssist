@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myassist.local/schemas/mcp/get_daily_context.input.json",
+  "title": "get_daily_context input",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "date": {
+      "type": "string",
+      "description": "Optional ISO calendar date (YYYY-MM-DD); reserved for future server-side filtering."
+    },
+    "timezone": {
+      "type": "string",
+      "description": "Optional IANA timezone name; reserved for future server-side filtering."
+    }
+  }
+}

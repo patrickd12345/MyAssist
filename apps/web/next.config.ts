@@ -27,6 +27,17 @@ const nextConfig: NextConfig = {
     config.resolve.extensionAlias = {
       ".js": [".ts", ".tsx", ".js"],
     };
+    config.ignoreWarnings = [
+      ...(config.ignoreWarnings ?? []),
+      {
+        module: /require-in-the-middle/,
+        message: /require function is used in a way in which dependencies cannot be statically extracted/,
+      },
+      {
+        module: /@opentelemetry\/instrumentation/,
+        message: /the request of a dependency is an expression/,
+      },
+    ];
     return config;
   },
 };

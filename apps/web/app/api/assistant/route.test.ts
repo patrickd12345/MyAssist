@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/memoryStore", () => ({
   getResolvedItems: vi.fn(async () => []),
@@ -31,6 +31,10 @@ beforeAll(async () => {
   vi.stubGlobal("fetch", mockFetch);
   const mod = await import("./route");
   POST = mod.POST;
+});
+
+afterEach(() => {
+  vi.useRealTimers();
 });
 
 describe("POST /api/assistant", () => {
@@ -174,6 +178,36 @@ describe("POST /api/assistant", () => {
     expect(json.mode).toBe("fallback");
     expect(json.fallbackReason).toBe("fetch failed: ECONNREFUSED");
     expect(json.answer).toContain("Park");
+  });
+
+  it("falls back when chat Ollama request hangs", async () => {
+    vi.useFakeTimers();
+    mockFetch.mockImplementationOnce(
+      () =>
+        new Promise(() => {
+          // Never resolve: validates timeout guard.
+        }),
+    );
+
+    const pending = POST(
+      new Request("http://localhost/api/assistant", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          kind: "chat",
+          message: "What should happen if AI hangs?",
+          context: minimalContext,
+        }),
+      }),
+    );
+
+    await vi.advanceTimersByTimeAsync(60_000);
+    const res = await pending;
+    expect(res.status).toBe(200);
+    const json = (await res.json()) as { mode: string; fallbackReason?: string; answer: string };
+    expect(json.mode).toBe("fallback");
+    expect(json.fallbackReason).toBe("assistant_chat_timeout");
+    expect(json.answer.length).toBeGreaterThan(0);
   });
 
   it("routes chief-of-staff day summary chat prompts to situation brief path", async () => {
