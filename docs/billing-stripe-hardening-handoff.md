@@ -31,7 +31,7 @@ Historical note: the workspace briefly blocked non-markdown edits; the checklist
 ### 6. Migrations
 
 - Canonical: **`20260402141000_myassist_stripe_billing.sql`** only.
-- Remove **`20260402135156_myassist_stripe_billing.sql`** when file is not locked (delete or `git rm`).
+- Duplicate **`20260402135156_myassist_stripe_billing.sql`** was removed from the repo; `supabase/.gitignore` ignores a stale on-disk copy if Windows could not delete it.
 
 ---
 
