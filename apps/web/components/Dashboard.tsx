@@ -59,6 +59,7 @@ import { CommunicationDraftToolbar } from "./CommunicationDraftToolbar";
 import { AssistantConsole, type CommunicationDraftInjectPayload } from "./AssistantConsole";
 import { InboxEmailRow } from "./InboxEmailRow";
 import { TaskList } from "./TaskList";
+import { BillingAccountPanel } from "./BillingAccountPanel";
 
 function dailyContextClientError(e: unknown): string {
   if (e instanceof Error && e.name === "AbortError") {
@@ -1941,6 +1942,7 @@ export function Dashboard({
               ) : null}
             </div>
             </div>
+            <BillingAccountPanel />
             <div className="flex flex-wrap gap-3 xl:justify-end">
               <button
                 type="button"
