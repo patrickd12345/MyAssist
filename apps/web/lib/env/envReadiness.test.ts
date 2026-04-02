@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { analyzeMyAssistEnv, formatEnvReadinessReport } from "./envReadiness";
 
 describe("envReadiness", () => {
@@ -33,6 +33,22 @@ describe("envReadiness", () => {
     const r = analyzeMyAssistEnv({ NODE_ENV: "development" } as NodeJS.ProcessEnv);
     const s = formatEnvReadinessReport(r);
     expect(s).toContain("Auth");
+    expect(s).toContain("Billing (Stripe)");
     expect(s).toContain("Result:");
+  });
+
+  it("production_like fails when billing enabled without Stripe secrets", () => {
+    const r = analyzeMyAssistEnv(
+      {
+        NODE_ENV: "production",
+        VERCEL_ENV: "production",
+        AUTH_SECRET: "x".repeat(32),
+        SUPABASE_URL: "https://abc.supabase.co",
+        SUPABASE_SECRET_KEY: "sb_secret_test",
+        BILLING_ENABLED: "true",
+      } as NodeJS.ProcessEnv,
+      { productionLike: true },
+    );
+    expect(r.passed).toBe(false);
   });
 });

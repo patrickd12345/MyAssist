@@ -27,6 +27,7 @@
     "@bookiji-inc/ai-runtime": "workspace:*",
     "@bookiji-inc/error-contract": "workspace:*",
     "@bookiji-inc/observability": "workspace:*",
+    "@bookiji-inc/stripe-runtime": "file:../../../../packages/stripe-runtime",
     "@sentry/nextjs": "^9.47.1",
     "@supabase/supabase-js": "2.100.1",
     "bcryptjs": "^3.0.3",
@@ -35,7 +36,8 @@
     "next-auth": "5.0.0-beta.30",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "server-only": "^0.0.1"
+    "server-only": "^0.0.1",
+    "stripe": "^20.2.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

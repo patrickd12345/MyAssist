@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Pure env readiness analysis for MyAssist (no I/O, no secrets logged).
  */
 
@@ -117,6 +117,31 @@ export function analyzeMyAssistEnv(
     ],
   });
 
+  const billingEnabled = (env.BILLING_ENABLED || "").trim().toLowerCase() === "true";
+  const stripeSecretOk = hasAny(env, ["STRIPE_SECRET_KEY"]);
+  const stripeWebhookOk = hasAny(env, ["STRIPE_WEBHOOK_SECRET"]);
+  const stripePriceOk = hasAny(env, ["MYASSIST_STRIPE_PRICE_ID", "STRIPE_PRICE_ID"]);
+  sections.push({
+    title: "Billing (Stripe)",
+    items: [
+      item(
+        "BILLING_ENABLED",
+        !billingEnabled || (stripeSecretOk && stripeWebhookOk),
+        "When BILLING_ENABLED=true, set STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET.",
+      ),
+      item(
+        "STRIPE_SECRET_KEY (+ webhook secret)",
+        !billingEnabled || (stripeSecretOk && stripeWebhookOk),
+        "Server-only; required when billing is enabled.",
+      ),
+      item(
+        "MYASSIST_STRIPE_PRICE_ID or STRIPE_PRICE_ID",
+        !billingEnabled || stripePriceOk,
+        "Default subscription price id for checkout when not passed in the request body.",
+      ),
+    ],
+  });
+
   sections.push({
     title: "OAuth (integrations)",
     items: [
@@ -145,6 +170,9 @@ export function analyzeMyAssistEnv(
     passed = false;
   }
   if (productionLike && !authOk) {
+    passed = false;
+  }
+  if (productionLike && billingEnabled && (!stripeSecretOk || !stripeWebhookOk)) {
     passed = false;
   }
 

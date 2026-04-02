@@ -6,9 +6,9 @@ Type: AI assistant
 ## Platform Standards Applicability
 
 | Capability | Status | Notes |
-|------------|--------|------|
+|------------|--------|-------|
 | AI Runtime | Applicable | AI execution is a core product surface and uses shared runtime patterns. |
-| Stripe Runtime | N/A | No billing or Stripe webhook surface is part of this product scope. |
+| Stripe Runtime | Applicable | Checkout, Customer Portal, and Stripe webhooks when `BILLING_ENABLED=true`; uses `@bookiji-inc/stripe-runtime` for idempotent webhook processing. |
 | CI Baseline | Partial | CI exists, but baseline enforcement is still limited and web-scoped. |
 | Env Contract | Partial | Canonical env work exists, but alias handling and validation are not complete. |
 | Observability | Partial | Logging helpers exist, but observability is not applied across all API paths. |
@@ -17,13 +17,12 @@ Type: AI assistant
 
 ## Architecture Intent
 
-Assistant-focused product with AI runtime in scope and no billing surface.
+Assistant-focused product with AI runtime in scope and an optional billing surface (Stripe Checkout, portal, webhooks) for subscription access. **Entitlement authority** for paid status is **`myassist.billing_subscriptions`** (not `platform.entitlements`), because MyAssist credential users live in `myassist.app_users` and are not guaranteed to exist in `auth.users`.
 
 ## Out of Scope
 
-- Stripe and billing architecture
-- Payment webhook recommendations
-- Marketplace or subscription design
+- Marketplace or multi-vendor subscription design beyond a single MyAssist subscription product
+- Using `platform.entitlements` as the write path for credential-auth users without a documented identity bridge to `auth.users`
 
 ## Audit Instructions
 
