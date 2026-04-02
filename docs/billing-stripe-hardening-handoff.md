@@ -1,6 +1,8 @@
-# Stripe billing hardening — handoff (Agent mode required)
+# Stripe billing hardening — handoff
 
-The workspace blocked non-markdown edits while this note was created. **Switch to Agent mode** and apply the changes below, or paste the patches from this document.
+**Status:** Hardening applied in-repo (webhook claim fix, production Stripe guard, entitlement helper, runbook, tests). Use [`billing-stripe-runbook.md`](./billing-stripe-runbook.md) for operations.
+
+Historical note: the workspace briefly blocked non-markdown edits; the checklist below documents what was assessed.
 
 ## Phase 1 — Repo assessment (current state)
 

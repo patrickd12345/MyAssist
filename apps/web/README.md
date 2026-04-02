@@ -122,7 +122,7 @@ Prefer **Infisical** for team-local and shared keys (`pnpm dev:infisical`); mirr
 - `OLLAMA_BASE_URL`: Ollama base URL, default `http://127.0.0.1:11434`
 - `OLLAMA_MODEL`: optional Ollama model name, default `llama3.2:3b`
 - `TODOIST_API_TOKEN`: optional global fallback for Todoist REST if the user has not completed Todoist OAuth; dashboard actions need **either** OAuth **or** this token **or** a per-user token in the user registry (see `resolveTodoistApiToken` behavior in code)
-- **Billing (optional):** `BILLING_ENABLED=true`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, and `MYASSIST_STRIPE_PRICE_ID` or `STRIPE_PRICE_ID` (default subscription price when the client does not send `priceId`). Requires hosted Supabase (`SUPABASE_URL` + `SUPABASE_SECRET_KEY`) so `myassist.billing_subscriptions` and `myassist.stripe_event_log` can be written. Webhook URL: `POST /api/payments/webhook`. Run `pnpm run check:env` / `check:env:prod` to validate readiness.
+- **Billing (optional):** `BILLING_ENABLED=true`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, and `MYASSIST_STRIPE_PRICE_ID` or `STRIPE_PRICE_ID` (default subscription price when the client does not send `priceId`). Requires hosted Supabase (`SUPABASE_URL` + `SUPABASE_SECRET_KEY`) so `myassist.billing_subscriptions` and `myassist.stripe_event_log` can be written. Canonical webhook: `POST /api/payments/webhook` only. Without `STRIPE_SECRET_KEY`, checkout/portal use **mock URLs** in dev; **production** requires the secret when billing is enabled. Full ops: [`docs/billing-stripe-runbook.md`](../docs/billing-stripe-runbook.md). Run `pnpm run check:env` / `check:env:prod` to validate readiness.
 
 Infisical-first minimum local set:
 

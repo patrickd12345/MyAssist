@@ -17,7 +17,7 @@ Type: AI assistant
 
 ## Architecture Intent
 
-Assistant-focused product with AI runtime in scope and an optional billing surface (Stripe Checkout, portal, webhooks) for subscription access. **Entitlement authority** for paid status is **`myassist.billing_subscriptions`** (not `platform.entitlements`), because MyAssist credential users live in `myassist.app_users` and are not guaranteed to exist in `auth.users`.
+Assistant-focused product with AI runtime in scope and an optional billing surface (Stripe Checkout, portal, webhooks) for subscription access. **Entitlement authority** for paid status is **`myassist.billing_subscriptions`** (not `platform.entitlements`), because MyAssist credential users live in `myassist.app_users` and are not guaranteed to exist in `auth.users`. The only Stripe webhook endpoint is **`POST /api/payments/webhook`** (idempotent; see `docs/billing-stripe-runbook.md`).
 
 ## Out of Scope
 

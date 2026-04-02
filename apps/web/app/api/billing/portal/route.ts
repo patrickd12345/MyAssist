@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { isBillingEnabled } from "@/lib/billing/config";
+import { billingLiveStripeGuard } from "@/lib/billing/stripeRouteGuards";
 import { getApiRequestId, jsonApiError } from "@/lib/api/error-contract";
 import {
   MYASSIST_BILLING_SUBSCRIPTIONS_TABLE,
@@ -19,6 +20,11 @@ export async function POST(req: Request) {
     const admin = getSupabaseAdmin();
     if (!admin) {
       return jsonApiError("billing_unavailable", "Hosted storage is not configured.", 503, requestId);
+    }
+
+    const liveGuard = billingLiveStripeGuard(requestId);
+    if (liveGuard) {
+      return liveGuard;
     }
 
     const userId = await getSessionUserId();

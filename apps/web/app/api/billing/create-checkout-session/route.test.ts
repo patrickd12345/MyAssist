@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockGetSessionUserId = vi.hoisted(() => vi.fn());
 const mockCreateSubscriptionCheckoutSession = vi.hoisted(() =>
@@ -34,7 +34,13 @@ vi.mock("@/lib/services/stripeBilling", () => ({
 describe("POST /api/billing/create-checkout-session", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.BILLING_ENABLED = "true";
+    vi.stubEnv("BILLING_ENABLED", "true");
+    vi.stubEnv("STRIPE_SECRET_KEY", "sk_test_placeholder");
+    vi.stubEnv("NODE_ENV", "test");
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   it("returns 401 when no user", async () => {
@@ -64,7 +70,7 @@ describe("POST /api/billing/create-checkout-session", () => {
   });
 
   it("returns 503 when billing is disabled", async () => {
-    process.env.BILLING_ENABLED = "false";
+    vi.stubEnv("BILLING_ENABLED", "false");
     mockGetSessionUserId.mockResolvedValue("user-1");
     const { POST } = await import("./route");
     const res = await POST(
@@ -78,6 +84,30 @@ describe("POST /api/billing/create-checkout-session", () => {
     expect(res.status).toBe(503);
     expect(json.code).toBe("billing_disabled");
     expect(json.requestId).toBe("req_1");
+  });
+
+  it("returns 503 in production-like deploy when STRIPE_SECRET_KEY is missing", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("VERCEL_ENV", "preview");
+    vi.stubEnv("STRIPE_SECRET_KEY", "");
+    vi.stubEnv("BILLING_ENABLED", "true");
+    mockGetSessionUserId.mockResolvedValue("550e8400-e29b-41d4-a716-446655440001");
+    vi.resetModules();
+    const { POST } = await import("./route");
+    const res = await POST(
+      new Request("http://localhost/api/billing/create-checkout-session", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          priceId: "price_1",
+          successUrl: "https://ok",
+          cancelUrl: "https://cancel",
+        }),
+      }),
+    );
+    expect(res.status).toBe(503);
+    const json = (await res.json()) as { code: string };
+    expect(json.code).toBe("billing_misconfigured");
   });
 
   it("returns checkout url when billing enabled", async () => {

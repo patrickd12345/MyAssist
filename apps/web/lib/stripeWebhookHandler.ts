@@ -12,6 +12,7 @@ import Stripe from "stripe";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { isBillingEnabled } from "@/lib/billing/config";
+import { isStripeSecretConfigured } from "@/lib/billing/stripeRouteGuards";
 import { getApiRequestId, jsonApiError } from "@/lib/api/error-contract";
 import {
   MYASSIST_BILLING_SUBSCRIPTIONS_TABLE,
@@ -26,6 +27,14 @@ export type MyAssistStripeWebhookResponse = {
   duplicate?: boolean;
   error?: string;
 };
+
+/** Matches typical Postgres `gen_random_uuid()` / RFC 4122 v4 user ids from `myassist.app_users`. */
+const MYASSIST_USER_ID_UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function isLikelyMyAssistUserId(id: string): boolean {
+  return MYASSIST_USER_ID_UUID_RE.test(id.trim());
+}
 
 function subscriptionPeriodEndIso(sub: Stripe.Subscription): string | null {
   const unix = (sub as unknown as { current_period_end?: number }).current_period_end;
@@ -91,6 +100,9 @@ async function handleCheckoutSessionCompleted(
   if (!userId || !customerId || !subscriptionId) {
     return;
   }
+  if (!isLikelyMyAssistUserId(userId)) {
+    return;
+  }
   const sub = await stripe.subscriptions.retrieve(subscriptionId);
   const { error } = await supabase
     .schema(MYASSIST_SCHEMA)
@@ -136,6 +148,9 @@ export async function handleMyAssistStripeWebhook(request: NextRequest): Promise
   if (!webhookSecret) {
     return jsonApiError("billing_misconfigured", "Missing STRIPE_WEBHOOK_SECRET.", 500, requestId);
   }
+  if (!isStripeSecretConfigured()) {
+    return jsonApiError("billing_misconfigured", "Missing STRIPE_SECRET_KEY.", 503, requestId);
+  }
 
   const body = await request.text();
   const signature = request.headers.get("stripe-signature");
@@ -156,7 +171,10 @@ export async function handleMyAssistStripeWebhook(request: NextRequest): Promise
     return jsonApiError("invalid_signature", "Invalid signature", 400, requestId);
   }
 
-  const tryClaimEvent = async (eventId: string, eventType: string): Promise<boolean> => {
+  const tryClaimEvent = async (
+    eventId: string,
+    eventType: string,
+  ): Promise<"claimed" | "duplicate" | "failed"> => {
     const result = await claimStripeEvent({
       eventId,
       eventType,
@@ -171,11 +189,11 @@ export async function handleMyAssistStripeWebhook(request: NextRequest): Promise
     });
     if (result.error) {
       if (result.duplicate) {
-        return false;
+        return "duplicate";
       }
-      return false;
+      return "failed";
     }
-    return result.claimed;
+    return result.claimed ? "claimed" : "failed";
   };
 
   const markEventProcessed = async (eventId: string): Promise<void> => {
@@ -195,8 +213,17 @@ export async function handleMyAssistStripeWebhook(request: NextRequest): Promise
   };
 
   try {
-    if (!(await tryClaimEvent(event.id, event.type))) {
+    const claim = await tryClaimEvent(event.id, event.type);
+    if (claim === "duplicate") {
       return NextResponse.json({ received: true, duplicate: true });
+    }
+    if (claim === "failed") {
+      return jsonApiError(
+        "idempotency_claim_failed",
+        "Could not claim webhook event for processing.",
+        503,
+        requestId,
+      );
     }
 
     const stripe = getStripeOrThrow();

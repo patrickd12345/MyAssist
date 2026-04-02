@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockGetSessionUserId = vi.hoisted(() => vi.fn());
 const mockCreateBillingPortalSession = vi.hoisted(() => vi.fn(async () => "http://portal.test"));
@@ -31,7 +31,13 @@ vi.mock("@/lib/services/stripeBilling", () => ({
 describe("POST /api/billing/portal", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.BILLING_ENABLED = "true";
+    vi.stubEnv("BILLING_ENABLED", "true");
+    vi.stubEnv("STRIPE_SECRET_KEY", "sk_test_placeholder");
+    vi.stubEnv("NODE_ENV", "test");
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   it("returns 401 when no user", async () => {
@@ -69,6 +75,26 @@ describe("POST /api/billing/portal", () => {
       }),
     );
     expect(res.status).toBe(404);
+  });
+
+  it("returns 503 in production-like deploy when STRIPE_SECRET_KEY is missing", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("VERCEL_ENV", "preview");
+    vi.stubEnv("STRIPE_SECRET_KEY", "");
+    vi.stubEnv("BILLING_ENABLED", "true");
+    mockGetSessionUserId.mockResolvedValue("550e8400-e29b-41d4-a716-446655440002");
+    vi.resetModules();
+    const { POST } = await import("./route");
+    const res = await POST(
+      new Request("http://localhost/api/billing/portal", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ returnUrl: "https://return" }),
+      }),
+    );
+    expect(res.status).toBe(503);
+    const json = (await res.json()) as { code: string };
+    expect(json.code).toBe("billing_misconfigured");
   });
 
   it("returns portal url when customer exists", async () => {

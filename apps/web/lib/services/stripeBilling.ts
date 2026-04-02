@@ -8,6 +8,11 @@ function getIsMockMode(): boolean {
   return !process.env.STRIPE_SECRET_KEY || process.env.NODE_ENV === "test";
 }
 
+/** True when Stripe API calls use mock URLs (no secret, or Vitest `NODE_ENV=test`). */
+export function isStripeBillingMockMode(): boolean {
+  return getIsMockMode();
+}
+
 export function getStripeOrThrow(): Stripe {
   if (getIsMockMode()) {
     throw new Error("Stripe not configured");

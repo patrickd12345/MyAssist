@@ -56,6 +56,7 @@ On Node server boot, [`apps/web/lib/env/bootstrap.sharedDb.ts`](../apps/web/lib/
 | `SHARED_DB_TIER`, `SHARED_DB_ENV_STRICT`, `SHARED_DB_DEV_PROJECT_REF`, `SHARED_DB_PROD_PROJECT_REF` | Optional; strict dev/prod Supabase URL alignment (see **Shared Supabase tier guardrails**). |
 | `SENTRY_DSN` and/or `NEXT_PUBLIC_SENTRY_DSN` | Optional; error reporting ([Sentry Next.js](https://docs.sentry.io/platforms/javascript/guides/nextjs/)). |
 | `SENTRY_ENVIRONMENT` | Optional; defaults to `VERCEL_ENV` or `NODE_ENV`. |
+| `BILLING_ENABLED`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `MYASSIST_STRIPE_PRICE_ID` / `STRIPE_PRICE_ID` | Optional; Stripe subscription billing. Production-like hosts with billing on require the Stripe secret key (checkout/portal return 503 if missing). Webhook endpoint: `POST /api/payments/webhook`. See [billing-stripe-runbook.md](./billing-stripe-runbook.md). |
 
 **Local `next build`:** set `AUTH_SECRET` (32+ chars) or the build will fail when collecting auth routes.
 
