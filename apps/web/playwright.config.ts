@@ -5,6 +5,9 @@ const e2eUserStore = path.join(process.cwd(), "tests", "e2e", ".playwright-users
 const e2ePort = process.env.PLAYWRIGHT_WEB_PORT ?? "3005";
 const e2eOrigin = `http://127.0.0.1:${e2ePort}`;
 
+/** When `1`, dev server gets `BILLING_ENABLED=true` so `tests/e2e/billing-status.spec.ts` can assert the Subscription panel. Do not set in CI unless you intend to run only billing specs against a fresh server. */
+const billingUiE2E = process.env.PLAYWRIGHT_BILLING_UI === "1";
+
 export default defineConfig({
   testDir: "./tests/e2e",
   /** File-backed user store (`MYASSIST_USER_STORE_FILE`) is shared; parallel workers race and flake registration. */
@@ -28,6 +31,12 @@ export default defineConfig({
       AUTH_SECRET: "playwright-test-auth-secret-at-least-32-characters-long",
       AUTH_URL: e2eOrigin,
       MYASSIST_USER_STORE_FILE: e2eUserStore,
+      ...(billingUiE2E
+        ? {
+            BILLING_ENABLED: "true",
+            MYASSIST_STRIPE_PRICE_ID: "price_e2e_placeholder",
+          }
+        : {}),
     },
   },
 });
