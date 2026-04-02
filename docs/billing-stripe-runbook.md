@@ -15,7 +15,7 @@ npx supabase db push
 
 Canonical migration file: [`supabase/migrations/20260402141000_myassist_stripe_billing.sql`](../supabase/migrations/20260402141000_myassist_stripe_billing.sql).
 
-If an older duplicate migration `20260402135156_myassist_stripe_billing.sql` still exists in the tree, delete it so only `20260402141000_*` remains (it may be locked while an editor holds the file open).
+If an older duplicate migration `20260402135156_myassist_stripe_billing.sql` still exists in the tree, delete it so only `20260402141000_*` remains. If Windows reports the file is in use, close any editor tab or indexer holding it, then remove it or run `git rm` on that path.
 
 If the Supabase CLI fails with **config parse errors** (invalid keys in `supabase/config.toml`), fix or regenerate config per Supabase docs, or apply the same SQL in the Supabase SQL editor as a last resort (still prefer CLI for repeatability).
 
@@ -43,7 +43,11 @@ If the Supabase CLI fails with **config parse errors** (invalid keys in `supabas
 
 Validation: `pnpm run check:env` / `pnpm run check:env:prod` from `apps/web`.
 
-## 4. Hosted smoke test (manual)
+## 4. Dashboard UI
+
+When billing is enabled, the dashboard header shows a **Subscription** panel ([`BillingAccountPanel`](../apps/web/components/BillingAccountPanel.tsx)). On load it calls **`GET /api/billing/status`**, which returns `{ enabled: boolean }` from server `isBillingEnabled()` (no public env flag for this). If `enabled` is true, **Subscribe / upgrade** opens Checkout and **Manage billing** opens the Customer Portal.
+
+## 5. Hosted smoke test (manual)
 
 1. Sign in as a test user with a row in `myassist.app_users`.
 2. `POST /api/billing/create-checkout-session` with `priceId` (or rely on env default), `successUrl`, `cancelUrl` — expect `{ url }`.
@@ -52,7 +56,7 @@ Validation: `pnpm run check:env` / `pnpm run check:env:prod` from `apps/web`.
 5. Confirm **`myassist.billing_subscriptions`** updated for the user (`status`, `stripe_customer_id`, etc.).
 6. `POST /api/billing/portal` with `returnUrl` — expect `{ url }` to Stripe Customer Portal.
 
-## 5. Troubleshooting
+## 6. Troubleshooting
 
 | Symptom | Check |
 |--------|--------|
@@ -60,6 +64,6 @@ Validation: `pnpm run check:env` / `pnpm run check:env:prod` from `apps/web`.
 | Webhook 503 `idempotency_claim_failed` | DB reachable; `myassist.stripe_event_log` exists and RLS/service role allows insert. |
 | Checkout 503 `billing_misconfigured` in prod | Set `STRIPE_SECRET_KEY`, or `BILLING_ENABLED=false` for non-billing deploys. |
 
-## 6. Manual steps that require a real Stripe account
+## 7. Manual steps that require a real Stripe account
 
 Live mode keys, production webhooks, and PCI-related settings must be configured in the Stripe Dashboard; this repo does not store or rotate secrets.
