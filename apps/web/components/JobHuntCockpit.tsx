@@ -764,13 +764,13 @@ export function JobHuntCockpit() {
         </div>
 
         <div className="mt-8 flex flex-wrap gap-2 border-t border-white/10 pt-6" role="tablist" aria-label="Job hunt views">
-          <button type="button" role="tab" aria-selected={activeTab === "discovery"} className={tabClass("discovery")} onClick={() => setActiveTab("discovery")}>
+          <button type="button" role="tab" id="tab-discovery" aria-controls="panel-discovery" aria-selected={activeTab === "discovery"} className={tabClass("discovery")} onClick={() => setActiveTab("discovery")}>
             Discovery
           </button>
-          <button type="button" role="tab" aria-selected={activeTab === "pipeline"} className={tabClass("pipeline")} onClick={() => setActiveTab("pipeline")}>
+          <button type="button" role="tab" id="tab-pipeline" aria-controls="panel-pipeline" aria-selected={activeTab === "pipeline"} className={tabClass("pipeline")} onClick={() => setActiveTab("pipeline")}>
             Pipeline
           </button>
-          <button type="button" role="tab" aria-selected={activeTab === "contacts"} className={tabClass("contacts")} onClick={() => setActiveTab("contacts")}>
+          <button type="button" role="tab" id="tab-contacts" aria-controls="panel-contacts" aria-selected={activeTab === "contacts"} className={tabClass("contacts")} onClick={() => setActiveTab("contacts")}>
             Contacts
           </button>
         </div>

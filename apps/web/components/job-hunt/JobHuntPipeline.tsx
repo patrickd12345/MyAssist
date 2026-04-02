@@ -31,7 +31,7 @@ export function JobHuntPipeline({ savedJobs, savedLoading, savedError, onOpenJob
   }, [savedJobs]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" role="tabpanel" id="panel-pipeline" aria-labelledby="tab-pipeline">
       <p className="theme-muted text-xs leading-5">
         Kanban by lifecycle stage. Click a card for details, timeline notes, and contact assignment.
       </p>

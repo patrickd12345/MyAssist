@@ -197,7 +197,7 @@ export function JobHuntContactsCRM({ refreshKey = 0, onContactsChanged }: Props)
   }, [showRecordPanel, viewing]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" role="tabpanel" id="panel-contacts" aria-labelledby="tab-contacts">
       <p className="theme-muted text-xs leading-5">
         All contacts across jobs. List any posting / job ids this person is tied to (comma-separated). No separate
         &quot;primary&quot; id — one list is enough.
