@@ -124,6 +124,7 @@ Running 9 tests using 1 worker
 | Demo | Full demo walkthrough | Desktop | Signed-in | Pass | `demo-walkthrough.spec.ts` |
 | Smoke | `/sign-in` shell | Desktop | Anonymous | Pass | `smoke.spec.ts` |
 | Mobile | Tasks tab: **Complete** touch target | Pixel 5 (393x851) | Signed-in | Pass | `mobile-task-touch-targets.spec.ts` (height >= 44px) |
+| Billing | `GET /api/billing/status` + subscription buttons vs env | Desktop | Signed-in | Pass | `billing-status.spec.ts` (default: billing off; optional `pnpm run test:e2e:billing-ui` / `PLAYWRIGHT_BILLING_UI=1` for panel visible) |
 | Build | `next build` | n/a | n/a | Pass | Clean build output above |
 
 **Routes present in `/` app build (not every path hit by a dedicated E2E spec):** see `next build` route table in the command bundle output (`/api/*` job-hunt, integrations, todoist, gmail, etc.). Automated coverage is **spotty** for many API routes; Vitest and route tests cover subsets.
@@ -137,6 +138,7 @@ Running 9 tests using 1 worker
 | Mobile task controls | `min-h-11` on task actions; E2E asserts height >= 44px |
 | Stale `.next` chunk errors | `pnpm clean` + rebuild |
 | Webpack warnings (Sentry/OTEL) | `ignoreWarnings` in `next.config.ts` |
+| Windows Vitest flake on concurrent `createUser` | `userStoreFile.ts` lock: retry on `EPERM` / `EACCES` like `EEXIST` |
 
 ## Residual risks (not fully proven here)
 
@@ -160,6 +162,12 @@ pnpm test
 pnpm exec playwright test
 pnpm clean
 pnpm build
+```
+
+Optional billing-on E2E only (starts Next with `BILLING_ENABLED=true` for `billing-status.spec.ts`; stop any process on the Playwright port first):
+
+```powershell
+pnpm run test:e2e:billing-ui
 ```
 
 Optional hosted smoke (requires env):

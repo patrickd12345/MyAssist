@@ -47,6 +47,7 @@ Live execution tracker for the unified live operational window model.
 - [x] Added press-and-hold defer actions on task completion buttons for afternoon, tomorrow, and next week.
 - [x] Added AI-drafted Todoist task creation with explicit confirmation in the assistant console.
 - [x] **Stripe billing (Bookiji-style):** Checkout, Customer Portal, `POST /api/payments/webhook`, `myassist` subscription tables, production guards, dashboard **Subscription** panel + `GET /api/billing/status`; runbook [`docs/billing-stripe-runbook.md`](docs/billing-stripe-runbook.md).
+- [x] **E2E billing:** `tests/e2e/billing-status.spec.ts` (default off; optional `pnpm run test:e2e:billing-ui`); **Windows** file user-store lock retries `EPERM`/`EACCES` in [`userStoreFile.ts`](apps/web/lib/userStoreFile.ts) for stable concurrent registration tests.
 
 ## Risks
 

@@ -15,6 +15,7 @@
     "web:typecheck": "npm --prefix apps/web run typecheck",
     "web:test": "npm --prefix apps/web run test",
     "web:test:e2e": "npm --prefix apps/web run test:e2e",
+    "web:test:e2e:billing-ui": "npm --prefix apps/web run test:e2e:billing-ui",
     "web:start": "npm --prefix apps/web run start",
     "web:clean": "npm --prefix apps/web run clean",
     "web:dev:fresh": "npm run web:clean && npm run web:dev",

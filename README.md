@@ -23,6 +23,7 @@ Personal operations system as a unified live operational window over Gmail, Goog
 - Default command examples use `npm`.
 - Preferred local runtime:
   - `apps/web` on `npm`
+- From repo root (`pnpm`): `pnpm web:lint`, `pnpm web:typecheck`, `pnpm web:test`, `pnpm web:test:e2e`, and optional `pnpm web:test:e2e:billing-ui` for the billing-on Playwright path (see `apps/web/README.md`).
 
 ## Operating model
 

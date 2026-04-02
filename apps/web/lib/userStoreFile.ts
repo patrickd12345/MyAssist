@@ -88,7 +88,11 @@ async function withRegistryLock<T>(work: () => Promise<T>): Promise<T> {
       }
     } catch (error) {
       const code = error && typeof error === "object" && "code" in error ? (error as { code?: string }).code : "";
-      if (code !== "EEXIST") {
+      const retriable =
+        code === "EEXIST" ||
+        code === "EPERM" ||
+        code === "EACCES";
+      if (!retriable) {
         throw error;
       }
       if (Date.now() - start >= USER_STORE_LOCK_TIMEOUT_MS) {
