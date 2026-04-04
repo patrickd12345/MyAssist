@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "@bookiji-inc/ai-runtime": "workspace:*",
+    "@bookiji-inc/persistent-memory-runtime": "file:../../../../packages/persistent-memory-runtime",
     "@bookiji-inc/error-contract": "workspace:*",
     "@bookiji-inc/observability": "workspace:*",
     "@bookiji-inc/stripe-runtime": "file:../../../../packages/stripe-runtime",
