@@ -173,13 +173,14 @@ export function TaskList({
                 </div>
                 {canComplete ? (
                   <div className="relative mt-4 flex flex-wrap items-start justify-between gap-2">
-                    <div className="flex gap-1 opacity-40 transition-opacity hover:opacity-100">
+                    <div className="flex gap-1 opacity-40 transition-opacity hover:opacity-100 focus-within:opacity-100">
                       <button
                         type="button"
                         disabled={isPending || index === 0}
                         onClick={() => void onNudge?.(id, "up", taskContent(task))}
-                        className="min-h-11 min-w-11 rounded px-2 py-1 text-[10px] hover:bg-black/5 disabled:cursor-not-allowed disabled:opacity-30"
+                        className="min-h-11 min-w-11 rounded px-2 py-1 text-[10px] hover:bg-black/5 focus-visible:bg-black/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 disabled:cursor-not-allowed disabled:opacity-30"
                         title="Bump up one slot (AI will learn this preference)"
+                        aria-label={`Move task up: ${taskContent(task)}`}
                       >
                         ▲
                       </button>
@@ -187,8 +188,9 @@ export function TaskList({
                         type="button"
                         disabled={isPending || index === sortedTasks.length - 1}
                         onClick={() => void onNudge?.(id, "down", taskContent(task))}
-                        className="min-h-11 min-w-11 rounded px-2 py-1 text-[10px] hover:bg-black/5 disabled:cursor-not-allowed disabled:opacity-30"
+                        className="min-h-11 min-w-11 rounded px-2 py-1 text-[10px] hover:bg-black/5 focus-visible:bg-black/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 disabled:cursor-not-allowed disabled:opacity-30"
                         title="Bump down one slot (AI will learn this preference)"
+                        aria-label={`Move task down: ${taskContent(task)}`}
                       >
                         ▼
                       </button>
