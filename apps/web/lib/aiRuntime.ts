@@ -9,6 +9,7 @@ import {
   startSession,
 } from "@bookiji-inc/persistent-memory-runtime";
 import { buildMyAssistBoundaryFromChat } from "@/lib/myassistMemoryBoundary";
+import { bridgeMyAssistRuntimeToUmbrella, shouldBridgeMyAssistToUmbrella } from "@/lib/umbrellaRuntimeBridge";
 import { resolveMyAssistRuntimeEnv } from "@/lib/env/runtime";
 
 export type CanonicalAiMode = "gateway" | "ollama" | "fallback";
@@ -113,13 +114,16 @@ export async function executeChat(args: {
     providerOverride: mode,
   });
 
+  const boundary = buildMyAssistBoundaryFromChat(args.messages, response.text);
   try {
-    await commitSessionBoundary(
-      memoryHandle,
-      buildMyAssistBoundaryFromChat(args.messages, response.text),
-    );
+    await commitSessionBoundary(memoryHandle, boundary);
   } catch {
     /* non-fatal: disk or env may block writes in constrained hosts */
+  }
+  if (shouldBridgeMyAssistToUmbrella(process.env)) {
+    void bridgeMyAssistRuntimeToUmbrella(process.env, boundary).catch(() => {
+      /* explicit opt-in bridge; failures must not affect chat */
+    });
   }
 
   return {
