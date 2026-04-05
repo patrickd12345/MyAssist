@@ -180,6 +180,7 @@ export function TaskList({
                         onClick={() => void onNudge?.(id, "up", taskContent(task))}
                         className="min-h-11 min-w-11 rounded px-2 py-1 text-[10px] hover:bg-black/5 disabled:cursor-not-allowed disabled:opacity-30"
                         title="Bump up one slot (AI will learn this preference)"
+                        aria-label="Bump up"
                       >
                         ▲
                       </button>
@@ -189,6 +190,7 @@ export function TaskList({
                         onClick={() => void onNudge?.(id, "down", taskContent(task))}
                         className="min-h-11 min-w-11 rounded px-2 py-1 text-[10px] hover:bg-black/5 disabled:cursor-not-allowed disabled:opacity-30"
                         title="Bump down one slot (AI will learn this preference)"
+                        aria-label="Bump down"
                       >
                         ▼
                       </button>
