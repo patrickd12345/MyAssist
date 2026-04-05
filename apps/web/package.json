@@ -28,7 +28,6 @@
     "@bookiji-inc/ai-runtime": "workspace:*",
     "@bookiji-inc/error-contract": "workspace:*",
     "@bookiji-inc/observability": "workspace:*",
-    "@bookiji-inc/stripe-runtime": "file:../../../../packages/stripe-runtime",
     "@sentry/nextjs": "^9.47.1",
     "@supabase/supabase-js": "2.100.1",
     "bcryptjs": "^3.0.3",

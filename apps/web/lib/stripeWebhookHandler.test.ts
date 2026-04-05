@@ -13,8 +13,8 @@ vi.mock("@/lib/services/stripeBilling", () => ({
   getStripeOrThrow: mockGetStripeOrThrow,
 }));
 
-vi.mock("@bookiji-inc/stripe-runtime", async (importOriginal) => {
-  const mod = await importOriginal<typeof import("@bookiji-inc/stripe-runtime")>();
+vi.mock("@/lib/stripe-runtime-mock", async (importOriginal) => {
+  const mod = await importOriginal<typeof import("@/lib/stripe-runtime-mock")>();
   return {
     ...mod,
     claimStripeEvent: (...args: unknown[]) => mockClaimStripeEvent(...args),

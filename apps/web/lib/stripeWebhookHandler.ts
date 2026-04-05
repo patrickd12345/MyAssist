@@ -5,7 +5,7 @@ import {
   buildStripeProcessedUpdate,
   claimStripeEvent,
   verifyStripeWebhookSignature,
-} from "@bookiji-inc/stripe-runtime";
+} from "@/lib/stripe-runtime-mock";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";

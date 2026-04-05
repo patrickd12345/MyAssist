@@ -1,7 +1,5 @@
 import "server-only";
 
-import { isBillingEnabled as isSharedBillingEnabled } from "@bookiji-inc/stripe-runtime";
-
 export function isBillingEnabled(): boolean {
-  return isSharedBillingEnabled(process.env);
+  return process.env.MYASSIST_BILLING_ENABLED === "true" || process.env.BILLING_ENABLED === "true";
 }
