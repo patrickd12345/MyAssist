@@ -16,6 +16,7 @@ Live execution tracker for the unified live operational window model.
 - [x] **Environment hardening / dev-prod separation (first pass):** `sharedDbEnv` + `bootstrap.sharedDb` on Node boot, `assertMyAssistRuntimeEnv` for prod/strict Supabase, `pnpm dev:infisical` merge script (also **`pnpm dev:infisical`** at repo root), OAuth integration route tests, `SHARED_DB_*` ref vars in `.env.example`. **Infisical** is the documented team default for secrets (`AUTH_SECRET`, Supabase, OAuth); README + root README point to it.
 - [x] **`pnpm dev:all` single entry:** `scripts/dev-all.mjs` runs Next + job-hunt digest with shared `scripts/infisical-merge.mjs` (optional Infisical, graceful fallback); `apps/web/scripts/dev-with-infisical.mjs` uses the same merge helper.
 - [x] **Env sign-off §0:** [`docs/myassist-operational-signoff.md`](docs/myassist-operational-signoff.md) section 0 documents `pnpm check:env` / `pnpm check:env:prod` (no secret values); billing-related checks apply when `BILLING_ENABLED=true` (see [`apps/web/lib/env/envReadiness.ts`](apps/web/lib/env/envReadiness.ts)).
+- [ ] Wire in the persistent memory feature already developed so MyAssist uses the shared persistent-memory path end to end in the assistant flow.
 - [ ] Tighten the assistant voice, action proposals, and conversational depth.
 - [ ] Finalize adapter/service boundaries: `gmailAdapter`, `calendarAdapter`, `todoistAdapter`, `unifiedTodayService`, `crossSystemActionService`.
 - [ ] Harden OAuth and secret handling without adding multi-tenant complexity.
