@@ -30,6 +30,11 @@ import {
 } from "@/lib/assistantPrompts";
 import type { MyAssistDailyContext, SituationBrief } from "@/lib/types";
 import { parseAssistantStructuredReply } from "@/lib/assistantStructuredReply";
+import {
+  commitMyAssistBoundaryIfMeaningful,
+  formatPersistentMemoryContextForPrompt,
+  startMyAssistStandard2bSession,
+} from "@/lib/standard2bPersistentMemory";
 
 export const dynamic = "force-dynamic";
 
@@ -245,6 +250,8 @@ async function createReply(context: MyAssistDailyContext, message: string, userI
   }
   try {
     const memoryPrompt = await getRollingMemoryPrompt(userId, context);
+    const s2b = await startMyAssistStandard2bSession(userId);
+    const persistentBlock = formatPersistentMemoryContextForPrompt(s2b);
 
     const result = await runAssistantChatWithTimeout(
       executeChat({
@@ -258,7 +265,7 @@ async function createReply(context: MyAssistDailyContext, message: string, userI
           },
           {
             role: "user",
-            content: `Question:\n${message}\n\nDaily context snapshot:\n${buildContextDigest(context)}\n\nHistorical Rolling Memory:\n${memoryPrompt}`,
+            content: `Question:\n${message}\n\nDaily context snapshot:\n${buildContextDigest(context)}\n\nHistorical Rolling Memory:\n${memoryPrompt}\n\n[persistent_memory_context]\n${persistentBlock}`,
           },
         ],
       }),
@@ -277,6 +284,13 @@ async function createReply(context: MyAssistDailyContext, message: string, userI
       latencyMs: result.latencyMs,
       fallbackReason: result.fallbackReason,
     };
+    try {
+      await commitMyAssistBoundaryIfMeaningful(s2b, parsed);
+    } catch (commitErr) {
+      logServerEvent("warn", "myassist_standard2b_commit_failed", {
+        error: commitErr instanceof Error ? commitErr.message : String(commitErr),
+      });
+    }
     logAiServerEvent("assistant_chat_completed", response, { route: "assistant", kind: "chat" });
     return response;
   } catch (error) {

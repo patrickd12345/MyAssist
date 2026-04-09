@@ -89,6 +89,9 @@ importers:
       '@bookiji-inc/observability':
         specifier: workspace:*
         version: link:../../packages/observability
+      '@bookiji-inc/persistent-memory-runtime':
+        specifier: file:../../../../packages/persistent-memory-runtime
+        version: file:../../packages/persistent-memory-runtime
       '@bookiji-inc/stripe-runtime':
         specifier: file:../../../../packages/stripe-runtime
         version: file:../../packages/stripe-runtime(@types/node@20.19.37)
@@ -291,6 +294,9 @@ packages:
   '@babel/types@7.29.0':
     resolution: {integrity: sha512-LwdZHpScM4Qz8Xw2iKSzS+cfglZzJGvofQICy7W7v4caru4EaAmyUuO6BGrbyQ2mYV11W0U8j5mBhd14dd3B0A==}
     engines: {node: '>=6.9.0'}
+
+  '@bookiji-inc/persistent-memory-runtime@file:../../packages/persistent-memory-runtime':
+    resolution: {directory: ../../packages/persistent-memory-runtime, type: directory}
 
   '@bookiji-inc/stripe-runtime@file:../../packages/stripe-runtime':
     resolution: {directory: ../../packages/stripe-runtime, type: directory}
@@ -4592,6 +4598,8 @@ snapshots:
     dependencies:
       '@babel/helper-string-parser': 7.27.1
       '@babel/helper-validator-identifier': 7.28.5
+
+  '@bookiji-inc/persistent-memory-runtime@file:../../packages/persistent-memory-runtime': {}
 
   '@bookiji-inc/stripe-runtime@file:../../packages/stripe-runtime(@types/node@20.19.37)':
     dependencies:
