@@ -134,6 +134,31 @@ export function TaskList({
     clearHoldTimer();
   }
 
+  const handleNudge = (taskId: string, direction: "up" | "down", content: string) => {
+    void onNudge?.(taskId, direction, content);
+  };
+
+  const handleComplete = (taskId: string, isMenuOpen: boolean) => {
+    if (isMenuOpen) {
+      setMenuTaskId(null);
+      return;
+    }
+    void onComplete?.(taskId);
+  };
+
+  const handleToggleMenu = (taskId: string) => {
+    setMenuTaskId((current) => (current === taskId ? null : taskId));
+  };
+
+  const handleBlockCalendarAction = (taskId: string) => {
+    void onBlockCalendar?.(taskId);
+  };
+
+  const handleScheduleTask = (taskId: string, value: string, intent: string) => {
+    setMenuTaskId(null);
+    void onSchedule?.(taskId, value, intent);
+  };
+
   return (
     <section className="glass-panel min-w-[280px] self-start rounded-[28px] p-5">
       <h2 className="section-title mb-4 text-xs font-semibold">
@@ -177,7 +202,7 @@ export function TaskList({
                       <button
                         type="button"
                         disabled={isPending || index === 0}
-                        onClick={() => void onNudge?.(id, "up", taskContent(task))}
+                        onClick={() => handleNudge(id, "up", taskContent(task))}
                         className="min-h-11 min-w-11 rounded px-2 py-1 text-[10px] hover:bg-black/5 disabled:cursor-not-allowed disabled:opacity-30"
                         title="Bump up one slot (AI will learn this preference)"
                       >
@@ -186,7 +211,7 @@ export function TaskList({
                       <button
                         type="button"
                         disabled={isPending || index === sortedTasks.length - 1}
-                        onClick={() => void onNudge?.(id, "down", taskContent(task))}
+                        onClick={() => handleNudge(id, "down", taskContent(task))}
                         className="min-h-11 min-w-11 rounded px-2 py-1 text-[10px] hover:bg-black/5 disabled:cursor-not-allowed disabled:opacity-30"
                         title="Bump down one slot (AI will learn this preference)"
                       >
@@ -197,13 +222,7 @@ export function TaskList({
                       <button
                         type="button"
                         disabled={isPending}
-                        onClick={() => {
-                          if (isMenuOpen) {
-                            setMenuTaskId(null);
-                            return;
-                          }
-                          void onComplete?.(id);
-                        }}
+                        onClick={() => handleComplete(id, isMenuOpen)}
                         onPointerDown={() => startHold(id)}
                         onPointerUp={cancelHold}
                         onPointerLeave={cancelHold}
@@ -220,7 +239,7 @@ export function TaskList({
                         <button
                           type="button"
                           disabled={isPending}
-                          onClick={() => setMenuTaskId((current) => (current === id ? null : id))}
+                          onClick={() => handleToggleMenu(id)}
                           className="theme-button-secondary min-h-11 rounded-full px-4 py-2.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50"
                           aria-label="Open defer options"
                         >
@@ -231,7 +250,7 @@ export function TaskList({
                         <button
                           type="button"
                           disabled={isPending || blockBusy}
-                          onClick={() => void onBlockCalendar(id)}
+                          onClick={() => handleBlockCalendarAction(id)}
                           className="theme-button-secondary min-h-11 rounded-full px-4 py-2.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50"
                           title="Create a focus block on Google Calendar when the task has a due time"
                         >
@@ -246,10 +265,7 @@ export function TaskList({
                             key={`${option.value}|${option.intent}`}
                             type="button"
                             disabled={isPending}
-                            onClick={() => {
-                              setMenuTaskId(null);
-                              void onSchedule(id, option.value, option.intent);
-                            }}
+                            onClick={() => handleScheduleTask(id, option.value, option.intent)}
                             className="theme-menu-item block w-full rounded-[14px] px-3 py-2 text-left text-xs font-medium transition disabled:opacity-50"
                           >
                             {option.label}
