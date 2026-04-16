@@ -2,7 +2,7 @@
   "name": "myassist",
   "private": true,
   "dependencies": {
-    "next": "15.2.8"
+    "next": "15.2.6"
   },
   "scripts": {
     "vercel-build": "pnpm --filter web run build",
