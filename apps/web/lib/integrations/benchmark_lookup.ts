@@ -1,5 +1,5 @@
 
-function originalLookup(providers: string[], rows: any[]) {
+function originalLookup(providers: string[], rows: unknown[]) {
   return providers.map((provider) => {
     const row = rows.find((x) => x.provider === provider);
     if (!row) return { provider, status: "disconnected" };
@@ -7,7 +7,7 @@ function originalLookup(providers: string[], rows: any[]) {
   });
 }
 
-function optimizedLookup(providers: string[], rows: any[]) {
+function optimizedLookup(providers: string[], rows: unknown[]) {
   const rowMap = new Map(rows.map(row => [row.provider, row]));
   return providers.map((provider) => {
     const row = rowMap.get(provider);
