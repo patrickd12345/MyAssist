@@ -88,6 +88,24 @@ describe("TaskList", () => {
     expect(onComplete).toHaveBeenCalledWith("t99");
   });
 
+  it("has accessible bump buttons", () => {
+    const onNudge = vi.fn().mockResolvedValue(undefined);
+    render(
+      <TaskList
+        title="Test"
+        tasks={[
+          { id: "t1", content: "Task 1", priority: 1 },
+          { id: "t2", content: "Task 2", priority: 1 },
+        ]}
+        emptyLabel="Nothing"
+        onComplete={vi.fn().mockResolvedValue(undefined)}
+        onNudge={onNudge}
+      />,
+    );
+    expect(screen.getAllByRole("button", { name: "Bump task up" })[0]).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Bump task down" })[0]).toBeInTheDocument();
+  });
+
   it("opens defer menu and calls onSchedule", async () => {
     const user = userEvent.setup();
     const onSchedule = vi.fn().mockResolvedValue(undefined);
