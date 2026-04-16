@@ -167,7 +167,7 @@ export function JobHuntDiscovery({
   loading,
 }: Props) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" role="tabpanel" id="panel-discovery" aria-labelledby="tab-discovery">
       <p className="theme-muted text-sm leading-7">
         Find new leads: RSS sources, resolve a posting by id, then save from the live feed. Track metrics by track still
         appear in the header summary.
