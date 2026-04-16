@@ -29,7 +29,7 @@ async function refreshContextIfNeeded(page: Page) {
       break;
     }
     const refreshLive = page.getByRole("button", { name: "Refresh live context" });
-    const refresh = page.getByRole("button", { name: "Refresh", exact: true });
+    const refresh = page.getByRole("button", { name: "Refresh", exact: true }).first();
     if (await refreshLive.isVisible()) {
       await refreshLive.click();
     } else if (await refresh.isVisible()) {
