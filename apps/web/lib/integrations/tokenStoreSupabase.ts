@@ -150,8 +150,11 @@ export async function listIntegrationStatuses(userId: string): Promise<
     status: "connected" | "revoked";
     updated_at: string;
   }>;
+
+  const rowMap = new Map(rows.map((row) => [row.provider, row]));
+
   return providers.map((provider) => {
-    const row = rows.find((x) => x.provider === provider);
+    const row = rowMap.get(provider);
     if (!row) return { provider, status: "disconnected" as const };
     return { provider, status: row.status, updated_at: row.updated_at };
   });
