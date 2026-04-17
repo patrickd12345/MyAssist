@@ -135,21 +135,24 @@ export async function fetchGmailInboxPage(
       ? listJson.nextPageToken.trim()
       : undefined;
 
-  const previews: GmailInboxPreview[] = [];
-  for (const stub of stubs) {
+  const previewPromises = stubs.map(async (stub) => {
     const mid = typeof stub.id === "string" ? stub.id : "";
-    if (!mid) continue;
+    if (!mid) return null;
+
     const detailsRes = await fetch(
       `https://gmail.googleapis.com/gmail/v1/users/me/messages/${encodeURIComponent(
         mid,
       )}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date`,
       { headers: { Authorization: `Bearer ${accessToken}` }, cache: "no-store" },
     );
-    if (!detailsRes.ok) continue;
+
+    if (!detailsRes.ok) return null;
+
     const msg = (await detailsRes.json()) as GmailMetadataMessage;
-    const preview = parseGmailMetadataToPreview(msg, mid);
-    if (preview) previews.push(preview);
-  }
+    return parseGmailMetadataToPreview(msg, mid);
+  });
+
+  const previews = (await Promise.all(previewPromises)).filter((p): p is GmailInboxPreview => p !== null);
 
   return {
     ok: true,
