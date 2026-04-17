@@ -2,8 +2,11 @@
 
 import { useMemo } from "react";
 import type { LifecycleStage } from "job-hunt-manager/types/lifecycle";
-import type { SavedJobRow } from "@/lib/jobHuntUiTypes";
-import { PIPELINE_COLUMNS, columnForStage } from "@/lib/jobHuntUiTypes";
+import {
+  PIPELINE_COLUMNS,
+  columnForStage,
+  type SavedJobRow,
+} from "@/lib/jobHuntUiTypes";
 
 type Props = {
   savedJobs: SavedJobRow[];
