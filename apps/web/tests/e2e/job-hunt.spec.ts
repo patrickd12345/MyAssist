@@ -10,13 +10,13 @@ test("Job Hunt tab navigates to cockpit", async ({ page }) => {
   await page.getByLabel("Password").fill(password);
   await page.getByRole("button", { name: "Create account" }).click();
 
-  await expect(page.getByText("Welcome back", { exact: false }).first()).toBeVisible({
+  await expect(page.getByRole("heading", { name: /Welcome back/i }).first()).toBeVisible({
     timeout: 30_000,
   });
 
   await page.getByRole("link", { name: "Job Hunt" }).first().click();
 
-  await expect(page.getByRole("heading", { name: "Job Hunt Cockpit" })).toBeVisible({
+  await expect(page.getByRole("heading", { name: "Job Hunt CRM" })).toBeVisible({
     timeout: 15_000,
   });
   await expect(page.getByRole("navigation", { name: "Workspace" })).toBeVisible();

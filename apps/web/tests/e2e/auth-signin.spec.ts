@@ -10,7 +10,7 @@ test("register completes and dashboard shows welcome", async ({ page }) => {
   await page.getByLabel("Password").fill(password);
   await page.getByRole("button", { name: "Create account" }).click();
 
-  await expect(page.getByText("Welcome back", { exact: false }).first()).toBeVisible({
+  await expect(page.getByRole("heading", { name: /Welcome back/i }).first()).toBeVisible({
     timeout: 30_000,
   });
 });
