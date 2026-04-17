@@ -4,14 +4,12 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CalendarEvent } from "@/lib/types";
 import type { JobHuntPersonContact } from "@/lib/jobHuntContactTypes";
 import { contactAppliesToJob } from "@/lib/jobHuntContactUtils";
-import { lifecycleStageSchema } from "job-hunt-manager/types/lifecycle";
-import type { LifecycleStage } from "job-hunt-manager/types/lifecycle";
+import { lifecycleStageSchema, type LifecycleStage } from "job-hunt-manager/types/lifecycle";
 import {
   formatLifecycleStageLabel,
   LIFECYCLE_STAGE_DEFINITIONS,
 } from "@/lib/jobHuntStageDefinitions";
-import type { SavedJobRow } from "@/lib/jobHuntUiTypes";
-import { myAssistJobTag } from "@/lib/jobHuntUiTypes";
+import { myAssistJobTag, type SavedJobRow } from "@/lib/jobHuntUiTypes";
 
 const STAGE_OPTIONS = lifecycleStageSchema.options;
 

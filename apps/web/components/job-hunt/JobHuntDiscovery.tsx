@@ -1,8 +1,12 @@
 "use client";
 
 import type { Dispatch, RefObject, SetStateAction } from "react";
-import type { JobHuntListingRow, DigestPayload } from "@/lib/jobHuntUiTypes";
-import { NEW_TRACK_SELECT_VALUE, myAssistJobTag } from "@/lib/jobHuntUiTypes";
+import {
+  NEW_TRACK_SELECT_VALUE,
+  myAssistJobTag,
+  type JobHuntListingRow,
+  type DigestPayload,
+} from "@/lib/jobHuntUiTypes";
 
 type JobHuntContactPerson = {
   id: string;
