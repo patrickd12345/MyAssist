@@ -1,5 +1,17 @@
 
-function originalLookup(providers: string[], rows: any[]) {
+type ConnectionRow = {
+  provider: string;
+  status: string;
+  updated_at: string;
+};
+
+type ConnectionLookup = {
+  provider: string;
+  status: string;
+  updated_at?: string;
+};
+
+function originalLookup(providers: string[], rows: ConnectionRow[]): ConnectionLookup[] {
   return providers.map((provider) => {
     const row = rows.find((x) => x.provider === provider);
     if (!row) return { provider, status: "disconnected" };
@@ -7,8 +19,8 @@ function originalLookup(providers: string[], rows: any[]) {
   });
 }
 
-function optimizedLookup(providers: string[], rows: any[]) {
-  const rowMap = new Map(rows.map(row => [row.provider, row]));
+function optimizedLookup(providers: string[], rows: ConnectionRow[]): ConnectionLookup[] {
+  const rowMap = new Map(rows.map((row) => [row.provider, row]));
   return providers.map((provider) => {
     const row = rowMap.get(provider);
     if (!row) return { provider, status: "disconnected" };
@@ -46,7 +58,10 @@ function runBenchmark(N: number, M: number, iterations: number) {
   const endOptimized = performance.now();
   console.log(`Optimized O(N+M) took: ${(endOptimized - startOptimized).toFixed(4)}ms`);
 
-  const improvement = ((endOriginal - startOriginal) - (endOptimized - startOptimized)) / (endOriginal - startOriginal) * 100;
+  const improvement =
+    ((endOriginal - startOriginal) - (endOptimized - startOptimized)) /
+    (endOriginal - startOriginal) *
+    100;
   console.log(`Improvement: ${improvement.toFixed(2)}%`);
 }
 
