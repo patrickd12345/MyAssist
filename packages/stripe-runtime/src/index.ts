@@ -45,8 +45,11 @@ export type ClaimStripeEventResult = {
 
 function isPgDuplicateError(err: unknown): boolean {
   if (!err || typeof err !== "object") return false;
-  const record = err as { code?: unknown };
-  return record.code === "23505";
+  const record = err as { code?: unknown; message?: unknown };
+  return (
+    record.code === "23505" ||
+    (typeof record.message === "string" && /duplicate key|unique constraint/i.test(record.message))
+  );
 }
 
 export async function claimStripeEvent(input: ClaimStripeEventInput): Promise<ClaimStripeEventResult> {
