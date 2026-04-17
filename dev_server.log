@@ -1,0 +1,14 @@
+
+> myassist@ web:dev /app
+> npm --prefix apps/web run dev
+
+npm warn Unknown env config "verify-deps-before-run". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "npm-globalconfig". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "_jsr-registry". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> web@0.1.0 dev
+> cross-env NODE_OPTIONS=--max-old-space-size=6144 next dev
+
+sh: 1: cross-env: not found
+ ELIFECYCLE  Command failed.
+ WARN   Local package.json exists, but node_modules missing, did you mean to install?
