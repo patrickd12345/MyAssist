@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Mono, Space_Grotesk } from "next/font/google";
+import Script from "next/script";
 import { AuthSessionProvider } from "@/components/AuthSessionProvider";
 import "./globals.css";
 
@@ -34,11 +35,9 @@ export default function RootLayout({
           color: "var(--ink, #0f172a)",
         }}
       >
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem("myassist-theme");if(t==="neon"||t==="kpop-demon-hunters"||t==="zara-larsson")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(e){}})();`,
-          }}
-        />
+        <Script id="theme-switcher" strategy="beforeInteractive">
+          {`(function(){try{var t=localStorage.getItem("myassist-theme");if(t==="neon"||t==="kpop-demon-hunters"||t==="zara-larsson")document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");}catch(e){}})();`}
+        </Script>
         <AuthSessionProvider>{children}</AuthSessionProvider>
       </body>
     </html>
