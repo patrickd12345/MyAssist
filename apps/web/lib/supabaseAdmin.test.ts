@@ -6,7 +6,7 @@ import {
   isSupabaseHostedStorageEnabled,
 } from "./supabaseAdmin";
 import { resolveMyAssistRuntimeEnv, type MyAssistRuntimeEnv } from "@/lib/env/runtime";
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js";
 
 vi.mock("@/lib/env/runtime", () => ({
   resolveMyAssistRuntimeEnv: vi.fn(),
@@ -104,7 +104,8 @@ describe("supabaseAdmin", () => {
         supabaseProjectUrl: "https://xyz.supabase.co",
         supabaseSecretKey: "sb_secret_123",
       } as unknown as MyAssistRuntimeEnv);
-      vi.mocked(createClient).mockReturnValue(mockClient as unknown as SupabaseClient);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.mocked(createClient).mockReturnValue(mockClient as any);
 
       const client1 = getSupabaseAdmin();
       expect(client1).toBe(mockClient);
@@ -130,7 +131,8 @@ describe("supabaseAdmin", () => {
         supabaseProjectUrl: "https://url1.supabase.co",
         supabaseSecretKey: "key1",
       } as unknown as MyAssistRuntimeEnv);
-      vi.mocked(createClient).mockReturnValue(mockClient1 as unknown as SupabaseClient);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.mocked(createClient).mockReturnValue(mockClient1 as any);
 
       getSupabaseAdmin();
       expect(createClient).toHaveBeenCalledTimes(1);
@@ -140,7 +142,8 @@ describe("supabaseAdmin", () => {
         supabaseProjectUrl: "https://url2.supabase.co",
         supabaseSecretKey: "key2",
       } as unknown as MyAssistRuntimeEnv);
-      vi.mocked(createClient).mockReturnValue(mockClient2 as unknown as SupabaseClient);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.mocked(createClient).mockReturnValue(mockClient2 as any);
 
       const client2 = getSupabaseAdmin();
       expect(client2).toBe(mockClient2);
