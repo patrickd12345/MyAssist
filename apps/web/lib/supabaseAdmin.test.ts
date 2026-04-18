@@ -5,8 +5,9 @@ import {
   getSupabaseAdmin,
   isSupabaseHostedStorageEnabled,
 } from "./supabaseAdmin";
+import type { MyAssistRuntimeEnv } from "@/lib/env/runtime";
 import { resolveMyAssistRuntimeEnv } from "@/lib/env/runtime";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 vi.mock("@/lib/env/runtime", () => ({
   resolveMyAssistRuntimeEnv: vi.fn(),
@@ -15,6 +16,11 @@ vi.mock("@/lib/env/runtime", () => ({
 vi.mock("@supabase/supabase-js", () => ({
   createClient: vi.fn(),
 }));
+
+/** Partial env overrides for tests; fields not used by supabaseAdmin are omitted via assertion. */
+function stubRuntimeEnv(partial: Partial<MyAssistRuntimeEnv>): MyAssistRuntimeEnv {
+  return partial as MyAssistRuntimeEnv;
+}
 
 describe("supabaseAdmin", () => {
   beforeEach(() => {
@@ -25,17 +31,17 @@ describe("supabaseAdmin", () => {
 
   describe("resolveSupabaseProjectUrl", () => {
     it("returns the project URL when present in env", () => {
-      vi.mocked(resolveMyAssistRuntimeEnv).mockReturnValue({
-        supabaseProjectUrl: "https://xyz.supabase.co",
-      } as any);
+      vi.mocked(resolveMyAssistRuntimeEnv).mockReturnValue(
+        stubRuntimeEnv({ supabaseProjectUrl: "https://xyz.supabase.co" })
+      );
 
       expect(resolveSupabaseProjectUrl()).toBe("https://xyz.supabase.co");
     });
 
     it("returns undefined when project URL is empty in env", () => {
-      vi.mocked(resolveMyAssistRuntimeEnv).mockReturnValue({
-        supabaseProjectUrl: "",
-      } as any);
+      vi.mocked(resolveMyAssistRuntimeEnv).mockReturnValue(
+        stubRuntimeEnv({ supabaseProjectUrl: "" })
+      );
 
       expect(resolveSupabaseProjectUrl()).toBeUndefined();
     });
@@ -43,17 +49,17 @@ describe("supabaseAdmin", () => {
 
   describe("resolveSupabaseSecretKey", () => {
     it("returns the secret key when present in env", () => {
-      vi.mocked(resolveMyAssistRuntimeEnv).mockReturnValue({
-        supabaseSecretKey: "sb_secret_123",
-      } as any);
+      vi.mocked(resolveMyAssistRuntimeEnv).mockReturnValue(
+        stubRuntimeEnv({ supabaseSecretKey: "sb_secret_123" })
+      );
 
       expect(resolveSupabaseSecretKey()).toBe("sb_secret_123");
     });
 
     it("returns undefined when secret key is empty in env", () => {
-      vi.mocked(resolveMyAssistRuntimeEnv).mockReturnValue({
-        supabaseSecretKey: "",
-      } as any);
+      vi.mocked(resolveMyAssistRuntimeEnv).mockReturnValue(
+        stubRuntimeEnv({ supabaseSecretKey: "" })
+      );
 
       expect(resolveSupabaseSecretKey()).toBeUndefined();
     });
@@ -61,28 +67,34 @@ describe("supabaseAdmin", () => {
 
   describe("isSupabaseHostedStorageEnabled", () => {
     it("returns true when both URL and key are present", () => {
-      vi.mocked(resolveMyAssistRuntimeEnv).mockReturnValue({
-        supabaseProjectUrl: "https://xyz.supabase.co",
-        supabaseSecretKey: "sb_secret_123",
-      } as any);
+      vi.mocked(resolveMyAssistRuntimeEnv).mockReturnValue(
+        stubRuntimeEnv({
+          supabaseProjectUrl: "https://xyz.supabase.co",
+          supabaseSecretKey: "sb_secret_123",
+        })
+      );
 
       expect(isSupabaseHostedStorageEnabled()).toBe(true);
     });
 
     it("returns false when URL is missing", () => {
-      vi.mocked(resolveMyAssistRuntimeEnv).mockReturnValue({
-        supabaseProjectUrl: "",
-        supabaseSecretKey: "sb_secret_123",
-      } as any);
+      vi.mocked(resolveMyAssistRuntimeEnv).mockReturnValue(
+        stubRuntimeEnv({
+          supabaseProjectUrl: "",
+          supabaseSecretKey: "sb_secret_123",
+        })
+      );
 
       expect(isSupabaseHostedStorageEnabled()).toBe(false);
     });
 
     it("returns false when key is missing", () => {
-      vi.mocked(resolveMyAssistRuntimeEnv).mockReturnValue({
-        supabaseProjectUrl: "https://xyz.supabase.co",
-        supabaseSecretKey: "",
-      } as any);
+      vi.mocked(resolveMyAssistRuntimeEnv).mockReturnValue(
+        stubRuntimeEnv({
+          supabaseProjectUrl: "https://xyz.supabase.co",
+          supabaseSecretKey: "",
+        })
+      );
 
       expect(isSupabaseHostedStorageEnabled()).toBe(false);
     });
@@ -90,21 +102,25 @@ describe("supabaseAdmin", () => {
 
   describe("getSupabaseAdmin", () => {
     it("returns null and resets cache when config is missing", () => {
-      vi.mocked(resolveMyAssistRuntimeEnv).mockReturnValue({
-        supabaseProjectUrl: "",
-        supabaseSecretKey: "",
-      } as any);
+      vi.mocked(resolveMyAssistRuntimeEnv).mockReturnValue(
+        stubRuntimeEnv({
+          supabaseProjectUrl: "",
+          supabaseSecretKey: "",
+        })
+      );
 
       expect(getSupabaseAdmin()).toBeNull();
     });
 
     it("creates and caches the client when config is present", () => {
       const mockClient = { name: "supabase-client" };
-      vi.mocked(resolveMyAssistRuntimeEnv).mockReturnValue({
-        supabaseProjectUrl: "https://xyz.supabase.co",
-        supabaseSecretKey: "sb_secret_123",
-      } as any);
-      vi.mocked(createClient).mockReturnValue(mockClient as any);
+      vi.mocked(resolveMyAssistRuntimeEnv).mockReturnValue(
+        stubRuntimeEnv({
+          supabaseProjectUrl: "https://xyz.supabase.co",
+          supabaseSecretKey: "sb_secret_123",
+        })
+      );
+      vi.mocked(createClient).mockReturnValue(mockClient as unknown as SupabaseClient);
 
       const client1 = getSupabaseAdmin();
       expect(client1).toBe(mockClient);
@@ -126,21 +142,25 @@ describe("supabaseAdmin", () => {
       const mockClient2 = { name: "client2" };
 
       // First config
-      vi.mocked(resolveMyAssistRuntimeEnv).mockReturnValue({
-        supabaseProjectUrl: "https://url1.supabase.co",
-        supabaseSecretKey: "key1",
-      } as any);
-      vi.mocked(createClient).mockReturnValue(mockClient1 as any);
+      vi.mocked(resolveMyAssistRuntimeEnv).mockReturnValue(
+        stubRuntimeEnv({
+          supabaseProjectUrl: "https://url1.supabase.co",
+          supabaseSecretKey: "key1",
+        })
+      );
+      vi.mocked(createClient).mockReturnValue(mockClient1 as unknown as SupabaseClient);
 
       getSupabaseAdmin();
       expect(createClient).toHaveBeenCalledTimes(1);
 
       // Second config
-      vi.mocked(resolveMyAssistRuntimeEnv).mockReturnValue({
-        supabaseProjectUrl: "https://url2.supabase.co",
-        supabaseSecretKey: "key2",
-      } as any);
-      vi.mocked(createClient).mockReturnValue(mockClient2 as any);
+      vi.mocked(resolveMyAssistRuntimeEnv).mockReturnValue(
+        stubRuntimeEnv({
+          supabaseProjectUrl: "https://url2.supabase.co",
+          supabaseSecretKey: "key2",
+        })
+      );
+      vi.mocked(createClient).mockReturnValue(mockClient2 as unknown as SupabaseClient);
 
       const client2 = getSupabaseAdmin();
       expect(client2).toBe(mockClient2);
