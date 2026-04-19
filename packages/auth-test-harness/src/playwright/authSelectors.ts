@@ -1,0 +1,15 @@
+export const authSelectors = {
+  loginButton: '[data-testid="login-button"]',
+  googleLoginButton: '[data-testid="google-login-button"]',
+  outlookLoginButton: '[data-testid="outlook-login-button"]',
+  forgotPasswordLink: '[data-testid="forgot-password-link"]',
+  emailInput: '[data-testid="email-input"]',
+  passwordInput: '[data-testid="password-input"]',
+  submitButton: '[data-testid="submit-button"]',
+  resetPasswordButton: '[data-testid="reset-password-button"]',
+  newPasswordInput: '[data-testid="new-password-input"]',
+  confirmPasswordInput: '[data-testid="confirm-password-input"]',
+  successMessage: '[data-testid="success-message"]',
+  errorMessage: '[data-testid="error-message"]',
+  resetTokenParam: 'token',
+};

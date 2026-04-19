@@ -7,7 +7,14 @@ import {
 } from "./supabaseAdmin";
 import type { MyAssistRuntimeEnv } from "@/lib/env/runtime";
 import { resolveMyAssistRuntimeEnv } from "@/lib/env/runtime";
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js";
+
+/** Real `createClient` return shape from `@supabase/supabase-js` (tests only need a shallow stub). */
+type SupabaseJsClient = ReturnType<typeof import("@supabase/supabase-js").createClient>;
+
+function stubSupabaseJsClient(marker: string): SupabaseJsClient {
+  return { name: marker } as unknown as SupabaseJsClient;
+}
 
 vi.mock("@/lib/env/runtime", () => ({
   resolveMyAssistRuntimeEnv: vi.fn(),
@@ -113,14 +120,14 @@ describe("supabaseAdmin", () => {
     });
 
     it("creates and caches the client when config is present", () => {
-      const mockClient = { name: "supabase-client" };
+      const mockClient = stubSupabaseJsClient("supabase-client");
       vi.mocked(resolveMyAssistRuntimeEnv).mockReturnValue(
         stubRuntimeEnv({
           supabaseProjectUrl: "https://xyz.supabase.co",
           supabaseSecretKey: "sb_secret_123",
         })
       );
-      vi.mocked(createClient).mockReturnValue(mockClient as unknown as SupabaseClient);
+      vi.mocked(createClient).mockReturnValue(mockClient);
 
       const client1 = getSupabaseAdmin();
       expect(client1).toBe(mockClient);
@@ -138,8 +145,8 @@ describe("supabaseAdmin", () => {
     });
 
     it("re-creates the client when config changes", () => {
-      const mockClient1 = { name: "client1" };
-      const mockClient2 = { name: "client2" };
+      const mockClient1 = stubSupabaseJsClient("client1");
+      const mockClient2 = stubSupabaseJsClient("client2");
 
       // First config
       vi.mocked(resolveMyAssistRuntimeEnv).mockReturnValue(
@@ -148,7 +155,7 @@ describe("supabaseAdmin", () => {
           supabaseSecretKey: "key1",
         })
       );
-      vi.mocked(createClient).mockReturnValue(mockClient1 as unknown as SupabaseClient);
+      vi.mocked(createClient).mockReturnValue(mockClient1);
 
       getSupabaseAdmin();
       expect(createClient).toHaveBeenCalledTimes(1);
@@ -160,7 +167,7 @@ describe("supabaseAdmin", () => {
           supabaseSecretKey: "key2",
         })
       );
-      vi.mocked(createClient).mockReturnValue(mockClient2 as unknown as SupabaseClient);
+      vi.mocked(createClient).mockReturnValue(mockClient2);
 
       const client2 = getSupabaseAdmin();
       expect(client2).toBe(mockClient2);

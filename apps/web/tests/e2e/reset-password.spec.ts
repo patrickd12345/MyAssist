@@ -1,4 +1,8 @@
 import { expect, test } from "@playwright/test";
+import {
+  awaitDevResetLinkFromForgotPasswordPage,
+  submitForgotPasswordFromForgotPasswordPage,
+} from "@bookiji-inc/auth-test-harness";
 
 test("forgot-password flow resets credentials and allows sign-in", async ({ page }) => {
   test.setTimeout(60_000);
@@ -16,12 +20,10 @@ test("forgot-password flow resets credentials and allows sign-in", async ({ page
   });
 
   await page.goto("/forgot-password");
-  await page.getByLabel("Email").fill(email);
-  await page.getByRole("button", { name: "Send reset link" }).click();
-  await expect(page.getByText("If this email exists, reset instructions were sent.")).toBeVisible();
-  const resetHref = await page.getByRole("link", { name: "Open reset link (dev)" }).getAttribute("href");
+  await submitForgotPasswordFromForgotPasswordPage(page, email);
+  const resetHref = await awaitDevResetLinkFromForgotPasswordPage(page);
   expect(resetHref).toContain("token=");
-  await page.goto(resetHref as string);
+  await page.goto(resetHref);
   await expect(page.getByRole("heading", { name: "Reset password" })).toBeVisible();
 
   await page.locator("#reset-password").fill(updatedPassword);
