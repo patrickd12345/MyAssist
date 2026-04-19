@@ -97,6 +97,21 @@ describe("POST /api/billing/portal", () => {
     expect(json.code).toBe("billing_misconfigured");
   });
 
+  it("returns 400 when body is invalid JSON", async () => {
+    mockGetSessionUserId.mockResolvedValue("user-1");
+    const { POST } = await import("./route");
+    const res = await POST(
+      new Request("http://localhost/api/billing/portal", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: "{ bad json }",
+      }),
+    );
+    expect(res.status).toBe(400);
+    const json = (await res.json()) as { code: string };
+    expect(json.code).toBe("invalid_json");
+  });
+
   it("returns portal url when customer exists", async () => {
     mockGetSessionUserId.mockResolvedValue("user-1");
     const { POST } = await import("./route");
