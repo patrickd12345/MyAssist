@@ -47,6 +47,26 @@ export function analyzeMyAssistEnv(
   const sections: EnvReadinessSection[] = [];
 
   const authOk = hasAny(env, ["AUTH_SECRET", "NEXTAUTH_SECRET"]);
+  const publicOriginOk = hasAny(env, ["AUTH_URL", "NEXTAUTH_URL", "MYASSIST_PUBLIC_APP_URL"]);
+  const googleLoginOk =
+    hasAny(env, ["GOOGLE_CLIENT_ID", "MYASSIST_GMAIL_CLIENT_ID", "MYASSIST_GOOGLE_CLIENT_ID"]) &&
+    hasAny(env, ["GOOGLE_CLIENT_SECRET", "MYASSIST_GMAIL_CLIENT_SECRET", "MYASSIST_GOOGLE_CLIENT_SECRET"]);
+  const microsoftLoginOk =
+    hasAny(env, [
+      "MICROSOFT_CLIENT_ID",
+      "MICROSOFT_ENTRA_ID_CLIENT_ID",
+      "AUTH_MICROSOFT_ENTRA_ID_ID",
+      "AZURE_AD_CLIENT_ID",
+    ]) &&
+    hasAny(env, [
+      "MICROSOFT_CLIENT_SECRET",
+      "MICROSOFT_ENTRA_ID_CLIENT_SECRET",
+      "AUTH_MICROSOFT_ENTRA_ID_SECRET",
+      "AZURE_AD_CLIENT_SECRET",
+    ]);
+  const passwordResetEmailOk =
+    hasAny(env, ["RESEND_API_KEY", "MYASSIST_RESEND_API_KEY"]) &&
+    hasAny(env, ["MYASSIST_PASSWORD_RESET_EMAIL_FROM", "PASSWORD_RESET_EMAIL_FROM", "RESEND_FROM_EMAIL"]);
   sections.push({
     title: "Auth",
     items: [
@@ -143,12 +163,49 @@ export function analyzeMyAssistEnv(
   });
 
   sections.push({
+    title: "Login OAuth (BKI-019)",
+    items: [
+      item(
+        "Google login",
+        googleLoginOk || !productionLike,
+        "Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET; callback URL must be configured in Google Cloud Console.",
+      ),
+      item(
+        "Microsoft / Outlook login",
+        microsoftLoginOk || !productionLike,
+        "Set MICROSOFT_CLIENT_ID and MICROSOFT_CLIENT_SECRET; callback URL must be configured in Azure / Microsoft Entra ID.",
+      ),
+      item(
+        "AUTH_URL or NEXTAUTH_URL",
+        publicOriginOk || !productionLike,
+        "Public app origin used by Auth.js OAuth callbacks and password-reset links.",
+      ),
+    ],
+  });
+
+  sections.push({
+    title: "Password reset email (BKI-019)",
+    items: [
+      item(
+        "RESEND_API_KEY",
+        hasAny(env, ["RESEND_API_KEY", "MYASSIST_RESEND_API_KEY"]) || !productionLike,
+        "Server-only Resend API key; required in production to deliver reset emails.",
+      ),
+      item(
+        "MYASSIST_PASSWORD_RESET_EMAIL_FROM",
+        hasAny(env, ["MYASSIST_PASSWORD_RESET_EMAIL_FROM", "PASSWORD_RESET_EMAIL_FROM", "RESEND_FROM_EMAIL"]) ||
+          !productionLike,
+        "Verified sender used for MyAssist password-reset emails.",
+      ),
+    ],
+  });
+
+  sections.push({
     title: "OAuth (integrations)",
     items: [
       item(
         "Google (Gmail + Calendar)",
-        hasAny(env, ["GOOGLE_CLIENT_ID", "MYASSIST_GMAIL_CLIENT_ID", "MYASSIST_GOOGLE_CLIENT_ID"]) &&
-          hasAny(env, ["GOOGLE_CLIENT_SECRET", "MYASSIST_GMAIL_CLIENT_SECRET", "MYASSIST_GOOGLE_CLIENT_SECRET"]),
+        googleLoginOk,
         "Web client ID/secret; redirect URI must match AUTH_URL origin.",
       ),
       item(
@@ -159,7 +216,7 @@ export function analyzeMyAssistEnv(
       ),
       item(
         "AUTH_URL",
-        hasAny(env, ["AUTH_URL", "NEXTAUTH_URL", "MYASSIST_PUBLIC_APP_URL"]),
+        publicOriginOk,
         "Public app origin for OAuth redirects.",
       ),
     ],
@@ -173,6 +230,9 @@ export function analyzeMyAssistEnv(
     passed = false;
   }
   if (productionLike && billingEnabled && (!stripeSecretOk || !stripeWebhookOk)) {
+    passed = false;
+  }
+  if (productionLike && (!googleLoginOk || !microsoftLoginOk || !passwordResetEmailOk || !publicOriginOk)) {
     passed = false;
   }
 

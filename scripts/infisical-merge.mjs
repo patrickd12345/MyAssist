@@ -35,6 +35,13 @@ function exportSecrets(secretPath, envName, infisicalCwd) {
   );
 }
 
+function assertInfisicalCli(infisicalCwd) {
+  execFileSync("infisical", ["--version"], {
+    stdio: ["ignore", "ignore", "ignore"],
+    cwd: infisicalCwd,
+  });
+}
+
 /**
  * Merges Infisical `/platform` + `/myassist` into `baseEnv` when the CLI is available and export succeeds.
  * On failure (CLI missing, not logged in, no project link), returns `baseEnv` unchanged and logs a short hint.
@@ -56,10 +63,7 @@ export function mergeInfisicalEnvOptional(baseEnv, options = {}) {
   }
 
   try {
-    execFileSync("infisical", ["--version"], {
-      stdio: ["ignore", "ignore", "ignore"],
-      cwd: infisicalCwd,
-    });
+    assertInfisicalCli(infisicalCwd);
   } catch {
     console.warn(
       "[dev] Infisical CLI not on PATH — skipped. Install CLI or rely on apps/web/.env.local.",
@@ -81,6 +85,43 @@ export function mergeInfisicalEnvOptional(baseEnv, options = {}) {
     console.warn(`[dev] Infisical export failed (${message}) — using .env.local and existing env.`);
     return baseEnv;
   }
+}
+
+/**
+ * Strict Infisical merge for verification and deployment preflight.
+ * Fails closed when the CLI, login session, project link, or required paths are not available.
+ *
+ * @param {NodeJS.ProcessEnv} baseEnv
+ * @param {{ envName?: string, infisicalCwd?: string }} [options]
+ * @returns {{ mergedEnv: NodeJS.ProcessEnv, counts: { platform: number, myassist: number }, envName: string }}
+ */
+export function mergeInfisicalEnvStrict(baseEnv, options = {}) {
+  const infisicalCwd = options.infisicalCwd ?? appsWebRoot;
+  const configuredEnvName = options.envName ?? (baseEnv.INFISICAL_ENV ?? process.env.INFISICAL_ENV)?.trim();
+  const envName = configuredEnvName || "dev";
+
+  const linked = existsSync(join(infisicalCwd, ".infisical.json"));
+  if (!linked) {
+    throw new Error("Missing apps/web/.infisical.json. Run `infisical init` in apps/web or restore the project binding.");
+  }
+
+  assertInfisicalCli(infisicalCwd);
+  const platformSecrets = exportSecrets("/platform", envName, infisicalCwd);
+  const myassistSecrets = exportSecrets("/myassist", envName, infisicalCwd);
+
+  return {
+    mergedEnv: {
+      ...baseEnv,
+      ...platformSecrets,
+      ...myassistSecrets,
+      INFISICAL_ENV: envName,
+    },
+    counts: {
+      platform: Object.keys(platformSecrets).length,
+      myassist: Object.keys(myassistSecrets).length,
+    },
+    envName,
+  };
 }
 
 export { appsWebRoot, repoRoot };

@@ -82,6 +82,15 @@ The Vercel project linked to production should use this app as the deploy root:
 
 `pnpm dev:infisical` uses the same merge helper and exports `/platform` and `/myassist` before launching `next dev`, so shared Supabase keys and app-specific OAuth/auth keys both arrive even though Infisical CLI path injection is single-folder oriented.
 
+Strict verification, without starting Next.js or printing secret values:
+
+```sh
+pnpm verify:infisical
+pnpm verify:infisical -- --env=prod
+```
+
+These commands export `/platform` and `/myassist`, merge them in memory, then run the MyAssist readiness audit. Use them before redeploying BKI-019 login/recovery changes.
+
 **Note:** `pnpm dev` / `npm run web:dev` **without** `dev:infisical` only loads **`apps/web/.env.local`** (and defaults). If `AUTH_SECRET` is empty there, the app still boots in development using the built-in dev fallback, but **production-like checks** and **stable sessions** expect a real secret from Infisical or `.env.local`.
 
 Fallback local path (no Infisical):
@@ -115,6 +124,11 @@ Prefer **Infisical** for team-local and shared keys (`pnpm dev:infisical`); mirr
 - `MYASSIST_INTEGRATIONS_ENCRYPTION_KEY`: optional; **if unset**, encryption uses a hash of `AUTH_SECRET` (or a dev fallback). Set an explicit key for production and keep it identical on Vercel and locally if you share one Supabase DB — generate: `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`
 - `GOOGLE_CLIENT_ID`: Google OAuth client id for Gmail + Calendar connect flow
 - `GOOGLE_CLIENT_SECRET`: Google OAuth client secret for Gmail + Calendar connect flow
+- `MICROSOFT_CLIENT_ID`: Microsoft / Outlook login OAuth client id for Auth.js
+- `MICROSOFT_CLIENT_SECRET`: Microsoft / Outlook login OAuth client secret for Auth.js
+- `MICROSOFT_TENANT_ID`: optional Microsoft Entra tenant id override
+- `RESEND_API_KEY`: Resend API key for production password-reset email delivery
+- `MYASSIST_PASSWORD_RESET_EMAIL_FROM`: verified sender for MyAssist password-reset email
 - `TODOIST_CLIENT_ID`: Todoist OAuth client id for direct task actions
 - `TODOIST_CLIENT_SECRET`: Todoist OAuth client secret
 - `AI_MODE`: `ollama` (default), `gateway` (OpenAI-compatible API via `VERCEL_AI_BASE_URL` + key), or `fallback` (deterministic assistant only). On Vercel, `ollama` with default `127.0.0.1` cannot reach a laptop Ollama — use `gateway` or a remote `OLLAMA_BASE_URL`. See [`docs/commercial-pilot-readiness.md`](../docs/commercial-pilot-readiness.md).
@@ -127,7 +141,7 @@ Prefer **Infisical** for team-local and shared keys (`pnpm dev:infisical`); mirr
 Infisical-first minimum local set:
 
 - `/platform`: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `SHARED_DB_TIER=dev`, `SHARED_DB_ENV_STRICT=1`
-- `/myassist`: `AUTH_SECRET`, `AUTH_URL`, `MYASSIST_INTEGRATIONS_ENCRYPTION_KEY`, `MYASSIST_GMAIL_CLIENT_ID`, `MYASSIST_GMAIL_CLIENT_SECRET`
+- `/myassist`: `AUTH_SECRET`, `AUTH_URL`, `MYASSIST_INTEGRATIONS_ENCRYPTION_KEY`, `MYASSIST_GMAIL_CLIENT_ID`, `MYASSIST_GMAIL_CLIENT_SECRET`, `MICROSOFT_CLIENT_ID`, `MICROSOFT_CLIENT_SECRET`, `RESEND_API_KEY`, `MYASSIST_PASSWORD_RESET_EMAIL_FROM`
 
 The file `apps/web/.infisical.json` is local machine state from `infisical init` and should not be committed.
 
@@ -140,6 +154,8 @@ Notes:
 - UI state should auto-refresh after successful writes.
 - The assistant route falls back gracefully if Ollama is unavailable.
 - **Gmail OAuth (Phase B MVP)** uses read-only scopes only (`openid`, `userinfo.email`, `userinfo.profile`, `gmail.readonly`) — see `GMAIL_MVP_OAUTH_SCOPES` in `lib/integrations/providers/google.ts`. **Mark read/unread** in Gmail via API needs `gmail.modify` and returns **422** with `code: insufficient_scope` until a later phase adds that scope. After connecting, **`GET /api/integrations/gmail/verify`** (signed in) lists up to three message ids to confirm API access.
+- **BKI-019 login OAuth:** `/sign-in` shows **Continue with Google** and **Continue with Outlook** when `/api/auth/providers` exposes configured Auth.js providers. Register callback URLs exactly as `{AUTH_URL}/api/auth/callback/google` and `{AUTH_URL}/api/auth/callback/microsoft-entra-id`.
+- **BKI-019 password reset:** production forgot-password requests return generic success and do not expose the reset token. If the account exists and Resend env vars are configured, the reset link is sent by email.
 - **Gmail inbox (read-only, bounded):** **`GET /api/integrations/gmail/inbox`** — query params `maxResults` (default 10, hard cap 50), `pageToken` (from prior response), `q` (Gmail search string, length-limited). Returns **`messages`** as **deduplicated canonical rows** (`GmailNormalizedMessage` from `lib/integrations/gmailNormalize.ts`: `messageId`, `threadId`, `internalDate`, `dateHeader`, `from`, `subject`, `snippet`, `labelIds`, `unread`, `important`, `providerAccountId`, `normalizedAt`), plus `nextPageToken` and `queryUsed`. Merge additional pages in-process with `mergeNormalizedGmailPages` to avoid double-counting. Daily-context **`fetchGmailSignals`** uses the same normalize + dedupe path before mapping to legacy `GmailSignal` fields. Raw fetch/list: `lib/integrations/gmailInboxFetch.ts` (fixed 20-message window for signals: `in:inbox newer_than:10d`).
 - **Phase B deterministic signals (no LLM):** After normalization, **`detectSignals`** in `lib/integrations/gmailSignalDetection.ts` runs on `GmailNormalizedMessage[]` and attaches **`phase_b_signals`** to each legacy Gmail row when any rule matches (`job_interview`, `job_recruiter`, `job_application`, `job_offer`, `job_rejection`, `job_related`, `important`, `action_required`, `calendar_related`). Each signal includes `messageId`, `type`, `confidence` (0–1 heuristic), `reason`, and optional `extractedDate` / `extractedEntities`. Wired through **`fetchGmailSignals`** → daily context / **`GmailSignal`**.
 - **Daily intelligence (`MyAssistDailyContext.daily_intelligence`):** Built in **`lib/dailyIntelligence.ts`** from **`GmailSignal[]`** using **`phase_b_signals`**. Exposes buckets **`urgent`**, **`important`**, **`action_required`**, **`job_related`**, **`calendar_related`**, plus **`summary`** with **`countsByType`**, **`topPriorities`**, and **`generatedDeterministicSummary`**. Urgent = rejection, or (offer + action_required), or (interview + action_required). Optional **`MYASSIST_DAILY_INTEL_AI=true`** adds **`summary.aiSummary`** via **`@bookiji-inc/ai-runtime`** only (`executeChat` in **`aiRuntime.ts`**); if AI is off or fails, deterministic output still ships. The dashboard **`DailyIntelligencePanel`** shows bucket counts, the deterministic summary, optional AI line, and top priorities; **`buildContextDigest`** (`lib/assistant.ts`) adds a compact **`daily_intelligence`** object for the assistant user message via **`lib/dailyIntelligencePrompt.ts`** (no raw inbox dump). **`GET /api/daily-context?provider=gmail`** also returns **`daily_intelligence`** so partial Gmail refreshes stay aligned.
@@ -169,6 +185,8 @@ From `apps/web` (optional env audit without printing secret values):
 ```sh
 pnpm check:env
 pnpm check:env:prod
+pnpm verify:infisical
+pnpm verify:infisical -- --env=prod
 ```
 
 To evaluate **production-like** checks with vars from `.env.local` (Node 20+), from `apps/web`:

@@ -39,12 +39,31 @@ function SignInFormFields() {
   const search = useSearchParams();
   const callbackUrl = search.get("callbackUrl")?.trim() || "/";
 
+  const [oauthProviders, setOauthProviders] = useState<{ google?: string; outlook?: string }>({});
   const [mode, setMode] = useState<"sign-in" | "register">("sign-in");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/auth/providers")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((providers: unknown) => {
+        if (!active || !providers || typeof providers !== "object") return;
+        const providerMap = providers as Record<string, { id?: string } | undefined>;
+        setOauthProviders({
+          google: providerMap.google?.id,
+          outlook: providerMap["microsoft-entra-id"]?.id ?? providerMap["azure-ad"]?.id,
+        });
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const onRegister = useCallback(async () => {
     setBusy(true);
@@ -109,6 +128,19 @@ function SignInFormFields() {
     }
   }, [callbackUrl, email, password, router]);
 
+  const onOAuthSignIn = useCallback(
+    async (providerId: string) => {
+      setBusy(true);
+      setMessage(null);
+      try {
+        await signIn(providerId, { callbackUrl });
+      } finally {
+        setBusy(false);
+      }
+    },
+    [callbackUrl],
+  );
+
   return (
     <div className="mx-auto flex min-h-[70vh] w-full max-w-md flex-col justify-center px-4 py-16">
       <div className="glass-panel-strong rounded-[28px] px-6 py-8 sm:px-8">
@@ -119,6 +151,32 @@ function SignInFormFields() {
         <p className="theme-muted mt-2 text-sm leading-relaxed">
           Personal workspace access. Credentials stay on this machine in a local user file.
         </p>
+
+        {oauthProviders.google || oauthProviders.outlook ? (
+          <div className="mt-6 space-y-3">
+            {oauthProviders.google ? (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void onOAuthSignIn(oauthProviders.google as string)}
+                className="theme-input w-full rounded-lg px-4 py-3 text-sm font-semibold transition hover:opacity-90 disabled:opacity-50"
+              >
+                Continue with Google
+              </button>
+            ) : null}
+            {oauthProviders.outlook ? (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void onOAuthSignIn(oauthProviders.outlook as string)}
+                className="theme-input w-full rounded-lg px-4 py-3 text-sm font-semibold transition hover:opacity-90 disabled:opacity-50"
+              >
+                Continue with Outlook
+              </button>
+            ) : null}
+            <p className="theme-muted text-center text-xs">or use email</p>
+          </div>
+        ) : null}
 
         <div className="mt-6 flex gap-2 rounded-full bg-black/20 p-1">
           <button

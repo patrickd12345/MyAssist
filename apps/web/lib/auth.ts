@@ -2,6 +2,9 @@ import { createHash } from "node:crypto";
 import { PHASE_PRODUCTION_BUILD } from "next/constants";
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import Google from "next-auth/providers/google";
+import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
+import type { Provider } from "next-auth/providers";
 import { compare } from "bcryptjs";
 import { findUserByEmail } from "./userStore";
 import { MYASSIST_DEV_AUTH_SECRET_FALLBACK, resolveMyAssistRuntimeEnv } from "./env/runtime";
@@ -52,6 +55,53 @@ function sessionTokenCookieName(): string {
 }
 
 const useSecureCookies = process.env.NODE_ENV === "production";
+const runtime = resolveMyAssistRuntimeEnv(process.env);
+const providers: Provider[] = [
+  Credentials({
+    name: "credentials",
+    credentials: {
+      email: { label: "Email", type: "email" },
+      password: { label: "Password", type: "password" },
+    },
+    authorize: async (credentials) => {
+      const email = typeof credentials?.email === "string" ? credentials.email : "";
+      const password = typeof credentials?.password === "string" ? credentials.password : "";
+      if (!email.trim() || !password) return null;
+
+      const user = await findUserByEmail(email);
+      if (!user) return null;
+
+      const valid = await compare(password, user.passwordHash);
+      if (!valid) return null;
+
+      return {
+        id: user.id,
+        email: user.email,
+      };
+    },
+  }),
+];
+
+if (runtime.googleClientId && runtime.googleClientSecret) {
+  providers.push(
+    Google({
+      clientId: runtime.googleClientId,
+      clientSecret: runtime.googleClientSecret,
+    }),
+  );
+}
+
+if (runtime.microsoftClientId && runtime.microsoftClientSecret) {
+  providers.push(
+    MicrosoftEntraID({
+      clientId: runtime.microsoftClientId,
+      clientSecret: runtime.microsoftClientSecret,
+      issuer: runtime.microsoftTenantId
+        ? `https://login.microsoftonline.com/${runtime.microsoftTenantId}/v2.0`
+        : undefined,
+    }),
+  );
+}
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
@@ -72,31 +122,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   pages: {
     signIn: "/sign-in",
   },
-  providers: [
-    Credentials({
-      name: "credentials",
-      credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
-      },
-      authorize: async (credentials) => {
-        const email = typeof credentials?.email === "string" ? credentials.email : "";
-        const password = typeof credentials?.password === "string" ? credentials.password : "";
-        if (!email.trim() || !password) return null;
-
-        const user = await findUserByEmail(email);
-        if (!user) return null;
-
-        const valid = await compare(password, user.passwordHash);
-        if (!valid) return null;
-
-        return {
-          id: user.id,
-          email: user.email,
-        };
-      },
-    }),
-  ],
+  providers,
   callbacks: {
     jwt({ token, user }) {
       if (user?.id) {

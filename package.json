@@ -8,6 +8,7 @@
     "vercel-build": "pnpm --filter web run build",
     "dev": "npm --prefix apps/web run dev",
     "dev:infisical": "npm --prefix apps/web run dev:infisical",
+    "verify:infisical": "pnpm --prefix apps/web run verify:infisical",
     "dev:all": "node scripts/dev-all.mjs",
     "web:dev": "npm --prefix apps/web run dev",
     "web:build": "npm --prefix apps/web run build",

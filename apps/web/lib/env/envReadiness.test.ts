@@ -16,13 +16,24 @@ describe("envReadiness", () => {
     expect(r.passed).toBe(false);
   });
 
-  it("production_like passes with auth and supabase keys", () => {
+  const bki019ProdEnv = {
+    AUTH_URL: "https://myassist.bookiji.com",
+    GOOGLE_CLIENT_ID: "google-client",
+    GOOGLE_CLIENT_SECRET: "google-secret",
+    MICROSOFT_CLIENT_ID: "microsoft-client",
+    MICROSOFT_CLIENT_SECRET: "microsoft-secret",
+    RESEND_API_KEY: "re_test",
+    MYASSIST_PASSWORD_RESET_EMAIL_FROM: "MyAssist <reset@example.com>",
+  };
+
+  it("production_like passes with auth, supabase, OAuth, and reset email vars", () => {
     const r = analyzeMyAssistEnv(
       {
         NODE_ENV: "production",
         AUTH_SECRET: "x".repeat(32),
         SUPABASE_URL: "https://abc.supabase.co",
         SUPABASE_SECRET_KEY: "sb_secret_test",
+        ...bki019ProdEnv,
       } as NodeJS.ProcessEnv,
       { productionLike: true },
     );
@@ -45,10 +56,26 @@ describe("envReadiness", () => {
         AUTH_SECRET: "x".repeat(32),
         SUPABASE_URL: "https://abc.supabase.co",
         SUPABASE_SECRET_KEY: "sb_secret_test",
+        ...bki019ProdEnv,
         BILLING_ENABLED: "true",
       } as NodeJS.ProcessEnv,
       { productionLike: true },
     );
     expect(r.passed).toBe(false);
+  });
+
+  it("production_like fails when BKI-019 OAuth and email delivery vars are missing", () => {
+    const r = analyzeMyAssistEnv(
+      {
+        NODE_ENV: "production",
+        AUTH_SECRET: "x".repeat(32),
+        SUPABASE_URL: "https://abc.supabase.co",
+        SUPABASE_SECRET_KEY: "sb_secret_test",
+      } as NodeJS.ProcessEnv,
+      { productionLike: true },
+    );
+    expect(r.passed).toBe(false);
+    expect(formatEnvReadinessReport(r)).toContain("Login OAuth (BKI-019)");
+    expect(formatEnvReadinessReport(r)).toContain("Password reset email (BKI-019)");
   });
 });

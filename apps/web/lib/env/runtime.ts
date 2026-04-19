@@ -67,6 +67,11 @@ export type MyAssistRuntimeEnv = {
   integrationsEncryptionKey: string;
   googleClientId: string;
   googleClientSecret: string;
+  microsoftClientId: string;
+  microsoftClientSecret: string;
+  microsoftTenantId: string;
+  resendApiKey: string;
+  passwordResetEmailFrom: string;
   todoistClientId: string;
   todoistClientSecret: string;
   myassistUseMockContext: string;
@@ -125,6 +130,30 @@ export function resolveMyAssistRuntimeEnv(env: EnvSource = process.env): MyAssis
     "MYASSIST_GMAIL_CLIENT_SECRET",
     "MYASSIST_GOOGLE_CLIENT_SECRET",
   ]);
+  const microsoftClientId = readFirst(env, [
+    "MICROSOFT_CLIENT_ID",
+    "MICROSOFT_ENTRA_ID_CLIENT_ID",
+    "AUTH_MICROSOFT_ENTRA_ID_ID",
+    "AZURE_AD_CLIENT_ID",
+  ]);
+  const microsoftClientSecret = readFirst(env, [
+    "MICROSOFT_CLIENT_SECRET",
+    "MICROSOFT_ENTRA_ID_CLIENT_SECRET",
+    "AUTH_MICROSOFT_ENTRA_ID_SECRET",
+    "AZURE_AD_CLIENT_SECRET",
+  ]);
+  const microsoftTenantId = readFirst(env, [
+    "MICROSOFT_TENANT_ID",
+    "MICROSOFT_ENTRA_ID_TENANT_ID",
+    "AUTH_MICROSOFT_ENTRA_ID_TENANT_ID",
+    "AZURE_AD_TENANT_ID",
+  ]);
+  const resendApiKey = readFirst(env, ["RESEND_API_KEY", "MYASSIST_RESEND_API_KEY"]);
+  const passwordResetEmailFrom = readFirst(env, [
+    "MYASSIST_PASSWORD_RESET_EMAIL_FROM",
+    "PASSWORD_RESET_EMAIL_FROM",
+    "RESEND_FROM_EMAIL",
+  ]);
   const todoistClientId = readFirst(env, ["TODOIST_CLIENT_ID", "MYASSIST_TODOIST_CLIENT_ID"]);
   const todoistClientSecret = readFirst(env, ["TODOIST_CLIENT_SECRET", "MYASSIST_TODOIST_CLIENT_SECRET"]);
   const myassistUseMockContext = readFirst(env, ["MYASSIST_USE_MOCK_CONTEXT"]);
@@ -171,6 +200,11 @@ export function resolveMyAssistRuntimeEnv(env: EnvSource = process.env): MyAssis
     integrationsEncryptionKey,
     googleClientId,
     googleClientSecret,
+    microsoftClientId,
+    microsoftClientSecret,
+    microsoftTenantId,
+    resendApiKey,
+    passwordResetEmailFrom,
     todoistClientId,
     todoistClientSecret,
     myassistUseMockContext,
