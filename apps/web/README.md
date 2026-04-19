@@ -110,7 +110,7 @@ If Next.js reports that port **3000** is in use and falls back to **3001+**, sto
 
 ## Environment variables
 
-Prefer **Infisical** for team-local and shared keys (`pnpm dev:infisical`); mirror the same names into Vercel for deploys. Alternatively set in `apps/web/.env.local`:
+**Infisical is the canonical source for team/shared secrets.** Use `pnpm dev:infisical` for local development, and sync or mirror the same canonical names into Vercel Preview/Production until automated sync is in place. `apps/web/.env.local` is a local fallback only:
 
 - `AUTH_SECRET` (or `NEXTAUTH_SECRET`): secret for Auth.js session cookies (required for `next build` / production; dev-only fallback when unset in development). **Store in Infisical** `/myassist` for normal local dev.
 - `MYASSIST_REGISTRATION_INVITE_CODE`: optional; when set, registration must send the same value as `inviteCode` in the JSON body
@@ -122,13 +122,13 @@ Prefer **Infisical** for team-local and shared keys (`pnpm dev:infisical`); mirr
 - `MYASSIST_USER_STORE_FILE`: optional path to the JSON user registry (default: `.myassist-memory/users.json`)
 - `MYASSIST_USE_MOCK_CONTEXT`: set to `true` or `1` to serve **mock** daily context instead of live Gmail/Calendar/Todoist reads (useful for UI dev without OAuth)
 - `MYASSIST_INTEGRATIONS_ENCRYPTION_KEY`: optional; **if unset**, encryption uses a hash of `AUTH_SECRET` (or a dev fallback). Set an explicit key for production and keep it identical on Vercel and locally if you share one Supabase DB — generate: `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`
-- `GOOGLE_CLIENT_ID`: Google OAuth client id for Gmail + Calendar connect flow
-- `GOOGLE_CLIENT_SECRET`: Google OAuth client secret for Gmail + Calendar connect flow
-- `MICROSOFT_CLIENT_ID`: Microsoft / Outlook login OAuth client id for Auth.js
-- `MICROSOFT_CLIENT_SECRET`: Microsoft / Outlook login OAuth client secret for Auth.js
-- `MICROSOFT_TENANT_ID`: optional Microsoft Entra tenant id override
-- `RESEND_API_KEY`: Resend API key for production password-reset email delivery
-- `MYASSIST_PASSWORD_RESET_EMAIL_FROM`: verified sender for MyAssist password-reset email
+- `GOOGLE_CLIENT_ID`: Google OAuth client id for Gmail + Calendar connect flow. Aliases: `MYASSIST_GMAIL_CLIENT_ID`, `MYASSIST_GOOGLE_CLIENT_ID`.
+- `GOOGLE_CLIENT_SECRET`: Google OAuth client secret for Gmail + Calendar connect flow. Aliases: `MYASSIST_GMAIL_CLIENT_SECRET`, `MYASSIST_GOOGLE_CLIENT_SECRET`.
+- `MICROSOFT_CLIENT_ID`: Microsoft / Outlook login OAuth client id for Auth.js. Aliases: `MICROSOFT_ENTRA_ID_CLIENT_ID`, `AUTH_MICROSOFT_ENTRA_ID_ID`, `AZURE_AD_CLIENT_ID`.
+- `MICROSOFT_CLIENT_SECRET`: Microsoft / Outlook login OAuth client secret for Auth.js. Aliases: `MICROSOFT_ENTRA_ID_CLIENT_SECRET`, `AUTH_MICROSOFT_ENTRA_ID_SECRET`, `AZURE_AD_CLIENT_SECRET`.
+- `MICROSOFT_TENANT_ID`: optional Microsoft Entra tenant id override. Aliases: `MICROSOFT_ENTRA_ID_TENANT_ID`, `AUTH_MICROSOFT_ENTRA_ID_TENANT_ID`, `AZURE_AD_TENANT_ID`.
+- `RESEND_API_KEY`: Resend API key for production password-reset email delivery. Alias: `MYASSIST_RESEND_API_KEY`.
+- `MYASSIST_PASSWORD_RESET_EMAIL_FROM`: verified sender for MyAssist password-reset email. Aliases: `PASSWORD_RESET_EMAIL_FROM`, `RESEND_FROM_EMAIL`.
 - `TODOIST_CLIENT_ID`: Todoist OAuth client id for direct task actions
 - `TODOIST_CLIENT_SECRET`: Todoist OAuth client secret
 - `AI_MODE`: `ollama` (default), `gateway` (OpenAI-compatible API via `VERCEL_AI_BASE_URL` + key), or `fallback` (deterministic assistant only). On Vercel, `ollama` with default `127.0.0.1` cannot reach a laptop Ollama — use `gateway` or a remote `OLLAMA_BASE_URL`. See [`docs/commercial-pilot-readiness.md`](../docs/commercial-pilot-readiness.md).
