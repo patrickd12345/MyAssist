@@ -2,10 +2,18 @@ import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { platform } from "node:os";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(__dirname, "..");
 const appsWebRoot = join(repoRoot, "apps", "web");
+
+function resolveInfisicalExecutable() {
+  const fromEnv = process.env.INFISICAL_CLI_EXECUTABLE?.trim();
+  if (fromEnv) return fromEnv;
+  if (platform() === "win32") return "infisical.exe";
+  return "infisical";
+}
 
 /**
  * @param {string} secretPath
@@ -13,8 +21,9 @@ const appsWebRoot = join(repoRoot, "apps", "web");
  * @param {string} infisicalCwd
  */
 function exportSecrets(secretPath, envName, infisicalCwd) {
+  const cli = resolveInfisicalExecutable();
   const output = execFileSync(
-    "infisical",
+    cli,
     ["export", "--env", envName, "--path", secretPath, "--format", "json"],
     {
       encoding: "utf8",
@@ -36,7 +45,7 @@ function exportSecrets(secretPath, envName, infisicalCwd) {
 }
 
 function assertInfisicalCli(infisicalCwd) {
-  execFileSync("infisical", ["--version"], {
+  execFileSync(resolveInfisicalExecutable(), ["--version"], {
     stdio: ["ignore", "ignore", "ignore"],
     cwd: infisicalCwd,
   });
