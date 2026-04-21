@@ -1,5 +1,6 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { NextRequest } from "next/server";
+// @ts-ignore - missing package in monorepo
 import {
   signTestWebhookEvent,
   stripeChargeSucceededEvent,

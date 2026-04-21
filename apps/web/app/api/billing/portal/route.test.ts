@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+// @ts-ignore - missing package in monorepo
 import {
   mockBillingPortalRedirectUrl,
   stubDefaultBillingRouteEnv,
