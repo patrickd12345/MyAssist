@@ -170,9 +170,18 @@ export function buildProactiveIntelligence(input: BuildProactiveIntelligenceInpu
 
     const prevOverdue = overdueTaskIds(previousSnapshot.todoist_overdue);
     const currOverdue = overdueTaskIds(currentContext.todoist_overdue);
+
+    // Create a map to avoid O(n) lookups inside the loop
+    const currentOverdueMap = new Map();
+    for (const t of currentContext.todoist_overdue) {
+      if (typeof t.id === "string" && !currentOverdueMap.has(t.id)) {
+        currentOverdueMap.set(t.id, t);
+      }
+    }
+
     for (const id of currOverdue) {
       if (prevOverdue.has(id)) continue;
-      const task = currentContext.todoist_overdue.find((t) => typeof t.id === "string" && t.id === id);
+      const task = currentOverdueMap.get(id);
       const label = task && typeof task.content === "string" ? task.content : id;
       changesSinceLastVisit.push({
         kind: "new_overdue",
