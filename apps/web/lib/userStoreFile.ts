@@ -1,4 +1,4 @@
-import { createHash, randomBytes, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import { mkdir, open, readFile, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { hash } from "bcryptjs";
@@ -11,8 +11,6 @@ type UserRegistryFile = {
 };
 
 const SALT_ROUNDS = 12;
-const RESET_TOKEN_BYTES = 32;
-const RESET_TOKEN_TTL_MS = 1000 * 60 * 30;
 const USER_STORE_LOCK_TIMEOUT_MS = 10_000;
 const USER_STORE_LOCK_RETRY_MS = 25;
 
@@ -155,57 +153,3 @@ export async function createUser(input: { email: string; password: string }): Pr
   });
 }
 
-function hashResetToken(token: string): string {
-  return createHash("sha256").update(token).digest("hex");
-}
-
-export async function createPasswordResetToken(email: string): Promise<string | null> {
-  const key = normalizeEmail(email);
-  if (!key) return null;
-  return withRegistryLock(async () => {
-    const registry = await readRegistry();
-    const idx = registry.users.findIndex((u) => normalizeEmail(u.email) === key);
-    if (idx < 0) return null;
-
-    const rawToken = randomBytes(RESET_TOKEN_BYTES).toString("hex");
-    const tokenHash = hashResetToken(rawToken);
-    const expiresAt = new Date(Date.now() + RESET_TOKEN_TTL_MS).toISOString();
-    registry.users[idx] = {
-      ...registry.users[idx],
-      passwordResetTokenHash: tokenHash,
-      passwordResetExpiresAt: expiresAt,
-    };
-    await writeRegistry(registry);
-    return rawToken;
-  });
-}
-
-export async function resetPasswordWithToken(input: { token: string; password: string }): Promise<boolean> {
-  const token = input.token.trim();
-  const password = input.password;
-  if (!token) return false;
-  if (typeof password !== "string" || password.length < 8 || password.length > 256) return false;
-
-  return withRegistryLock(async () => {
-    const tokenHash = hashResetToken(token);
-    const now = Date.now();
-    const registry = await readRegistry();
-    const idx = registry.users.findIndex((u) => {
-      if (!u.passwordResetTokenHash || !u.passwordResetExpiresAt) return false;
-      const exp = Date.parse(u.passwordResetExpiresAt);
-      if (!Number.isFinite(exp) || exp < now) return false;
-      return u.passwordResetTokenHash === tokenHash;
-    });
-    if (idx < 0) return false;
-
-    const passwordHash = await hash(password, SALT_ROUNDS);
-    registry.users[idx] = {
-      ...registry.users[idx],
-      passwordHash,
-      passwordResetTokenHash: undefined,
-      passwordResetExpiresAt: undefined,
-    };
-    await writeRegistry(registry);
-    return true;
-  });
-}

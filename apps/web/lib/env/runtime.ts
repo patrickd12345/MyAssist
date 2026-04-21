@@ -62,6 +62,7 @@ export type MyAssistRuntimeEnv = {
   jobHuntDigestUrl: string;
   jobHuntPrepWebhook: string;
   supabaseProjectUrl: string;
+  supabaseAnonKey: string;
   supabaseSecretKey: string;
   todoistApiToken: string;
   integrationsEncryptionKey: string;
@@ -117,6 +118,12 @@ export function resolveMyAssistRuntimeEnv(env: EnvSource = process.env): MyAssis
   const jobHuntDigestUrl = readFirst(env, ["JOB_HUNT_DIGEST_URL"]);
   const jobHuntPrepWebhook = readFirst(env, ["MYASSIST_JOB_HUNT_PREP_WEBHOOK"]);
   const supabaseProjectUrl = readFirst(env, ["SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_URL", "VITE_SUPABASE_URL"]);
+  const supabaseAnonKey = readFirst(env, [
+    "SUPABASE_ANON_KEY",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+    "VITE_SUPABASE_ANON_KEY",
+    "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+  ]);
   const supabaseSecretKey = readFirst(env, ["SUPABASE_SECRET_KEY", "SUPABASE_SERVICE_ROLE_KEY"]);
   const todoistApiToken = readFirst(env, ["TODOIST_API_TOKEN"]);
   const integrationsEncryptionKey = readFirst(env, ["MYASSIST_INTEGRATIONS_ENCRYPTION_KEY"]);
@@ -195,6 +202,7 @@ export function resolveMyAssistRuntimeEnv(env: EnvSource = process.env): MyAssis
     jobHuntDigestUrl,
     jobHuntPrepWebhook,
     supabaseProjectUrl,
+    supabaseAnonKey,
     supabaseSecretKey,
     todoistApiToken,
     integrationsEncryptionKey,

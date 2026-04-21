@@ -20,11 +20,3 @@ export async function getUserById(id: string): Promise<SafeUser | null> {
 export async function createUser(input: { email: string; password: string }): Promise<SafeUser> {
   return impl().createUser(input);
 }
-
-export async function createPasswordResetToken(email: string): Promise<string | null> {
-  return impl().createPasswordResetToken(email);
-}
-
-export async function resetPasswordWithToken(input: { token: string; password: string }): Promise<boolean> {
-  return impl().resetPasswordWithToken(input);
-}
