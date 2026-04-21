@@ -37,7 +37,6 @@
     "bcryptjs": "^3.0.3",
     "job-hunt-manager": "workspace:*",
     "next": "15.2.6",
-    "next-auth": "5.0.0-beta.30",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "server-only": "^0.0.1",

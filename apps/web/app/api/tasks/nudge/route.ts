@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
 import { jsonLegacyApiError } from '@/lib/api/error-contract';
-import { auth } from "@/lib/auth";
+import { getSessionUserId } from "@/lib/session";
 import { logServerEvent } from "@/lib/serverLog";
 import { storeTaskNudge } from "@/lib/memoryStore";
 
 export async function POST(req: Request) {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const userId = await getSessionUserId();
+    if (!userId) {
       return jsonLegacyApiError("Unauthorized", 401);
     }
 
@@ -22,7 +22,7 @@ export async function POST(req: Request) {
       return jsonLegacyApiError("Invalid direction", 400);
     }
 
-    await storeTaskNudge(session.user.id, {
+    await storeTaskNudge(userId, {
       run_date,
       taskId,
       direction,

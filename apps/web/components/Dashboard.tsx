@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { signOut } from "next-auth/react";
 import React, {
   useCallback,
   useEffect,
@@ -43,6 +42,7 @@ import {
   buildFeedbackFromActionResponse,
   type UnifiedActionFeedback,
 } from "@/lib/actionResultModel";
+import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
 import { buildDailySynthesis } from "@/lib/services/dailySynthesisService";
 import { buildJobHuntExpansion } from "@/lib/services/jobHuntExpansionService";
 import type { FollowUpTimingStatus } from "@/lib/services/jobHuntExpansionService";
@@ -2256,7 +2256,14 @@ export function Dashboard({
             <div className="flex flex-wrap gap-3 xl:justify-end">
               <button
                 type="button"
-                onClick={() => void signOut({ callbackUrl: "/sign-in" })}
+                onClick={async () => {
+                  const supabase = getSupabaseBrowserClient();
+                  if (supabase) {
+                    await supabase.auth.signOut();
+                  }
+                  router.push("/sign-in");
+                  router.refresh();
+                }}
                 className="theme-button-secondary rounded-full px-5 py-3 text-sm font-semibold transition"
               >
                 Sign out

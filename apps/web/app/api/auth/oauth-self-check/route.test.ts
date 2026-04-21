@@ -31,9 +31,9 @@ describe("GET /api/auth/oauth-self-check", () => {
         microsoftLoginConfigured: true,
         passwordResetEmailConfigured: true,
       },
-      authJsCallbacks: {
-        google: "https://myassist.bookiji.com/api/auth/callback/google",
-        microsoftEntraId: "https://myassist.bookiji.com/api/auth/callback/microsoft-entra-id",
+      supabaseRedirectTargets: {
+        google: "https://myassist.bookiji.com/sign-in",
+        microsoftEntraId: "https://myassist.bookiji.com/sign-in",
       },
       integrationCallbacks: {
         google: "https://myassist.bookiji.com/api/integrations/google/callback",
@@ -41,12 +41,12 @@ describe("GET /api/auth/oauth-self-check", () => {
       googleCloudConsole: {
         authorizedJavaScriptOrigin: "https://myassist.bookiji.com",
         authorizedRedirectUris: [
-          "https://myassist.bookiji.com/api/auth/callback/google",
+          "https://myassist.bookiji.com/sign-in",
           "https://myassist.bookiji.com/api/integrations/google/callback",
         ],
       },
       microsoftEntraId: {
-        redirectUri: "https://myassist.bookiji.com/api/auth/callback/microsoft-entra-id",
+        redirectUri: "https://myassist.bookiji.com/sign-in",
       },
       notes: [
         "Google login and Gmail/Calendar integration are separate callback URLs.",

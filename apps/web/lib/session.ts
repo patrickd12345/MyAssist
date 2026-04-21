@@ -1,4 +1,5 @@
 import { resolveMyAssistRuntimeEnv } from "./env/runtime";
+import { getSupabaseServerUser } from "./supabaseServer";
 
 export async function getSessionUserId(): Promise<string | null> {
   const runtime = resolveMyAssistRuntimeEnv();
@@ -7,9 +8,8 @@ export async function getSessionUserId(): Promise<string | null> {
     return dev && dev !== "" ? dev : "dev-user";
   }
 
-  const { auth } = await import("./auth");
-  const session = await auth();
-  const id = session?.user?.id;
+  const user = await getSupabaseServerUser();
+  const id = user?.id;
   if (typeof id === "string" && id.trim() !== "") {
     return id;
   }
@@ -31,7 +31,6 @@ export async function getSessionUserDisplayFirstName(): Promise<string> {
   if (runtime.authDisabledRaw === "true") {
     return "there";
   }
-  const { auth } = await import("./auth");
-  const session = await auth();
-  return greetingFirstNameFromEmail(session?.user?.email);
+  const user = await getSupabaseServerUser();
+  return greetingFirstNameFromEmail(user?.email);
 }

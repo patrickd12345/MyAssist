@@ -4,8 +4,6 @@ import { resolvePublicOrigin } from "@/lib/integrations/origin";
 
 export const dynamic = "force-dynamic";
 
-const AUTH_GOOGLE_CALLBACK_PATH = "/api/auth/callback/google";
-const AUTH_MICROSOFT_CALLBACK_PATH = "/api/auth/callback/microsoft-entra-id";
 const GOOGLE_INTEGRATION_CALLBACK_PATH = "/api/integrations/google/callback";
 
 function hasBoth(id: string, secret: string): boolean {
@@ -22,8 +20,8 @@ export async function GET(req: Request) {
   const origin = resolvePublicOrigin(req);
   const runtime = resolveMyAssistRuntimeEnv();
 
-  const googleAuthCallbackUrl = `${origin}${AUTH_GOOGLE_CALLBACK_PATH}`;
-  const microsoftAuthCallbackUrl = `${origin}${AUTH_MICROSOFT_CALLBACK_PATH}`;
+  const googleAuthCallbackUrl = `${origin}/sign-in`;
+  const microsoftAuthCallbackUrl = `${origin}/sign-in`;
   const googleIntegrationCallbackUrl = `${origin}${GOOGLE_INTEGRATION_CALLBACK_PATH}`;
 
   return NextResponse.json({
@@ -31,12 +29,12 @@ export async function GET(req: Request) {
     origin,
     providerStatus: {
       authSecretConfigured: Boolean(runtime.authSecret),
-      authUrlConfigured: Boolean(runtime.authUrl || runtime.nextAuthUrl || runtime.publicAppUrl),
+      authUrlConfigured: Boolean(runtime.authUrl || runtime.publicAppUrl),
       googleLoginConfigured: hasBoth(runtime.googleClientId, runtime.googleClientSecret),
       microsoftLoginConfigured: hasBoth(runtime.microsoftClientId, runtime.microsoftClientSecret),
       passwordResetEmailConfigured: hasBoth(runtime.resendApiKey, runtime.passwordResetEmailFrom),
     },
-    authJsCallbacks: {
+    supabaseRedirectTargets: {
       google: googleAuthCallbackUrl,
       microsoftEntraId: microsoftAuthCallbackUrl,
     },

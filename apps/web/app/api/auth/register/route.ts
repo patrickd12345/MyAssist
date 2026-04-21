@@ -4,8 +4,8 @@ import {
   checkRegisterRateLimit,
   clientIpFromRequest,
 } from "@/lib/registerRateLimit";
-import { createUser } from "@/lib/userStore";
 import { resolveMyAssistRuntimeEnv } from "@/lib/env/runtime";
+import { getSupabaseAuthClient } from "@/lib/supabaseAuth";
 
 export const dynamic = "force-dynamic";
 
@@ -33,12 +33,19 @@ export async function POST(req: Request) {
 
     const email = typeof body.email === "string" ? body.email : "";
     const password = typeof body.password === "string" ? body.password : "";
-    await createUser({ email, password });
-    return NextResponse.json({ ok: true });
-  } catch (error) {
-    if (error instanceof Error && (error.message === "DUPLICATE" || error.message === "INVALID_INPUT")) {
+    const supabase = getSupabaseAuthClient();
+    if (!supabase) {
       return jsonLegacyApiError("Could not complete registration.", 400);
     }
+    const { error } = await supabase.auth.signUp({
+      email: email.trim(),
+      password,
+    });
+    if (error) {
+      return jsonLegacyApiError("Could not complete registration.", 400);
+    }
+    return NextResponse.json({ ok: true });
+  } catch {
     return jsonLegacyApiError("Could not complete registration.", 400);
   }
 }

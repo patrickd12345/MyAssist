@@ -1,42 +1,34 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SignInForm } from "../app/sign-in/SignInForm";
 
-const signIn = vi.fn();
 const push = vi.fn();
 const refresh = vi.fn();
-
-vi.mock("next-auth/react", () => ({
-  signIn: (...args: unknown[]) => signIn(...args),
-}));
+const signInWithOAuth = vi.fn();
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push, refresh }),
   useSearchParams: () => new URLSearchParams("callbackUrl=/dashboard"),
 }));
 
+vi.mock("@/lib/supabaseBrowser", () => ({
+  getSupabaseBrowserClient: () => ({
+    auth: {
+      signInWithPassword: vi.fn(),
+      signUp: vi.fn(),
+      signInWithOAuth,
+    },
+  }),
+}));
+
 describe("SignInForm BKI-019 OAuth providers", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({
-          credentials: { id: "credentials" },
-          google: { id: "google" },
-          "microsoft-entra-id": { id: "microsoft-entra-id" },
-        }),
-      }),
-    );
+    signInWithOAuth.mockResolvedValue({ data: {}, error: null });
   });
 
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
-  it("shows Google and Outlook buttons from configured Auth.js providers", async () => {
+  it("shows Google and Outlook buttons", async () => {
     render(<SignInForm />);
 
     await waitFor(() => {
@@ -45,11 +37,15 @@ describe("SignInForm BKI-019 OAuth providers", () => {
     });
   });
 
-  it("starts the selected Auth.js OAuth flow", async () => {
+  it("starts Supabase OAuth flow", async () => {
     render(<SignInForm />);
 
-    await userEvent.click(await screen.findByRole("button", { name: "Continue with Outlook" }));
+    const buttons = await screen.findAllByRole("button", { name: "Continue with Outlook" });
+    await userEvent.click(buttons[0]);
 
-    expect(signIn).toHaveBeenCalledWith("microsoft-entra-id", { callbackUrl: "/dashboard" });
+    expect(signInWithOAuth).toHaveBeenCalledWith({
+      provider: "azure",
+      options: { redirectTo: "http://localhost:3000/dashboard" },
+    });
   });
 });

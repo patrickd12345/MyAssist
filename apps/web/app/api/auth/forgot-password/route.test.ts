@@ -8,10 +8,6 @@ vi.mock("@/lib/supabaseAuth", () => ({
 }));
 
 describe("POST /api/auth/forgot-password", () => {
-  const originalPublicAppUrl = process.env.MYASSIST_PUBLIC_APP_URL;
-  const originalAuthUrl = process.env.AUTH_URL;
-  const originalNodeEnv = process.env.NODE_ENV;
-
   beforeEach(() => {
     resetPasswordForEmail.mockReset();
     getSupabaseAuthClient.mockReset();
@@ -24,12 +20,7 @@ describe("POST /api/auth/forgot-password", () => {
 
   afterEach(() => {
     vi.resetModules();
-    if (originalPublicAppUrl === undefined) delete process.env.MYASSIST_PUBLIC_APP_URL;
-    else process.env.MYASSIST_PUBLIC_APP_URL = originalPublicAppUrl;
-    if (originalAuthUrl === undefined) delete process.env.AUTH_URL;
-    else process.env.AUTH_URL = originalAuthUrl;
-    if (originalNodeEnv === undefined) delete process.env.NODE_ENV;
-    else process.env.NODE_ENV = originalNodeEnv;
+    vi.unstubAllEnvs();
   });
 
   it("returns 400 when email is missing", async () => {
