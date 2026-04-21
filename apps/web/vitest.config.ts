@@ -20,6 +20,14 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "."),
+      "@bookiji-inc/stripe-test-harness": path.resolve(
+        __dirname,
+        "../../packages/stripe-test-harness/src",
+      ),
+      "@bookiji-inc/auth-test-harness": path.resolve(
+        __dirname,
+        "../../packages/auth-test-harness/src",
+      ),
     },
   },
 } as Parameters<typeof defineConfig>[0]);
