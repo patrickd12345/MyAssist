@@ -1,4 +1,4 @@
-import { createHash, randomBytes, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import { hash } from "bcryptjs";
 import { getSupabaseAdmin } from "./supabaseAdmin";
 import {
@@ -8,8 +8,6 @@ import {
 import type { SafeUser, StoredUser } from "./userStoreTypes";
 
 const SALT_ROUNDS = 12;
-const RESET_TOKEN_BYTES = 32;
-const RESET_TOKEN_TTL_MS = 1000 * 60 * 30;
 
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
@@ -28,14 +26,6 @@ function rowToStoredUser(row: Record<string, unknown>): StoredUser | null {
     email: row.email,
     passwordHash: row.password_hash,
     todoistApiToken: typeof row.todoist_api_token === "string" ? row.todoist_api_token : undefined,
-    passwordResetTokenHash:
-      typeof row.password_reset_token_hash === "string" ? row.password_reset_token_hash : undefined,
-    passwordResetExpiresAt:
-      typeof row.password_reset_expires_at === "string"
-        ? row.password_reset_expires_at
-        : row.password_reset_expires_at instanceof Date
-          ? row.password_reset_expires_at.toISOString()
-          : undefined,
   };
 }
 
@@ -46,9 +36,7 @@ export async function findUserByEmail(email: string): Promise<StoredUser | null>
   const { data, error } = await supabase
     .schema(MYASSIST_SCHEMA)
     .from(MYASSIST_APP_USERS_TABLE)
-    .select(
-      "id, email, password_hash, todoist_api_token, password_reset_token_hash, password_reset_expires_at",
-    )
+    .select("id, email, password_hash, todoist_api_token")
     .eq("email", key)
     .maybeSingle();
   if (error || !data) return null;
@@ -119,78 +107,3 @@ export async function createUser(input: { email: string; password: string }): Pr
   };
 }
 
-function hashResetToken(token: string): string {
-  return createHash("sha256").update(token).digest("hex");
-}
-
-export async function createPasswordResetToken(email: string): Promise<string | null> {
-  const supabase = getSupabaseAdmin();
-  if (!supabase) return null;
-  const key = normalizeEmail(email);
-  if (!key) return null;
-
-  const { data: existing, error: findErr } = await supabase
-    .schema(MYASSIST_SCHEMA)
-    .from(MYASSIST_APP_USERS_TABLE)
-    .select("id")
-    .eq("email", key)
-    .maybeSingle();
-  if (findErr || !existing) return null;
-
-  const rawToken = randomBytes(RESET_TOKEN_BYTES).toString("hex");
-  const tokenHash = hashResetToken(rawToken);
-  const expiresAt = new Date(Date.now() + RESET_TOKEN_TTL_MS).toISOString();
-
-  const { error: updateErr } = await supabase
-    .schema(MYASSIST_SCHEMA)
-    .from(MYASSIST_APP_USERS_TABLE)
-    .update({
-      password_reset_token_hash: tokenHash,
-      password_reset_expires_at: expiresAt,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("email", key);
-
-  if (updateErr) return null;
-  return rawToken;
-}
-
-export async function resetPasswordWithToken(input: { token: string; password: string }): Promise<boolean> {
-  const supabase = getSupabaseAdmin();
-  if (!supabase) return false;
-  const token = input.token.trim();
-  const password = input.password;
-  if (!token) return false;
-  if (typeof password !== "string" || password.length < 8 || password.length > 256) return false;
-
-  const tokenHash = hashResetToken(token);
-  const nowIso = new Date().toISOString();
-
-  const { data: row, error: findErr } = await supabase
-    .schema(MYASSIST_SCHEMA)
-    .from(MYASSIST_APP_USERS_TABLE)
-    .select("id, password_reset_expires_at")
-    .eq("password_reset_token_hash", tokenHash)
-    .maybeSingle();
-  if (findErr || !row) return false;
-
-  const rec = row as Record<string, unknown>;
-  const expRaw = rec.password_reset_expires_at;
-  const expStr =
-    typeof expRaw === "string" ? expRaw : expRaw instanceof Date ? expRaw.toISOString() : null;
-  if (!expStr || Date.parse(expStr) < Date.now()) return false;
-
-  const passwordHash = await hash(password, SALT_ROUNDS);
-  const { error: updateErr } = await supabase
-    .schema(MYASSIST_SCHEMA)
-    .from(MYASSIST_APP_USERS_TABLE)
-    .update({
-      password_hash: passwordHash,
-      password_reset_token_hash: null,
-      password_reset_expires_at: null,
-      updated_at: nowIso,
-    })
-    .eq("id", rec.id as string);
-
-  return !updateErr;
-}

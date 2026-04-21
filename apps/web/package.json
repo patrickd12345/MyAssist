@@ -32,6 +32,7 @@
     "@bookiji-inc/persistent-memory-runtime": "workspace:*",
     "@bookiji-inc/stripe-runtime": "workspace:*",
     "@sentry/nextjs": "^9.47.1",
+    "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "2.100.1",
     "bcryptjs": "^3.0.3",
     "job-hunt-manager": "workspace:*",
@@ -43,6 +44,8 @@
     "stripe": "^20.2.0"
   },
   "devDependencies": {
+    "@bookiji-inc/auth-test-harness": "workspace:*",
+    "@bookiji-inc/stripe-test-harness": "workspace:*",
     "@eslint/eslintrc": "^3",
     "@playwright/test": "^1.58.2",
     "@testing-library/jest-dom": "^6.9.1",
@@ -61,8 +64,6 @@
     "tailwindcss": "^3.4.1",
     "tsx": "^4.21.0",
     "typescript": "^5",
-    "vitest": "^4.1.1",
-    "@bookiji-inc/auth-test-harness": "workspace:*",
-    "@bookiji-inc/stripe-test-harness": "workspace:*"
+    "vitest": "^4.1.1"
   }
 }

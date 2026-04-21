@@ -3,12 +3,13 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-export function ResetPasswordForm({ token }: { token: string }) {
+export function ResetPasswordForm({ code }: { code: string }) {
   const router = useRouter();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [isError, setIsError] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   return (
@@ -17,12 +18,15 @@ export function ResetPasswordForm({ token }: { token: string }) {
       onSubmit={async (e) => {
         e.preventDefault();
         setMessage(null);
+        setIsError(false);
         if (password.length < 8) {
           setMessage("Password must be at least 8 characters.");
+          setIsError(true);
           return;
         }
         if (password !== confirm) {
           setMessage("Passwords do not match.");
+          setIsError(true);
           return;
         }
         setBusy(true);
@@ -30,18 +34,23 @@ export function ResetPasswordForm({ token }: { token: string }) {
           const res = await fetch("/api/auth/reset-password", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ token, password }),
+            body: JSON.stringify({ code, password }),
           });
           if (!res.ok) {
             const body = (await res.json()) as { error?: string };
             setMessage(body.error ?? "Could not reset password.");
+            setIsError(true);
             return;
           }
           setMessage("Password updated. Redirecting to sign in...");
+          setIsError(false);
           setTimeout(() => {
             router.push("/sign-in");
             router.refresh();
           }, 800);
+        } catch {
+          setMessage("Could not reset password.");
+          setIsError(true);
         } finally {
           setBusy(false);
         }
@@ -53,6 +62,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
         <div className="relative mt-2">
           <input
             id="reset-password"
+            data-testid="new-password-input"
             name="password"
             type={showPassword ? "text" : "password"}
             autoComplete="new-password"
@@ -79,6 +89,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
         Confirm password
         <input
           id="reset-password-confirm"
+          data-testid="confirm-password-input"
           name="confirmPassword"
           type={showPassword ? "text" : "password"}
           autoComplete="new-password"
@@ -89,7 +100,11 @@ export function ResetPasswordForm({ token }: { token: string }) {
       </label>
 
       {message ? (
-        <p className="theme-muted mt-4 text-sm" role="status">
+        <p
+          className={`mt-4 text-sm ${isError ? "text-red-300" : "theme-muted"}`}
+          role={isError ? "alert" : "status"}
+          data-testid={isError ? "error-message" : "success-message"}
+        >
           {message}
         </p>
       ) : null}
