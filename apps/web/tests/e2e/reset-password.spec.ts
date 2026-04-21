@@ -3,6 +3,7 @@ import { expect, test } from "@playwright/test";
 import {
   awaitDevResetLinkFromForgotPasswordPage,
   submitForgotPasswordFromForgotPasswordPage,
+// @ts-ignore - missing package in monorepo
 } from "@bookiji-inc/auth-test-harness";
 
 test("forgot-password flow resets credentials and allows sign-in", async ({ page }, testInfo) => {

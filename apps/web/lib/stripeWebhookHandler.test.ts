@@ -4,6 +4,7 @@ import {
   signTestWebhookEvent,
   stripeChargeSucceededEvent,
   stripeSubscriptionUpdatedEvent,
+// @ts-ignore - missing package in monorepo
 } from "@bookiji-inc/stripe-test-harness";
 
 const mockGetSupabaseAdmin = vi.hoisted(() => vi.fn());
