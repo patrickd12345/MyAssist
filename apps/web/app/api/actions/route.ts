@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
 import { jsonLegacyApiError } from '@/lib/api/error-contract';
-import { createCrossSystemActionService, type ActionName } from "@/lib/services/crossSystemActionService";
+import { createCrossSystemActionService } from "@/lib/services/crossSystemActionService";
 import { getSessionUserId } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
-const ALLOWED_ACTIONS: ActionName[] = [
+const ALLOWED_ACTIONS = [
   "email_to_task",
   "email_to_event",
   "task_to_calendar_block",
@@ -13,10 +13,12 @@ const ALLOWED_ACTIONS: ActionName[] = [
   "job_hunt_prep_tasks",
   "complete_task",
   "archive_email",
-];
+] as const;
 
-function isActionName(value: unknown): value is ActionName {
-  return typeof value === "string" && (ALLOWED_ACTIONS as string[]).includes(value);
+type LocalActionName = typeof ALLOWED_ACTIONS[number];
+
+function isActionName(value: unknown): value is LocalActionName {
+  return typeof value === "string" && (ALLOWED_ACTIONS as readonly string[]).includes(value);
 }
 
 export async function POST(req: Request) {
