@@ -72,6 +72,22 @@ describe("POST /api/billing/create-checkout-session", () => {
     expect(res.status).toBe(400);
   });
 
+  it("returns 400 when json body is invalid", async () => {
+    mockGetSessionUserId.mockResolvedValue("user-1");
+    const { POST } = await import("./route");
+    const res = await POST(
+      new Request("http://localhost/api/billing/create-checkout-session", {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-request-id": "req_invalid_json" },
+        body: "{ invalid json",
+      }),
+    );
+    expect(res.status).toBe(400);
+    const json = (await res.json()) as { code: string; requestId: string };
+    expect(json.code).toBe("invalid_json");
+    expect(json.requestId).toBe("req_invalid_json");
+  });
+
   it("returns 503 when billing is disabled", async () => {
     vi.stubEnv("BILLING_ENABLED", "false");
     mockGetSessionUserId.mockResolvedValue("user-1");
