@@ -9,6 +9,13 @@ import type { MyAssistRuntimeEnv } from "@/lib/env/runtime";
 import { resolveMyAssistRuntimeEnv } from "@/lib/env/runtime";
 import { createClient } from "@supabase/supabase-js";
 
+/** Real `createClient` return shape from `@supabase/supabase-js` (tests only need a shallow stub). */
+type SupabaseJsClient = ReturnType<typeof import("@supabase/supabase-js").createClient>;
+
+function stubSupabaseJsClient(marker: string): SupabaseJsClient {
+  return { name: marker } as unknown as SupabaseJsClient;
+}
+
 vi.mock("@/lib/env/runtime", () => ({
   resolveMyAssistRuntimeEnv: vi.fn(),
 }));
@@ -113,7 +120,7 @@ describe("supabaseAdmin", () => {
     });
 
     it("creates and caches the client when config is present", () => {
-      const mockClient = { name: "supabase-client" };
+      const mockClient = stubSupabaseJsClient("supabase-client");
       vi.mocked(resolveMyAssistRuntimeEnv).mockReturnValue(
         stubRuntimeEnv({
           supabaseProjectUrl: "https://xyz.supabase.co",
@@ -139,8 +146,8 @@ describe("supabaseAdmin", () => {
     });
 
     it("re-creates the client when config changes", () => {
-      const mockClient1 = { name: "client1" };
-      const mockClient2 = { name: "client2" };
+      const mockClient1 = stubSupabaseJsClient("client1");
+      const mockClient2 = stubSupabaseJsClient("client2");
 
       // First config
       vi.mocked(resolveMyAssistRuntimeEnv).mockReturnValue(

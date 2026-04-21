@@ -1,5 +1,10 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { NextRequest } from "next/server";
+import {
+  signTestWebhookEvent,
+  stripeChargeSucceededEvent,
+  stripeSubscriptionUpdatedEvent,
+} from "@bookiji-inc/stripe-test-harness";
 
 const mockGetSupabaseAdmin = vi.hoisted(() => vi.fn());
 const mockGetStripeOrThrow = vi.hoisted(() => vi.fn());
@@ -21,26 +26,24 @@ vi.mock("@bookiji-inc/stripe-runtime", async (importOriginal) => {
   };
 });
 
-const baseStripeEvent = {
-  id: "evt_test_1",
-  type: "customer.subscription.updated",
-  data: {
-    object: {
-      id: "sub_test",
-      customer: "cus_test",
-      status: "active",
-      items: { data: [{ price: { id: "price_1" } }] },
-    },
-  },
-};
+function buildWebhookNextRequest(payload: object): NextRequest {
+  const raw = JSON.stringify(payload);
+  const secret = process.env.STRIPE_WEBHOOK_SECRET ?? "";
+  const sig = signTestWebhookEvent(raw, secret);
+  return new NextRequest("http://localhost/api/payments/webhook", {
+    method: "POST",
+    body: raw,
+    headers: { "stripe-signature": sig },
+  });
+}
 
 describe("handleMyAssistStripeWebhook", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
-    process.env.BILLING_ENABLED = "true";
-    process.env.STRIPE_WEBHOOK_SECRET = "whsec_test";
-    process.env.STRIPE_SECRET_KEY = "sk_test_fake";
+    vi.stubEnv("BILLING_ENABLED", "true");
+    vi.stubEnv("STRIPE_WEBHOOK_SECRET", "whsec_test");
+    vi.stubEnv("STRIPE_SECRET_KEY", "sk_test_fake");
     mockGetSupabaseAdmin.mockReturnValue({
       schema: vi.fn(() => ({
         from: vi.fn(() => ({
@@ -51,7 +54,7 @@ describe("handleMyAssistStripeWebhook", () => {
     });
     mockGetStripeOrThrow.mockReturnValue({
       webhooks: {
-        constructEvent: vi.fn(() => baseStripeEvent),
+        constructEvent: vi.fn(() => stripeSubscriptionUpdatedEvent),
       },
     });
     mockClaimStripeEvent.mockResolvedValue({
@@ -62,27 +65,21 @@ describe("handleMyAssistStripeWebhook", () => {
     });
   });
 
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it("returns 503 when supabase admin is unavailable", async () => {
     mockGetSupabaseAdmin.mockReturnValue(null);
     const { handleMyAssistStripeWebhook } = await import("./stripeWebhookHandler");
-    const req = new NextRequest("http://localhost/api/payments/webhook", {
-      method: "POST",
-      body: "{}",
-      headers: { "stripe-signature": "t=1,v1=abc" },
-    });
-    const res = await handleMyAssistStripeWebhook(req);
+    const res = await handleMyAssistStripeWebhook(buildWebhookNextRequest(stripeSubscriptionUpdatedEvent));
     expect(res.status).toBe(503);
   });
 
   it("returns 503 when STRIPE_SECRET_KEY is missing", async () => {
-    delete process.env.STRIPE_SECRET_KEY;
+    vi.stubEnv("STRIPE_SECRET_KEY", "");
     const { handleMyAssistStripeWebhook } = await import("./stripeWebhookHandler");
-    const req = new NextRequest("http://localhost/api/payments/webhook", {
-      method: "POST",
-      body: "{}",
-      headers: { "stripe-signature": "t=1,v1=abc" },
-    });
-    const res = await handleMyAssistStripeWebhook(req);
+    const res = await handleMyAssistStripeWebhook(buildWebhookNextRequest(stripeSubscriptionUpdatedEvent));
     expect(res.status).toBe(503);
     const json = (await res.json()) as { code: string };
     expect(json.code).toBe("billing_misconfigured");
@@ -97,12 +94,7 @@ describe("handleMyAssistStripeWebhook", () => {
       },
     });
     const { handleMyAssistStripeWebhook } = await import("./stripeWebhookHandler");
-    const req = new NextRequest("http://localhost/api/payments/webhook", {
-      method: "POST",
-      body: "{}",
-      headers: { "stripe-signature": "t=1,v1=abc" },
-    });
-    const res = await handleMyAssistStripeWebhook(req);
+    const res = await handleMyAssistStripeWebhook(buildWebhookNextRequest(stripeSubscriptionUpdatedEvent));
     expect(res.status).toBe(400);
     const json = (await res.json()) as { code: string };
     expect(json.code).toBe("invalid_signature");
@@ -129,12 +121,7 @@ describe("handleMyAssistStripeWebhook", () => {
       claim: {} as never,
     });
     const { handleMyAssistStripeWebhook } = await import("./stripeWebhookHandler");
-    const req = new NextRequest("http://localhost/api/payments/webhook", {
-      method: "POST",
-      body: "{}",
-      headers: { "stripe-signature": "t=1,v1=abc" },
-    });
-    const res = await handleMyAssistStripeWebhook(req);
+    const res = await handleMyAssistStripeWebhook(buildWebhookNextRequest(stripeSubscriptionUpdatedEvent));
     expect(res.status).toBe(200);
     const json = (await res.json()) as { duplicate?: boolean };
     expect(json.duplicate).toBe(true);
@@ -148,12 +135,7 @@ describe("handleMyAssistStripeWebhook", () => {
       claim: {} as never,
     });
     const { handleMyAssistStripeWebhook } = await import("./stripeWebhookHandler");
-    const req = new NextRequest("http://localhost/api/payments/webhook", {
-      method: "POST",
-      body: "{}",
-      headers: { "stripe-signature": "t=1,v1=abc" },
-    });
-    const res = await handleMyAssistStripeWebhook(req);
+    const res = await handleMyAssistStripeWebhook(buildWebhookNextRequest(stripeSubscriptionUpdatedEvent));
     expect(res.status).toBe(503);
     const json = (await res.json()) as { code: string };
     expect(json.code).toBe("idempotency_claim_failed");
@@ -162,19 +144,11 @@ describe("handleMyAssistStripeWebhook", () => {
   it("returns 200 received for unhandled event types after claim", async () => {
     mockGetStripeOrThrow.mockReturnValue({
       webhooks: {
-        constructEvent: vi.fn(() => ({
-          ...baseStripeEvent,
-          type: "charge.succeeded",
-        })),
+        constructEvent: vi.fn(() => stripeChargeSucceededEvent),
       },
     });
     const { handleMyAssistStripeWebhook } = await import("./stripeWebhookHandler");
-    const req = new NextRequest("http://localhost/api/payments/webhook", {
-      method: "POST",
-      body: "{}",
-      headers: { "stripe-signature": "t=1,v1=abc" },
-    });
-    const res = await handleMyAssistStripeWebhook(req);
+    const res = await handleMyAssistStripeWebhook(buildWebhookNextRequest(stripeChargeSucceededEvent));
     expect(res.status).toBe(200);
     const json = (await res.json()) as { received?: boolean };
     expect(json.received).toBe(true);

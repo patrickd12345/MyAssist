@@ -1,8 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  mockBillingCheckoutRedirectUrl,
+  stubDefaultBillingRouteEnv,
+  stubProductionLikeBillingMisconfiguredEnv,
+} from "@bookiji-inc/stripe-test-harness";
 
 const mockGetSessionUserId = vi.hoisted(() => vi.fn());
 const mockCreateSubscriptionCheckoutSession = vi.hoisted(() =>
-  vi.fn(async () => "http://checkout.test"),
+  vi.fn(async () => mockBillingCheckoutRedirectUrl),
 );
 
 vi.mock("@/lib/session", () => ({
@@ -34,9 +39,7 @@ vi.mock("@/lib/services/stripeBilling", () => ({
 describe("POST /api/billing/create-checkout-session", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.stubEnv("BILLING_ENABLED", "true");
-    vi.stubEnv("STRIPE_SECRET_KEY", "sk_test_placeholder");
-    vi.stubEnv("NODE_ENV", "test");
+    stubDefaultBillingRouteEnv(vi);
   });
 
   afterEach(() => {
@@ -87,10 +90,7 @@ describe("POST /api/billing/create-checkout-session", () => {
   });
 
   it("returns 503 in production-like deploy when STRIPE_SECRET_KEY is missing", async () => {
-    vi.stubEnv("NODE_ENV", "production");
-    vi.stubEnv("VERCEL_ENV", "preview");
-    vi.stubEnv("STRIPE_SECRET_KEY", "");
-    vi.stubEnv("BILLING_ENABLED", "true");
+    stubProductionLikeBillingMisconfiguredEnv(vi);
     mockGetSessionUserId.mockResolvedValue("550e8400-e29b-41d4-a716-446655440001");
     vi.resetModules();
     const { POST } = await import("./route");
@@ -122,7 +122,7 @@ describe("POST /api/billing/create-checkout-session", () => {
     );
     expect(res.status).toBe(200);
     const json = (await res.json()) as { url: string };
-    expect(json.url).toBe("http://checkout.test");
+    expect(json.url).toBe(mockBillingCheckoutRedirectUrl);
     expect(mockCreateSubscriptionCheckoutSession).toHaveBeenCalled();
   });
 });

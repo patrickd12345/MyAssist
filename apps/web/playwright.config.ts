@@ -28,6 +28,17 @@ export default defineConfig({
     timeout: 120_000,
     env: {
       MYASSIST_USE_MOCK_CONTEXT: "true",
+      /** Override `.env.local` invite gates so specs that POST `/api/auth/register` without `inviteCode` stay valid. */
+      MYASSIST_REGISTRATION_INVITE_CODE: "",
+      /**
+       * Clear Supabase project env for this process so `isSupabaseHostedStorageEnabled()` is false
+       * and `createUser` uses the file user store (see `lib/userStore.ts`). Otherwise `.env.local`
+       * can point at Supabase and registration fails in E2E.
+       */
+      SUPABASE_URL: "",
+      NEXT_PUBLIC_SUPABASE_URL: "",
+      SUPABASE_SECRET_KEY: "",
+      SUPABASE_SERVICE_ROLE_KEY: "",
       AUTH_SECRET: "playwright-test-auth-secret-at-least-32-characters-long",
       AUTH_URL: e2eOrigin,
       MYASSIST_USER_STORE_FILE: e2eUserStore,
