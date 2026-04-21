@@ -3,6 +3,7 @@ import {
   mockBillingPortalRedirectUrl,
   stubDefaultBillingRouteEnv,
   stubProductionLikeBillingMisconfiguredEnv,
+// @ts-expect-error - missing package in monorepo
 } from "@bookiji-inc/stripe-test-harness";
 
 const mockGetSessionUserId = vi.hoisted(() => vi.fn());
