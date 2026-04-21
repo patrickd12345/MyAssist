@@ -3,6 +3,7 @@ import {
   mockBillingCheckoutRedirectUrl,
   stubDefaultBillingRouteEnv,
   stubProductionLikeBillingMisconfiguredEnv,
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore - missing package in monorepo
 } from "@bookiji-inc/stripe-test-harness";
 

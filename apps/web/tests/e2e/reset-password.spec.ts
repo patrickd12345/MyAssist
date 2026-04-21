@@ -3,6 +3,7 @@ import { expect, test } from "@playwright/test";
 import {
   awaitDevResetLinkFromForgotPasswordPage,
   submitForgotPasswordFromForgotPasswordPage,
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore - missing package in monorepo
 } from "@bookiji-inc/auth-test-harness";
 

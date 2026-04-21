@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore - missing package in monorepo
 import { myAssistActivePaidRow, myAssistCanceledRow } from "@bookiji-inc/stripe-test-harness";
 
