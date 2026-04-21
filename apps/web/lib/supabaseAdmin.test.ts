@@ -105,6 +105,17 @@ describe("supabaseAdmin", () => {
 
       expect(isSupabaseHostedStorageEnabled()).toBe(false);
     });
+
+    it("returns false when both URL and key are missing", () => {
+      vi.mocked(resolveMyAssistRuntimeEnv).mockReturnValue(
+        stubRuntimeEnv({
+          supabaseProjectUrl: "",
+          supabaseSecretKey: "",
+        })
+      );
+
+      expect(isSupabaseHostedStorageEnabled()).toBe(false);
+    });
   });
 
   describe("getSupabaseAdmin", () => {
