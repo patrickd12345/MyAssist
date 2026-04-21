@@ -45,6 +45,7 @@ export function ForgotPasswordForm() {
         Email
         <input
           id="forgot-email"
+          data-testid="email-input"
           name="email"
           type="email"
           autoComplete="username"
@@ -59,7 +60,7 @@ export function ForgotPasswordForm() {
       </label>
 
       {message ? (
-        <p className="theme-muted mt-4 text-sm" role="status">
+        <p className="theme-muted mt-4 text-sm" role="status" data-testid="success-message">
           {message}
         </p>
       ) : null}
@@ -75,6 +76,7 @@ export function ForgotPasswordForm() {
 
       <button
         type="submit"
+        data-testid="reset-password-button"
         disabled={busy}
         className="theme-button-primary mt-6 w-full rounded-full px-5 py-3 text-sm font-semibold disabled:opacity-50"
       >

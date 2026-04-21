@@ -276,6 +276,7 @@ function SignInFormFields() {
           {mode === "sign-in" ? (
             <a
               href="/forgot-password"
+              data-testid="forgot-password-link"
               className="theme-muted mt-4 inline-block text-xs underline underline-offset-2 transition hover:opacity-80"
             >
               Forgot password?
