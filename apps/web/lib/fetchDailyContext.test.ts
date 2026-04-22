@@ -14,9 +14,11 @@ describe("fetchDailyContextLive", () => {
   const originalEnv = { ...process.env };
 
   beforeEach(() => {
+    process.env.NODE_ENV = "test";
     process.env.MYASSIST_ENABLE_EMAIL_IMPORTANCE_AI = "0";
     delete process.env.MYASSIST_USE_MOCK_CONTEXT;
     delete process.env.MYASSIST_DEMO_MODE;
+    delete process.env.MYASSIST_DEMO_MODE_PRODUCTION_OVERRIDE;
     delete process.env.MYASSIST_DAILY_INTEL_AI;
     vi.spyOn(integrationService, "fetchGmailSignals").mockResolvedValue(null);
     vi.spyOn(integrationService, "fetchCalendarEvents").mockResolvedValue(null);
@@ -43,6 +45,14 @@ describe("fetchDailyContextLive", () => {
     expect(integrationService.fetchGmailSignals).not.toHaveBeenCalled();
   });
 
+  it("rejects mock context in production", async () => {
+    process.env.NODE_ENV = "production";
+    process.env.MYASSIST_USE_MOCK_CONTEXT = "true";
+
+    await expect(fetchDailyContextLive("user-1")).rejects.toThrow(/MYASSIST_USE_MOCK_CONTEXT/);
+    expect(integrationService.fetchGmailSignals).not.toHaveBeenCalled();
+  });
+
   it("returns curated demo context when MYASSIST_DEMO_MODE is true", async () => {
     process.env.MYASSIST_DEMO_MODE = "true";
     const { context, source } = await fetchDailyContextLive("user-1");
@@ -52,6 +62,24 @@ describe("fetchDailyContextLive", () => {
     expect(context.unified_daily_briefing?.counts).toBeDefined();
     expect(context.good_morning_message?.tone).toBe("neutral");
     expect(context.todoist_intelligence?.summary).toBeDefined();
+    expect(integrationService.fetchGmailSignals).not.toHaveBeenCalled();
+  });
+
+  it("rejects demo context in production without explicit override", async () => {
+    process.env.NODE_ENV = "production";
+    process.env.MYASSIST_DEMO_MODE = "true";
+
+    await expect(fetchDailyContextLive("user-1")).rejects.toThrow(/MYASSIST_DEMO_MODE/);
+    expect(integrationService.fetchGmailSignals).not.toHaveBeenCalled();
+  });
+
+  it("allows demo context in production with explicit override", async () => {
+    process.env.NODE_ENV = "production";
+    process.env.MYASSIST_DEMO_MODE = "true";
+    process.env.MYASSIST_DEMO_MODE_PRODUCTION_OVERRIDE = "true";
+
+    const { source } = await fetchDailyContextLive("user-1");
+    expect(source).toBe("demo");
     expect(integrationService.fetchGmailSignals).not.toHaveBeenCalled();
   });
 

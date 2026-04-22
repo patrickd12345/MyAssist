@@ -21,7 +21,7 @@ import { bucketTodoistTasksFromApi } from "./todoistTaskBuckets";
 import type { MyAssistDailyContext } from "./types";
 import { withTimeout } from "./asyncTimeout";
 import { executeChat } from "./aiRuntime";
-import { isMyAssistDemoModeEnabled, resolveMyAssistRuntimeEnv } from "./env/runtime";
+import { resolveMyAssistRuntimeEnv } from "./env/runtime";
 import { logServerEvent } from "./serverLog";
 
 /** Per-provider ceiling so Gmail/Calendar/Todoist HTTP cannot block the whole daily-context response forever. */
@@ -31,10 +31,38 @@ export type { DailyContextSource };
 export { MYASSIST_CONTEXT_SOURCE_HEADER };
 const EMAIL_IMPORTANCE_TIMEOUT_MS = 60000;
 
-function shouldUseMockContext(): boolean {
-  const runtime = resolveMyAssistRuntimeEnv();
-  const v = runtime.myassistUseMockContext.trim().toLowerCase();
+function isNonProductionSyntheticContextAllowed(nodeEnv: string): boolean {
+  return nodeEnv === "test" || nodeEnv === "development";
+}
+
+function parseEnvBoolean(value: string): boolean {
+  const v = value.trim().toLowerCase();
   return v === "1" || v === "true";
+}
+
+function isProductionDemoOverrideEnabled(): boolean {
+  const v = process.env.MYASSIST_DEMO_MODE_PRODUCTION_OVERRIDE?.trim().toLowerCase() ?? "";
+  return v === "1" || v === "true";
+}
+
+function shouldUseMockContext(runtime = resolveMyAssistRuntimeEnv()): boolean {
+  const enabled = parseEnvBoolean(runtime.myassistUseMockContext);
+  if (!enabled) return false;
+  if (!isNonProductionSyntheticContextAllowed(runtime.nodeEnv)) {
+    throw new Error("MYASSIST_USE_MOCK_CONTEXT is only allowed when NODE_ENV is test or development.");
+  }
+  return true;
+}
+
+function shouldUseDemoContext(runtime = resolveMyAssistRuntimeEnv()): boolean {
+  const enabled = parseEnvBoolean(runtime.myassistDemoMode);
+  if (!enabled) return false;
+  if (!isNonProductionSyntheticContextAllowed(runtime.nodeEnv) && !isProductionDemoOverrideEnabled()) {
+    throw new Error(
+      "MYASSIST_DEMO_MODE in production requires MYASSIST_DEMO_MODE_PRODUCTION_OVERRIDE=true.",
+    );
+  }
+  return true;
 }
 
 function todoistIntelligenceFromSeedTasks(
@@ -126,10 +154,11 @@ export async function fetchDailyContextLive(userId: string | null): Promise<{
   context: MyAssistDailyContext;
   source: DailyContextSource;
 }> {
-  if (isMyAssistDemoModeEnabled()) {
+  const runtime = resolveMyAssistRuntimeEnv();
+  if (shouldUseDemoContext(runtime)) {
     return buildSyntheticDailyContext(getDemoDailyContext(), "demo");
   }
-  if (shouldUseMockContext()) {
+  if (shouldUseMockContext(runtime)) {
     return buildSyntheticDailyContext(getMockDailyContext(), "mock");
   }
 

@@ -1,9 +1,16 @@
 import { resolveMyAssistRuntimeEnv } from "./env/runtime";
 import { getSupabaseServerUser } from "./supabaseServer";
 
+function isNonProductionAuthBypassAllowed(nodeEnv: string): boolean {
+  return nodeEnv === "test" || nodeEnv === "development";
+}
+
 export async function getSessionUserId(): Promise<string | null> {
   const runtime = resolveMyAssistRuntimeEnv();
   if (runtime.authDisabledRaw === "true") {
+    if (!isNonProductionAuthBypassAllowed(runtime.nodeEnv)) {
+      throw new Error("MYASSIST_AUTH_DISABLED is only allowed when NODE_ENV is test or development.");
+    }
     const dev = runtime.devUserId;
     return dev && dev !== "" ? dev : "dev-user";
   }
@@ -29,6 +36,9 @@ function greetingFirstNameFromEmail(email: string | null | undefined): string {
 export async function getSessionUserDisplayFirstName(): Promise<string> {
   const runtime = resolveMyAssistRuntimeEnv();
   if (runtime.authDisabledRaw === "true") {
+    if (!isNonProductionAuthBypassAllowed(runtime.nodeEnv)) {
+      throw new Error("MYASSIST_AUTH_DISABLED is only allowed when NODE_ENV is test or development.");
+    }
     return "there";
   }
   const user = await getSupabaseServerUser();
