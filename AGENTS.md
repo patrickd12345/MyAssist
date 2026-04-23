@@ -22,6 +22,7 @@
 - Gmail, Google Calendar, and Todoist are primary provider integrations.
 - Stripe is optional but canonical webhook remains `POST /api/payments/webhook` when billing is enabled.
 - Infisical (`/platform` + `/myassist`) is the canonical shared secret source for team/dev workflows.
+- See `./docs/TROUBLESHOOTING.md` for troubleshooting external integration environments, Supabase, and OAuth.
 
 ## Testing Contract
 - Run from `products/MyAssist`.
