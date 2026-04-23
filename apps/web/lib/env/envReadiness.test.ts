@@ -18,6 +18,7 @@ describe("envReadiness", () => {
 
   const bki019ProdEnv = {
     AUTH_URL: "https://myassist.bookiji.com",
+    NEXT_PUBLIC_SITE_URL: "https://myassist.bookiji.com",
     GOOGLE_CLIENT_ID: "google-client",
     GOOGLE_CLIENT_SECRET: "google-secret",
     MICROSOFT_CLIENT_ID: "microsoft-client",
@@ -62,6 +63,22 @@ describe("envReadiness", () => {
       { productionLike: true },
     );
     expect(r.passed).toBe(false);
+  });
+
+  it("production_like fails when NEXT_PUBLIC_SITE_URL is missing", () => {
+    const r = analyzeMyAssistEnv(
+      {
+        NODE_ENV: "production",
+        AUTH_SECRET: "x".repeat(32),
+        SUPABASE_URL: "https://abc.supabase.co",
+        SUPABASE_SECRET_KEY: "sb_secret_test",
+        ...bki019ProdEnv,
+        NEXT_PUBLIC_SITE_URL: "",
+      } as NodeJS.ProcessEnv,
+      { productionLike: true },
+    );
+    expect(r.passed).toBe(false);
+    expect(formatEnvReadinessReport(r)).toContain("NEXT_PUBLIC_SITE_URL");
   });
 
   it("production_like fails when BKI-019 OAuth and email delivery vars are missing", () => {

@@ -14,17 +14,17 @@ function normalizeEmail(email: string): string {
 }
 
 function rowToStoredUser(row: Record<string, unknown>): StoredUser | null {
-  if (
-    typeof row.id !== "string" ||
-    typeof row.email !== "string" ||
-    typeof row.password_hash !== "string"
-  ) {
+  if (typeof row.id !== "string" || typeof row.email !== "string") {
+    return null;
+  }
+  const ph = row.password_hash;
+  if (ph !== null && typeof ph !== "string") {
     return null;
   }
   return {
     id: row.id,
     email: row.email,
-    passwordHash: row.password_hash,
+    passwordHash: typeof ph === "string" ? ph : "",
     todoistApiToken: typeof row.todoist_api_token === "string" ? row.todoist_api_token : undefined,
   };
 }

@@ -18,7 +18,7 @@ describe("resolvePublicOrigin", () => {
     vi.unstubAllEnvs();
   });
 
-  it("prefers AUTH_URL over forwarded when set (production)", () => {
+  it("trusts forwarded host over mismatched AUTH_URL in production (avoids stale cross-product URL)", () => {
     vi.stubEnv("NODE_ENV", "production");
     vi.stubEnv("AUTH_URL", "https://myassist.bookiji.com");
 
@@ -28,7 +28,7 @@ describe("resolvePublicOrigin", () => {
         "x-forwarded-proto": "https",
       },
     });
-    expect(resolvePublicOrigin(req)).toBe("https://myassist.bookiji.com");
+    expect(resolvePublicOrigin(req)).toBe("https://other.example.com");
     vi.unstubAllEnvs();
   });
 });

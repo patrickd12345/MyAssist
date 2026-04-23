@@ -5,6 +5,7 @@ import {
   clientIpFromRequest,
 } from "@/lib/registerRateLimit";
 import { resolveMyAssistRuntimeEnv } from "@/lib/env/runtime";
+import { buildMyAssistAuthCallbackUrlForRequest } from "@/lib/myassistSiteOrigin";
 import { getSupabaseAuthClient } from "@/lib/supabaseAuth";
 
 export const dynamic = "force-dynamic";
@@ -22,6 +23,8 @@ export async function POST(req: Request) {
       email?: unknown;
       password?: unknown;
       inviteCode?: unknown;
+      /** Post-confirm path; hardened via `safeInternalPath` in `buildMyAssistAuthCallbackUrlForRequest`. */
+      callbackUrl?: unknown;
     };
     const expectedInvite = resolveMyAssistRuntimeEnv().registrationInviteCode;
     if (expectedInvite) {
@@ -37,9 +40,14 @@ export async function POST(req: Request) {
     if (!supabase) {
       return jsonLegacyApiError("Could not complete registration.", 400);
     }
+    const emailRedirectTo = buildMyAssistAuthCallbackUrlForRequest(
+      req,
+      typeof body.callbackUrl === "string" ? body.callbackUrl : null,
+    );
     const { error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
+      options: { emailRedirectTo },
     });
     if (error) {
       return jsonLegacyApiError("Could not complete registration.", 400);

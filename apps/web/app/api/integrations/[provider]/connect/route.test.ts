@@ -25,10 +25,6 @@ vi.mock("@/lib/integrations/origin", () => ({
   resolvePublicOrigin: vi.fn(() => "http://localhost:3000"),
 }));
 
-vi.mock("@/lib/integrations/oauthDebugLog", () => ({
-  oauthDebugLog: vi.fn(),
-}));
-
 vi.mock("@/lib/env/runtime", () => ({
   resolveMyAssistRuntimeEnv: vi.fn(() => ({
     authUrl: "http://localhost:3000",

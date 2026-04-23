@@ -48,6 +48,7 @@ export function analyzeMyAssistEnv(
 
   const authOk = hasAny(env, ["AUTH_SECRET", "NEXTAUTH_SECRET"]);
   const publicOriginOk = hasAny(env, ["AUTH_URL", "NEXTAUTH_URL", "MYASSIST_PUBLIC_APP_URL"]);
+  const nextPublicSiteOk = hasAny(env, ["NEXT_PUBLIC_SITE_URL"]);
   const googleLoginOk =
     hasAny(env, ["GOOGLE_CLIENT_ID", "MYASSIST_GMAIL_CLIENT_ID", "MYASSIST_GOOGLE_CLIENT_ID"]) &&
     hasAny(env, ["GOOGLE_CLIENT_SECRET", "MYASSIST_GMAIL_CLIENT_SECRET", "MYASSIST_GOOGLE_CLIENT_SECRET"]);
@@ -180,6 +181,11 @@ export function analyzeMyAssistEnv(
         publicOriginOk || !productionLike,
         "Public app origin used by Auth.js OAuth callbacks and password-reset links.",
       ),
+      item(
+        "NEXT_PUBLIC_SITE_URL",
+        nextPublicSiteOk || !productionLike,
+        "Canonical MyAssist origin for browser Supabase signInWithOAuth / magic-link redirectTo; without it, users on another Bookiji host get sent back to the wrong app.",
+      ),
     ],
   });
 
@@ -232,7 +238,10 @@ export function analyzeMyAssistEnv(
   if (productionLike && billingEnabled && (!stripeSecretOk || !stripeWebhookOk)) {
     passed = false;
   }
-  if (productionLike && (!googleLoginOk || !microsoftLoginOk || !passwordResetEmailOk || !publicOriginOk)) {
+  if (
+    productionLike &&
+    (!googleLoginOk || !microsoftLoginOk || !passwordResetEmailOk || !publicOriginOk || !nextPublicSiteOk)
+  ) {
     passed = false;
   }
 

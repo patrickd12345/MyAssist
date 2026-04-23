@@ -25,7 +25,7 @@ describe("POST /api/auth/register", () => {
     });
   });
 
-  it("creates a Supabase auth user", async () => {
+  it("creates a Supabase auth user with emailRedirectTo to MyAssist auth callback (default /)", async () => {
     signUp.mockResolvedValue({ data: {}, error: null });
     const { POST } = await import("./route");
     const res = await POST(
@@ -40,7 +40,35 @@ describe("POST /api/auth/register", () => {
     expect(signUp).toHaveBeenCalledWith({
       email: "first@example.com",
       password: "correcthorse",
+      options: {
+        emailRedirectTo: "http://localhost/auth/callback?callbackUrl=%2F",
+      },
     });
+  });
+
+  it("passes a safe callbackUrl for post-confirm email redirect (open redirects downgraded to /)", async () => {
+    signUp.mockResolvedValue({ data: {}, error: null });
+    const { POST } = await import("./route");
+    const res = await POST(
+      new Request("http://localhost/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: "a@b.com",
+          password: "correcthorse",
+          callbackUrl: "/tasks",
+        }),
+      }),
+    );
+
+    expect(res.status).toBe(200);
+    expect(signUp).toHaveBeenCalledWith(
+      expect.objectContaining({
+        options: {
+          emailRedirectTo: "http://localhost/auth/callback?callbackUrl=%2Ftasks",
+        },
+      }),
+    );
   });
 
   it("returns generic error when Supabase sign up fails", async () => {

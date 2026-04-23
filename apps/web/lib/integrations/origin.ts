@@ -13,41 +13,52 @@ function originFromForwardedHeaders(req: Request): string | null {
   }
 }
 
+/**
+ * Public origin for integration OAuth `redirect_uri` construction.
+ * Trusts `x-forwarded-host` over a mismatched `AUTH_URL` so a stale Bookiji URL cannot override the
+ * hostname the browser actually hit; when hosts align, uses configured URL for canonical scheme/port.
+ */
 export function resolvePublicOrigin(req: Request): string {
   const runtime = resolveMyAssistRuntimeEnv();
   const requestOrigin = new URL(req.url).origin;
   const forwardedOrigin = originFromForwardedHeaders(req);
+  const effectiveIncoming = forwardedOrigin ?? requestOrigin;
 
-  // In local development, always use the current request origin to avoid
-  // OAuth redirect_uri mismatches when dev server runs on a non-default port.
   if (runtime.nodeEnv !== "production") {
     try {
-      const host = new URL(requestOrigin).hostname;
+      const host = new URL(effectiveIncoming).hostname;
       if (host === "localhost" || host === "127.0.0.1") {
-        return requestOrigin;
+        return effectiveIncoming;
       }
     } catch {
-      // continue to configured fallback
+      // fall through
     }
   }
 
-  const configured =
-    runtime.authUrl ||
-    runtime.nextAuthUrl ||
-    runtime.publicAppUrl;
-  if (configured) {
-    try {
-      const origin = new URL(configured).origin;
-      const host = new URL(origin).hostname;
-      // Production often copies .env.local with AUTH_URL=http://localhost:3000 — that makes Google
-      // redirect to localhost after consent ("site can't be reached"). Prefer the real request host.
-      if (runtime.nodeEnv === "production" && (host === "localhost" || host === "127.0.0.1")) {
-        return forwardedOrigin ?? requestOrigin;
-      }
-      return origin;
-    } catch {
-      // fallback to request origin
-    }
+  const configured = runtime.authUrl || runtime.nextAuthUrl || runtime.publicAppUrl;
+  if (!configured?.trim()) {
+    return effectiveIncoming;
   }
-  return forwardedOrigin ?? requestOrigin;
+
+  try {
+    const configuredOrigin = new URL(configured).origin;
+    const cfgHost = new URL(configuredOrigin).hostname;
+    const incomingHost = new URL(effectiveIncoming).hostname;
+
+    if (runtime.nodeEnv === "production" && (cfgHost === "localhost" || cfgHost === "127.0.0.1")) {
+      return effectiveIncoming;
+    }
+
+    if (cfgHost === incomingHost) {
+      return configuredOrigin;
+    }
+
+    if (runtime.nodeEnv === "production") {
+      return effectiveIncoming;
+    }
+
+    return configuredOrigin;
+  } catch {
+    return effectiveIncoming;
+  }
 }

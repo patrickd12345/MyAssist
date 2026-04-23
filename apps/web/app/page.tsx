@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export default async function Home() {
   const userId = await getSessionUserId();
   if (!userId) {
-    redirect("/sign-in");
+    redirect("/sign-in?callbackUrl=%2F");
   }
 
   const greetingFirstName = await getSessionUserDisplayFirstName();

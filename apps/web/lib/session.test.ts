@@ -11,12 +11,13 @@ describe("session auth-disabled guard", () => {
 
   beforeEach(() => {
     process.env = { ...originalEnv };
-    process.env.NODE_ENV = "test";
+    vi.stubEnv("NODE_ENV", "test");
     delete process.env.MYASSIST_DEV_USER_ID;
     vi.mocked(getSupabaseServerUser).mockReset();
   });
 
   afterEach(() => {
+    vi.unstubAllEnvs();
     process.env = { ...originalEnv };
     vi.restoreAllMocks();
   });
@@ -31,7 +32,7 @@ describe("session auth-disabled guard", () => {
   });
 
   it("rejects auth-disabled sessions in production", async () => {
-    process.env.NODE_ENV = "production";
+    vi.stubEnv("NODE_ENV", "production");
     process.env.MYASSIST_AUTH_DISABLED = "true";
 
     await expect(getSessionUserId()).rejects.toThrow(/MYASSIST_AUTH_DISABLED/);

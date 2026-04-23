@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { jsonLegacyApiError } from '@/lib/api/error-contract';
-import { resolveMyAssistRuntimeEnv } from "@/lib/env/runtime";
+import { resolveMyAssistSiteOriginForRequest } from "@/lib/myassistSiteOrigin";
 import { getSupabaseAuthClient } from "@/lib/supabaseAuth";
 
 export const dynamic = "force-dynamic";
@@ -14,9 +14,7 @@ export async function POST(req: Request) {
     }
 
     const supabase = getSupabaseAuthClient();
-    const runtime = resolveMyAssistRuntimeEnv();
-    const requestOrigin = new URL(req.url).origin;
-    const base = runtime.publicAppUrl || runtime.authUrl || runtime.nextAuthUrl || requestOrigin;
+    const base = resolveMyAssistSiteOriginForRequest(req);
     const redirectTo = `${base.replace(/\/$/, "")}/reset-password`;
 
     if (supabase) {

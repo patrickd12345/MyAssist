@@ -12,6 +12,11 @@ import type { NextConfig } from "next";
  * you add `sentry-cli` or CI; runtime error capture remains.
  */
 const nextConfig: NextConfig = {
+  // Expose Vercel deployment host to the client for OAuth / magic link `redirectTo` when
+  // NEXT_PUBLIC_SITE_URL is not set (preview deploys). Custom domains: still set NEXT_PUBLIC_SITE_URL to the public origin.
+  env: {
+    NEXT_PUBLIC_VERCEL_URL: process.env.VERCEL_URL ?? "",
+  },
   transpilePackages: [
     "job-hunt-manager",
     "@bookiji-inc/ai-runtime",
