@@ -62,6 +62,11 @@ MyAssist does not store provider mirror tables and does not run reconciliation p
 
 For deploying the same app off `localhost` (durable accounts, OAuth, monitoring), see [commercial-pilot-readiness.md](./commercial-pilot-readiness.md).
 
+## Authentication (Supabase)
+
+- End users sign in via **Supabase Auth**; the app route **`/auth/callback`** exchanges the PKCE `code`, sets session cookies, then calls **`ensureAppUser`** once to bridge `auth.users` → **`myassist.app_users`** (no hidden writes in generic session helpers).
+- Error codes, redirect policy, and operational notes: [auth-supabase-callback.md](./auth-supabase-callback.md).
+
 ## Database (Bookiji shared Supabase)
 
 On the shared Bookiji Inc database, product data is segregated by schema: `platform.*` (cross-product spine), `bookiji.*`, `kinetix.*`, `chess.*`, and **`myassist.*`** for this app’s durable tables (`app_users`, `integration_tokens`). The legacy `public.*` namespace is avoided for new product tables. Post-migration verification SQL and rollout notes: [myassist-schema-segregation-readiness.md](./myassist-schema-segregation-readiness.md).

@@ -35,13 +35,29 @@ The Today dashboard is organized into focused tabs to reduce visual overload:
 
 ## Sign-in
 
-The dashboard and APIs require a local account (email + password). Unauthenticated visitors are redirected to `/sign-in`.
+The dashboard and APIs require a Supabase session. Unauthenticated visitors are redirected to `/sign-in?callbackUrl=%2F`.
 
-1. Open `/sign-in`, choose **Register**, and create an account (password at least 8 characters).
-2. Credentials are stored in `apps/web/.myassist-memory/users.json` (hashed passwords only).
-3. **`AUTH_SECRET` (or `NEXTAUTH_SECRET`):** In team workflows, keep this in **Infisical** (`/myassist` for local dev) and start with **`pnpm dev:infisical`** (from `apps/web` or repo root) so secrets inject at process start. For ad-hoc runs without Infisical, set it in `apps/web/.env.local` — use a long random string in production.
-4. Optional: set `AUTH_URL` to the public origin (e.g. `http://localhost:3000` locally).
-5. For Vitest and local scripting only, `MYASSIST_AUTH_DISABLED=true` skips login checks (see `vitest.setup.ts`).
+**Canonical host:** Set **`NEXT_PUBLIC_SITE_URL`** to the MyAssist public origin (e.g. `https://myassist.bookiji.com`). The client builds Supabase **`emailRedirectTo`** / **`redirectTo`** from this value so magic links and OAuth return to **MyAssist**. Runtime guardrails reject cross-product callback hosts and, on shared Bookiji domains, force auth returns to `https://myassist.bookiji.com` instead of sibling hosts like `app.bookiji.com`.
+
+**Primary:** Email magic link (`signInWithOtp`); completion at `/auth/callback` (PKCE cookie session).
+
+**Also:** Email + password (sign-in / register tabs), plus OAuth — **Continue with Google** / **Continue with Outlook** — all using the same `/auth/callback` return URL.
+
+**Supabase dashboard:** Set **Site URL** to the MyAssist production domain. Enable **Email** (magic link / OTP + password as needed). Under **Redirect URLs**, allow every environment:
+
+- `http://localhost:3000/auth/callback` (local)
+- `https://<preview-host>/auth/callback`
+- `https://myassist.bookiji.com/auth/callback` (production example)
+
+Without these, magic links and OAuth returns will fail after the provider redirects back.
+
+**Infisical / env:** Supply `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` (or publishable key alias), plus server-side secrets per your deployment docs.
+
+**`AUTH_SECRET` (or `NEXTAUTH_SECRET`):** In team workflows, keep this in **Infisical** (`/myassist` for local dev) and start with **`pnpm dev:infisical`** (from `apps/web` or repo root). For ad-hoc runs without Infisical, set it in `apps/web/.env.local`.
+
+Optional: set `AUTH_URL` to the public origin (e.g. `http://localhost:3000` locally).
+
+For Vitest and local scripting only, `MYASSIST_AUTH_DISABLED=true` skips login checks (see `vitest.setup.ts`).
 
 Session protection is enforced in server components and API route handlers (no Edge middleware, to avoid bundling issues with Auth.js on Vercel Edge).
 
@@ -67,7 +83,7 @@ The Vercel project linked to production should use this app as the deploy root:
 **Infisical (recommended for team secrets):**
 
 1. Run `infisical init` once from `apps/web` (creates `.infisical.json`; gitignored).
-2. In the Infisical project (e.g. `Bookiji Inc`), populate paths **`/platform`** and **`/myassist`** for environment **`dev`** — including **`AUTH_SECRET`**, Supabase keys, OAuth client ids, and encryption keys as needed.
+2. In the Infisical project (e.g. `Bookiji Inc`), populate paths **`/platform`** and **`/myassist`** for environment **`dev`** — including **`AUTH_SECRET`**, **`NEXT_PUBLIC_SITE_URL`** and **`AUTH_URL`** (public MyAssist origin; required for correct OAuth / magic link `redirectTo`), Supabase keys, OAuth client ids, and encryption keys as needed.
 3. Start everything from the repo root:
 
    ```sh
@@ -81,6 +97,8 @@ The Vercel project linked to production should use this app as the deploy root:
    ```
 
 `pnpm dev:infisical` uses the same merge helper and exports `/platform` and `/myassist` before launching `next dev`, so shared Supabase keys and app-specific OAuth/auth keys both arrive even though Infisical CLI path injection is single-folder oriented.
+
+**Reference:** [docs/infisical-and-secrets.md](../docs/infisical-and-secrets.md) — Infisical **paths** (`/platform`, `/myassist`), official **@infisical/mcp** for agents, **CLI** usage, and **`node scripts/sync-env-to-infisical-once.mjs`** (and `--all`) to align the vault with a local `.env.local` on a trusted machine.
 
 Strict verification, without starting Next.js or printing secret values:
 
@@ -141,7 +159,9 @@ If Next.js reports that port **3000** is in use and falls back to **3001+**, sto
 Infisical-first minimum local set:
 
 - `/platform`: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `SHARED_DB_TIER=dev`, `SHARED_DB_ENV_STRICT=1`
-- `/myassist`: `AUTH_SECRET`, `AUTH_URL`, `MYASSIST_INTEGRATIONS_ENCRYPTION_KEY`, `MYASSIST_GMAIL_CLIENT_ID`, `MYASSIST_GMAIL_CLIENT_SECRET`, `MICROSOFT_CLIENT_ID`, `MICROSOFT_CLIENT_SECRET`, `RESEND_API_KEY`, `MYASSIST_PASSWORD_RESET_EMAIL_FROM`
+- `/myassist`: `AUTH_SECRET`, `AUTH_URL`, **`NEXT_PUBLIC_SITE_URL`** (public MyAssist origin; OAuth / magic link `redirectTo`), `MYASSIST_INTEGRATIONS_ENCRYPTION_KEY`, `MYASSIST_GMAIL_CLIENT_ID`, `MYASSIST_GMAIL_CLIENT_SECRET`, `MICROSOFT_CLIENT_ID`, `MICROSOFT_CLIENT_SECRET`, `RESEND_API_KEY`, `MYASSIST_PASSWORD_RESET_EMAIL_FROM`, Todoist connect (`TODOIST_CLIENT_ID` / `TODOIST_CLIENT_SECRET` or `MYASSIST_TODOIST_*`), optional `TODOIST_API_TOKEN`, and (for `pnpm dev:all`) job-hunt + Ollama as you use them: `JOB_HUNT_LINKEDIN_RSS_URLS`, `OLLAMA_BASE_URL`, `OLLAMA_MODEL`, `OLLAMA_HEADLINE_MODELS`, `OLLAMA_EMAIL_IMPORTANCE_MODELS`
+
+**Do not** put the following in `/myassist` for the Next app—they are either unused by `apps/web` or belong elsewhere: `MYASSIST_N8N_WEBHOOK_URL` / `MYASSIST_N8N_WEBHOOK_TOKEN` / `MYASSIST_N8N_API_KEY` (n8n is optional tooling; the dashboard does not call these), duplicate `VITE_SUPABASE_*` if `NEXT_PUBLIC_SUPABASE_*` is already set (same values; runtime reads the `NEXT_PUBLIC` / `SUPABASE_*` names), `SUPABASE_ACCESS_TOKEN` (Supabase **CLI** token for `supabase` commands—not the JS client), and `VERCEL_TOKEN` (Vercel **CLI** / API—not Next.js `process.env` at runtime).
 
 The file `apps/web/.infisical.json` is local machine state from `infisical init` and should not be committed.
 
@@ -231,6 +251,7 @@ If logs show **Array buffer allocation failed** or **Caching failed for pack** f
 
 ## Playwright E2E (`pnpm test:e2e`)
 
+- **Looks stuck?** Playwright first **starts** `next dev` on **127.0.0.1:3005** and waits up to **120s** for that URL; then runs specs **one worker** at a time with up to **90s** per test. The quiet stretch is often **Next compiling**, not a freeze. For clearer progress, run **`pnpm test:e2e:verbose`** (`--reporter=line` + `DEBUG=pw:webserver`); from repo root **`pnpm web:test:e2e:verbose`**. (This project’s Playwright `webServer` types only support `pipe` / `ignore` for child stdio, not `inherit`, so we do not stream `next dev` to the same TTY by default.)
 - Runs against a dedicated dev server on **127.0.0.1:3005** with **`MYASSIST_USE_MOCK_CONTEXT=true`** (mock Gmail/Todoist/Calendar payload — not production tokens).
 - **`workers: 1`**: the Playwright user store file (`tests/e2e/.playwright-users.json`) is shared; parallel workers race and flake registration.
 - **`tests/e2e/dashboard-sanity.spec.ts`**: registers a user, checks **`/api/integrations/status`** and **`/api/daily-context`**, then walks **Overview → Tasks → Inbox → Calendar → Assistant** and asserts the Inbox shows mock email copy (e.g. `Example signal (mock)`).

@@ -7,6 +7,8 @@ Personal operations system as a unified live operational window over Gmail, Goog
 - `apps/web/`: Next.js assistant surface with a unified live Today view and direct provider actions.
 - OAuth integration layer for Gmail, Google Calendar, and Todoist through `/api/integrations/*`.
 - local app memory and lightweight metadata in `.myassist-memory`.
+- `docs/TROUBLESHOOTING.md`: auth, env, OAuth, Supabase, sessions, and operator runbook (MyAssist).
+- `docs/infisical-and-secrets.md`: Infisical paths, official MCP, CLI, vault sync from `.env.local`, and production checks.
 - `docs/architecture.md`: provider-canonical boundaries and module layout.
 - `docs/commercial-pilot-readiness.md`: hosted deployment checklist (Supabase storage, Sentry, env vars).
 - `docs/myassist-operational-signoff.md`: pilot sign-off for live AI path, live Today after OAuth, adapter boundaries.
@@ -70,7 +72,7 @@ Purpose:
 Setup:
 
 1. **One command (repo root):** `pnpm dev:all` — starts **Next** (`apps/web`) and the **job-hunt digest** dev server, with **optional** Infisical merge (`/platform` + `/myassist`) when `apps/web/.infisical.json` exists and the CLI works; otherwise it falls back to `apps/web/.env.local` and existing env. See `scripts/dev-all.mjs` and `scripts/infisical-merge.mjs`.
-2. **Secrets (recommended):** [Infisical](https://infisical.com) — run `infisical init` once from `apps/web`, then store keys under `/platform` and `/myassist` for env `dev`. Details: `apps/web/README.md`.
+2. **Secrets (recommended):** [Infisical](https://infisical.com) — run `infisical init` once from `apps/web`, then store keys under `/platform` and `/myassist` for env `dev`. Details: [docs/infisical-and-secrets.md](docs/infisical-and-secrets.md) and `apps/web/README.md`.
 3. **Without Infisical:** Copy `apps/web/.env.example` to `apps/web/.env.local` and fill values.
 4. Configure OAuth for Gmail, Google Calendar, and Todoist when needed (`apps/web/README.md`). Optional: `MYASSIST_USE_MOCK_CONTEXT=true`, Ollama, etc.
 5. Open `http://localhost:3000` after `pnpm dev:all` is running.
