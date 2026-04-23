@@ -199,6 +199,14 @@ If Google shows **Error 400: redirect_uri_mismatch**, the `redirect_uri` your ap
 
 For login OAuth, also open **`GET /api/auth/oauth-self-check`** on the same host (e.g. `https://myassist.bookiji.com/api/auth/oauth-self-check`) and copy **`googleCloudConsole.authorizedRedirectUris`** into Google Cloud Console character-for-character. For signed-in Gmail/Calendar integration OAuth, open **`GET /api/integrations/oauth-self-check`** and copy **`redirectUri`** character-for-character.
 
+## UI variant switch (classic vs refactor)
+
+- MyAssist now supports two co-existing UI variants on the same routes: `classic` (default) and `refactor`.
+- Global toggle: bottom-right control in the app shell (`Classic UI` / `Refactor UI`).
+- Persistence: `POST /api/ui-variant` with body `{ "variant": "classic" | "refactor" }` writes cookie `myassist_ui_variant` (30 days, `SameSite=Lax`, `secure` in production, `httpOnly=false`).
+- Preview override: add `?ui=classic` or `?ui=refactor` to any user-facing route. Query overrides cookie for rendering but does not persist unless you use the toggle/API.
+- Rollback: switch back to `Classic UI` using the toggle, or clear/overwrite the `myassist_ui_variant` cookie.
+
 ## Validation commands
 
 ```sh
