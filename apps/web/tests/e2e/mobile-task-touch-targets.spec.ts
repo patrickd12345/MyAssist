@@ -1,4 +1,5 @@
 import { expect, test, devices } from "@playwright/test";
+import { registerViaPasswordUi } from "./helpers/registerViaPasswordUi";
 
 test.use({ ...devices["Pixel 5"] });
 
@@ -9,15 +10,17 @@ test("Complete button has at least 44px height (touch target)", async ({ page })
   const email = `e2e-mob-${Date.now()}@example.com`;
   const password = "testpass1234";
 
-  await page.goto("/sign-in");
-  await page.getByRole("button", { name: "Register" }).click();
-  await page.getByLabel("Email").fill(email);
-  await page.locator("#sign-in-password").fill(password);
-  await page.getByRole("button", { name: "Create account" }).click();
+  await page.goto("/sign-in", { waitUntil: "domcontentloaded" });
+  await registerViaPasswordUi(page, email, password);
 
   await expect(page.getByText("Welcome back", { exact: false }).first()).toBeVisible({
     timeout: 30_000,
   });
+
+  await expect(page.getByTestId("dashboard-tab-overview")).toHaveAttribute("aria-current", "page", {
+    timeout: 30_000,
+  });
+  await page.waitForLoadState("networkidle");
 
   await page.getByRole("button", { name: "Tasks", exact: true }).click();
   await expect(

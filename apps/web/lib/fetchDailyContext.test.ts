@@ -14,7 +14,7 @@ describe("fetchDailyContextLive", () => {
   const originalEnv = { ...process.env };
 
   beforeEach(() => {
-    process.env.NODE_ENV = "test";
+    vi.stubEnv("NODE_ENV", "test");
     process.env.MYASSIST_ENABLE_EMAIL_IMPORTANCE_AI = "0";
     delete process.env.MYASSIST_USE_MOCK_CONTEXT;
     delete process.env.MYASSIST_DEMO_MODE;
@@ -29,6 +29,7 @@ describe("fetchDailyContextLive", () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllEnvs();
     process.env = { ...originalEnv };
   });
 
@@ -46,7 +47,7 @@ describe("fetchDailyContextLive", () => {
   });
 
   it("rejects mock context in production", async () => {
-    process.env.NODE_ENV = "production";
+    vi.stubEnv("NODE_ENV", "production");
     process.env.MYASSIST_USE_MOCK_CONTEXT = "true";
 
     await expect(fetchDailyContextLive("user-1")).rejects.toThrow(/MYASSIST_USE_MOCK_CONTEXT/);
@@ -66,7 +67,7 @@ describe("fetchDailyContextLive", () => {
   });
 
   it("rejects demo context in production without explicit override", async () => {
-    process.env.NODE_ENV = "production";
+    vi.stubEnv("NODE_ENV", "production");
     process.env.MYASSIST_DEMO_MODE = "true";
 
     await expect(fetchDailyContextLive("user-1")).rejects.toThrow(/MYASSIST_DEMO_MODE/);
@@ -74,7 +75,7 @@ describe("fetchDailyContextLive", () => {
   });
 
   it("allows demo context in production with explicit override", async () => {
-    process.env.NODE_ENV = "production";
+    vi.stubEnv("NODE_ENV", "production");
     process.env.MYASSIST_DEMO_MODE = "true";
     process.env.MYASSIST_DEMO_MODE_PRODUCTION_OVERRIDE = "true";
 

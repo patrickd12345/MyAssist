@@ -167,8 +167,8 @@ export async function fetchDailyContextLive(userId: string | null): Promise<{
     throw new Error("Daily context requires a signed-in user. Connect Gmail, Calendar, and Todoist after signing in.");
   }
 
-  const [gmailRaw, calendarRaw, todoistSlices] = await Promise.all([
-    (async () => {
+  async function gmailLeg(): Promise<Awaited<ReturnType<typeof integrationService.fetchGmailSignals>> | null> {
+    try {
       const r = await withTimeout(
         integrationService.fetchGmailSignals(trimmed),
         DAILY_CONTEXT_PROVIDER_FETCH_TIMEOUT_MS,
@@ -181,8 +181,17 @@ export async function fetchDailyContextLive(userId: string | null): Promise<{
         return null;
       }
       return r;
-    })(),
-    (async () => {
+    } catch (error) {
+      logServerEvent("warn", "myassist_daily_context_provider_error", {
+        provider: "gmail",
+        message: error instanceof Error ? error.message : String(error),
+      });
+      return null;
+    }
+  }
+
+  async function calendarLeg(): Promise<Awaited<ReturnType<typeof integrationService.fetchCalendarEvents>> | null> {
+    try {
       const r = await withTimeout(
         integrationService.fetchCalendarEvents(trimmed),
         DAILY_CONTEXT_PROVIDER_FETCH_TIMEOUT_MS,
@@ -195,8 +204,17 @@ export async function fetchDailyContextLive(userId: string | null): Promise<{
         return null;
       }
       return r;
-    })(),
-    (async () => {
+    } catch (error) {
+      logServerEvent("warn", "myassist_daily_context_provider_error", {
+        provider: "google_calendar",
+        message: error instanceof Error ? error.message : String(error),
+      });
+      return null;
+    }
+  }
+
+  async function todoistLeg() {
+    try {
       const r = await withTimeout(
         fetchTodoistSlicesForUser(trimmed),
         DAILY_CONTEXT_PROVIDER_FETCH_TIMEOUT_MS,
@@ -209,57 +227,95 @@ export async function fetchDailyContextLive(userId: string | null): Promise<{
         return null;
       }
       return r;
-    })(),
-  ]);
-
-  const gmail_signals = gmailRaw ? mapGmailFromOAuth(gmailRaw) : [];
-  const calendar_today = Array.isArray(calendarRaw) ? mapGoogleCalendarEventsRaw(calendarRaw) : [];
-
-  const nowDate = new Date();
-  const now = nowDate.toISOString();
-  const run_date = now.slice(0, 10);
-  const calendar_intelligence = buildCalendarIntelligence(calendar_today, nowDate.getTime(), run_date);
-
-  let base: MyAssistDailyContext = {
-    generated_at: now,
-    run_date,
-    gmail_signals,
-    calendar_today,
-    calendar_intelligence,
-    todoist_overdue: todoistSlices?.todoist_overdue ?? [],
-    todoist_due_today: todoistSlices?.todoist_due_today ?? [],
-    todoist_upcoming_high_priority: todoistSlices?.todoist_upcoming_high_priority ?? [],
-    todoist_intelligence: todoistSlices?.todoist_intelligence,
-  };
-
-  base = flattenGmailSignals(base);
-  const prioritized = await prioritizeContextEmails(base, trimmed);
-  const withJobHuntAnalysis = enrichGmailSignalsWithJobHuntAnalysis(prioritized);
-  const job_hunt_email_matches = await postJobHuntEmailSignals(withJobHuntAnalysis.gmail_signals);
-  if (trimmed && job_hunt_email_matches.length > 0) {
-    await syncContactsFromJobHuntEmailMatches(trimmed, job_hunt_email_matches);
+    } catch (error) {
+      logServerEvent("warn", "myassist_daily_context_provider_error", {
+        provider: "todoist",
+        message: error instanceof Error ? error.message : String(error),
+      });
+      return null;
+    }
   }
 
-  const daily_intelligence = await enrichDailyIntelligenceWithAi(
-    buildDailyIntelligence(withJobHuntAnalysis.gmail_signals),
-  );
+  try {
+    const [gmailRaw, calendarRaw, todoistSlices] = await Promise.all([gmailLeg(), calendarLeg(), todoistLeg()]);
 
-  const nextContext: MyAssistDailyContext = {
-    ...withJobHuntAnalysis,
-    ...(job_hunt_email_matches.length > 0 ? { job_hunt_email_matches } : {}),
-    daily_intelligence,
-  };
-  const unified_daily_briefing = await buildUnifiedDailyBriefing(nextContext);
-  const good_morning_message = await buildGoodMorningMessage(unified_daily_briefing);
+    const gmail_signals = gmailRaw ? mapGmailFromOAuth(gmailRaw) : [];
+    const calendar_today = Array.isArray(calendarRaw) ? mapGoogleCalendarEventsRaw(calendarRaw) : [];
 
-  return {
-    context: {
-      ...nextContext,
-      unified_daily_briefing,
-      good_morning_message,
-    },
-    source: "live",
-  };
+    const nowDate = new Date();
+    const now = nowDate.toISOString();
+    const run_date = now.slice(0, 10);
+    const calendar_intelligence = buildCalendarIntelligence(calendar_today, nowDate.getTime(), run_date);
+
+    let base: MyAssistDailyContext = {
+      generated_at: now,
+      run_date,
+      gmail_signals,
+      calendar_today,
+      calendar_intelligence,
+      todoist_overdue: todoistSlices?.todoist_overdue ?? [],
+      todoist_due_today: todoistSlices?.todoist_due_today ?? [],
+      todoist_upcoming_high_priority: todoistSlices?.todoist_upcoming_high_priority ?? [],
+      todoist_intelligence: todoistSlices?.todoist_intelligence,
+    };
+
+    base = flattenGmailSignals(base);
+    const prioritized = await prioritizeContextEmails(base, trimmed);
+    const withJobHuntAnalysis = enrichGmailSignalsWithJobHuntAnalysis(prioritized);
+    const job_hunt_email_matches = await postJobHuntEmailSignals(withJobHuntAnalysis.gmail_signals);
+    if (trimmed && job_hunt_email_matches.length > 0) {
+      await syncContactsFromJobHuntEmailMatches(trimmed, job_hunt_email_matches);
+    }
+
+    const daily_intelligence = await enrichDailyIntelligenceWithAi(
+      buildDailyIntelligence(withJobHuntAnalysis.gmail_signals),
+    );
+
+    const nextContext: MyAssistDailyContext = {
+      ...withJobHuntAnalysis,
+      ...(job_hunt_email_matches.length > 0 ? { job_hunt_email_matches } : {}),
+      daily_intelligence,
+    };
+    const unified_daily_briefing = await buildUnifiedDailyBriefing(nextContext);
+    const good_morning_message = await buildGoodMorningMessage(unified_daily_briefing);
+
+    return {
+      context: {
+        ...nextContext,
+        unified_daily_briefing,
+        good_morning_message,
+      },
+      source: "live",
+    };
+  } catch (error) {
+    logServerEvent("warn", "fetch_daily_context_pipeline_failed", {
+      userId: trimmed,
+      message: error instanceof Error ? error.message : String(error),
+    });
+    const now = new Date().toISOString();
+    const run_date = now.slice(0, 10);
+    const emptyBase: MyAssistDailyContext = {
+      generated_at: now,
+      run_date,
+      gmail_signals: [],
+      calendar_today: [],
+      calendar_intelligence: buildCalendarIntelligence([], Date.now(), run_date),
+      todoist_overdue: [],
+      todoist_due_today: [],
+      todoist_upcoming_high_priority: [],
+      daily_intelligence: buildDailyIntelligence([]),
+    };
+    const unified_daily_briefing = await buildUnifiedDailyBriefing(emptyBase);
+    const good_morning_message = await buildGoodMorningMessage(unified_daily_briefing);
+    return {
+      context: {
+        ...emptyBase,
+        unified_daily_briefing,
+        good_morning_message,
+      },
+      source: "live",
+    };
+  }
 }
 
 const NO_SUBJECT_PLACEHOLDER = /^\(no subject\)$/i;

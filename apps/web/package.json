@@ -20,6 +20,7 @@
     "test:hosted-smoke": "cross-env RUN_MYASSIST_HOSTED_SMOKE=1 node --env-file=.env.local node_modules/vitest/vitest.mjs run lib/hostedRuntimeSmoke.test.ts",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "test:e2e:verbose": "cross-env DEBUG=pw:webserver playwright test --reporter=line",
     "test:e2e:billing-ui": "cross-env PLAYWRIGHT_BILLING_UI=1 playwright test tests/e2e/billing-status.spec.ts",
     "check:env": "tsx scripts/check-env-readiness.ts",
     "check:env:prod": "tsx scripts/check-env-readiness.ts --production-like",

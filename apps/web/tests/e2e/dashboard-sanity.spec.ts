@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { registerViaPasswordUi } from "./helpers/registerViaPasswordUi";
 
 /**
  * Structured sanity pass: register once, then check APIs and each dashboard tab.
@@ -13,10 +14,7 @@ test.describe("Dashboard sanity (E2E server + mock daily context)", () => {
 
     await test.step("Register and land on dashboard", async () => {
       await page.goto("/sign-in");
-      await page.getByRole("button", { name: "Register" }).click();
-      await page.getByLabel("Email").fill(email);
-      await page.locator("#sign-in-password").fill(password);
-      await page.getByRole("button", { name: "Create account" }).click();
+      await registerViaPasswordUi(page, email, password);
       await expect(page.getByText("Welcome back", { exact: false }).first()).toBeVisible({
         timeout: 30_000,
       });

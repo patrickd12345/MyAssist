@@ -166,7 +166,7 @@ export async function POST(req: Request) {
       code: normalized.code,
       status: normalized.status ?? 500,
     });
-    return jsonApiError(normalized.code, normalized.message, 500, requestId);
+    return jsonApiError(normalized.code, normalized.message, normalized.status ?? 503, requestId);
   }
 }
 

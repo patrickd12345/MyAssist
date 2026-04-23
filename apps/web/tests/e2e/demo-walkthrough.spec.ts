@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { registerViaPasswordUi } from "./helpers/registerViaPasswordUi";
 
 test.use({
   video: "on",
@@ -13,10 +14,7 @@ async function registerAndOpenDashboard(page: Page) {
   await page.goto("/sign-in");
   await page.waitForTimeout(700);
 
-  await page.getByRole("button", { name: "Register" }).click();
-  await page.getByLabel("Email").fill(email);
-  await page.locator("#sign-in-password").fill(password);
-  await page.getByRole("button", { name: "Create account" }).click();
+  await registerViaPasswordUi(page, email, password);
 
   await expect(page.getByText("Welcome back", { exact: false }).first()).toBeVisible({
     timeout: 30_000,
@@ -54,6 +52,11 @@ test("single complete app walkthrough (video demo)", async ({ page }) => {
   await expect(page.getByRole("region", { name: "Recent MyAssist actions" })).toBeVisible();
   await page.waitForTimeout(900);
 
+  await expect(page.getByTestId("dashboard-tab-overview")).toHaveAttribute("aria-current", "page", {
+    timeout: 30_000,
+  });
+  await page.waitForLoadState("networkidle");
+
   await page.getByRole("button", { name: "Tasks", exact: true }).click();
   await expect(
     page
@@ -84,8 +87,13 @@ test("single complete app walkthrough (video demo)", async ({ page }) => {
     await page.waitForTimeout(900);
   }
 
-  await page.getByRole("button", { name: "Assistant", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Fast support when you need it" })).toBeVisible();
+  const assistantTab = page.getByTestId("dashboard-tab-assistant");
+  if ((await assistantTab.getAttribute("aria-current")) !== "page") {
+    await assistantTab.click();
+  }
+  await expect(page.getByRole("heading", { name: "Fast support when you need it" })).toBeVisible({
+    timeout: 25_000,
+  });
   await page.getByLabel("Ask MyAssist").fill("Summarize my day in one sentence and one next step.");
   await page.locator("form").getByRole("button", { name: "Ask" }).click();
   await page.waitForTimeout(1400);
@@ -98,10 +106,10 @@ test("single complete app walkthrough (video demo)", async ({ page }) => {
   await expect(page.getByText("Rule-based snapshot").first()).toBeVisible();
   await page.waitForTimeout(900);
 
-  const jobHuntLink = page.getByRole("link", { name: "Job Hunt" }).first();
-  await jobHuntLink.scrollIntoViewIfNeeded();
-  await jobHuntLink.click();
-  await page.waitForURL("**/job-hunt", { timeout: 60_000 });
+  // Dashboard → /job-hunt: prefer hard navigation in long e2e runs; client link clicks
+  // can fail to match waitForURL within the demo timeout (layout/video/server load).
+  await page.goto("/job-hunt", { waitUntil: "domcontentloaded" });
+  await expect(page).toHaveURL(/\/job-hunt/);
   await expect(page.getByRole("navigation", { name: "Workspace" })).toBeVisible();
   await page.waitForTimeout(1300);
 

@@ -2083,7 +2083,9 @@ export function Dashboard({
   ];
   const showMainColumn =
     activeTab === "overview" || activeTab === "tasks" || activeTab === "inbox";
-  const showSideColumn = activeTab === "calendar" || activeTab === "assistant";
+  /** Calendar stays in the right column; Assistant is primary workspace (not buried under integrations). */
+  const showCalendarAside = activeTab === "calendar";
+  const showAssistantWorkspace = activeTab === "assistant";
 
   return (
     <div
@@ -2316,6 +2318,7 @@ export function Dashboard({
                 <button
                   key={tab.id}
                   type="button"
+                  data-testid={`dashboard-tab-${tab.id}`}
                   className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
                     activeTab === tab.id
                       ? "theme-button-primary"
@@ -2765,12 +2768,37 @@ export function Dashboard({
       ) : displayData ? (
         <div
           className={`grid gap-6 ${
-            showMainColumn && showSideColumn
+            showMainColumn && showCalendarAside
               ? "xl:grid-cols-[minmax(0,1.55fr)_minmax(320px,0.9fr)]"
               : ""
           }`}
         >
-          {showMainColumn ? (
+          {showAssistantWorkspace ? (
+            <div className="space-y-6">
+              <section className="glass-panel rounded-[30px] p-5">
+                <p className="section-title text-xs font-semibold">
+                  Ask MyAssist
+                </p>
+                <h2 className="theme-ink mt-2 text-xl font-semibold tracking-[-0.03em]">
+                  Fast support when you need it
+                </h2>
+                <p className="theme-muted mt-2 text-sm leading-6">
+                  Chat, draft tasks, and challenge the plan without taking over
+                  the page.
+                </p>
+                <div className="mt-4">
+                  <AssistantConsole
+                    context={displayData}
+                    compact
+                    communicationDraftInject={communicationDraftInject}
+                    onCommunicationDraftConsumed={
+                      clearCommunicationDraftInject
+                    }
+                  />
+                </div>
+              </section>
+            </div>
+          ) : showMainColumn ? (
             <div className="space-y-6">
               {activeTab === "overview" && nextAction ? (
                 <section className="glass-panel-strong rounded-[30px] p-6">
@@ -3806,7 +3834,7 @@ export function Dashboard({
             </div>
           ) : null}
 
-          {showSideColumn ? (
+          {showCalendarAside ? (
             <aside className="space-y-6">
               {activeTab === "calendar" ? (
                 <section
@@ -3878,31 +3906,6 @@ export function Dashboard({
                       ))}
                     </ul>
                   )}
-                </section>
-              ) : null}
-
-              {activeTab === "assistant" ? (
-                <section className="glass-panel rounded-[30px] p-5">
-                  <p className="section-title text-xs font-semibold">
-                    Ask MyAssist
-                  </p>
-                  <h2 className="theme-ink mt-2 text-xl font-semibold tracking-[-0.03em]">
-                    Fast support when you need it
-                  </h2>
-                  <p className="theme-muted mt-2 text-sm leading-6">
-                    Chat, draft tasks, and challenge the plan without taking
-                    over the page.
-                  </p>
-                  <div className="mt-4">
-                    <AssistantConsole
-                      context={displayData}
-                      compact
-                      communicationDraftInject={communicationDraftInject}
-                      onCommunicationDraftConsumed={
-                        clearCommunicationDraftInject
-                      }
-                    />
-                  </div>
                 </section>
               ) : null}
             </aside>

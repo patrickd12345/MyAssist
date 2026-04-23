@@ -10,6 +10,8 @@ const billingUiE2E = process.env.PLAYWRIGHT_BILLING_UI === "1";
 
 export default defineConfig({
   testDir: "./tests/e2e",
+  /** Long walks (demo video, post-registration hydration) can exceed 30s on cold dev. */
+  timeout: 90_000,
   /** File-backed user store (`MYASSIST_USER_STORE_FILE`) is shared; parallel workers race and flake registration. */
   workers: 1,
   fullyParallel: false,

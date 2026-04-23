@@ -17,6 +17,7 @@
     "build:harness": "pnpm --filter @bookiji-inc/auth-test-harness build && pnpm --filter @bookiji-inc/stripe-test-harness build",
     "web:test": "pnpm run build:harness && npm --prefix apps/web run test",
     "web:test:e2e": "pnpm run build:harness && npm --prefix apps/web run test:e2e",
+    "web:test:e2e:verbose": "pnpm run build:harness && npm --prefix apps/web run test:e2e:verbose",
     "web:test:e2e:billing-ui": "npm --prefix apps/web run test:e2e:billing-ui",
     "web:start": "npm --prefix apps/web run start",
     "web:clean": "npm --prefix apps/web run clean",

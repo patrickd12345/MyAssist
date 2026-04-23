@@ -16,6 +16,7 @@ import { buildGoodMorningMessage } from "@/lib/goodMorning";
 import { buildUnifiedDailyBriefing } from "@/lib/unifiedDailyBriefing";
 import type { MyAssistDailyContext } from "@/lib/types";
 import { jsonLegacyApiError } from "@/lib/api/error-contract";
+import { logServerEvent } from "@/lib/serverLog";
 import { isMyAssistDemoModeEnabled } from "@/lib/env/runtime";
 import { logKpiDailyContextServed } from "@/lib/productKpi";
 
@@ -285,6 +286,22 @@ export async function GET(request: NextRequest) {
     return res;
   } catch (e) {
     const message = e instanceof Error ? e.message : "Unknown error";
-    return jsonLegacyApiError(String(message), 502);
+    logServerEvent("warn", "daily_context_get_failed", { message });
+    try {
+      const userId = await getSessionUserId();
+      if (userId) {
+        const cached = await readLastDailyContext(userId);
+        if (cached) {
+          const nudges = await getTaskNudges(userId);
+          const context = { ...cached, user_task_nudges: nudges };
+          const res = NextResponse.json(context);
+          res.headers.set(MYASSIST_CONTEXT_SOURCE_HEADER, "cache");
+          return res;
+        }
+      }
+    } catch {
+      // fall through to error response
+    }
+    return jsonLegacyApiError("daily_context_unavailable", 503);
   }
 }

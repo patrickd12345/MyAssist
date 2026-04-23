@@ -1,23 +1,34 @@
 import { expect, test } from "@playwright/test";
+import { registerViaPasswordUi } from "./helpers/registerViaPasswordUi";
 
 /**
  * Submit via Ask button (not Enter-only) and assert POST /api/assistant succeeds.
  */
 test("Ask button sends message and shows user bubble plus assistant reply", async ({ page }) => {
+  test.setTimeout(90_000);
   const email = `e2e-asst-${Date.now()}@example.com`;
   const password = "testpass1234";
 
   await page.goto("/sign-in");
-  await page.getByRole("button", { name: "Register" }).click();
-  await page.getByLabel("Email").fill(email);
-  await page.locator("#sign-in-password").fill(password);
-  await page.getByRole("button", { name: "Create account" }).click();
+  await registerViaPasswordUi(page, email, password);
 
   await expect(page.getByText("Welcome back", { exact: false }).first()).toBeVisible({
     timeout: 30_000,
   });
 
-  await page.getByRole("button", { name: "Assistant", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Overview", exact: true })).toBeVisible({
+    timeout: 30_000,
+  });
+
+  await expect(page.getByTestId("dashboard-tab-overview")).toHaveAttribute("aria-current", "page", {
+    timeout: 30_000,
+  });
+  await page.waitForLoadState("networkidle");
+
+  await page.getByTestId("dashboard-tab-assistant").click();
+  await expect(page.getByTestId("dashboard-tab-assistant")).toHaveAttribute("aria-current", "page", {
+    timeout: 10_000,
+  });
   await expect(page.getByRole("heading", { name: "Fast support when you need it" })).toBeVisible({
     timeout: 25_000,
   });
