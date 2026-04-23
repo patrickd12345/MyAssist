@@ -26,8 +26,13 @@ export default defineConfig({
   webServer: {
     command: `pnpm exec next dev -H 127.0.0.1 -p ${e2ePort}`,
     url: e2eOrigin,
-    reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
+    /**
+     * Always start a fresh dev server for E2E.
+     * Reusing existing local servers can leak stale env/config after interrupted runs.
+     */
+    reuseExistingServer: false,
+    /** Cold Next.js startup/compile can exceed 2m on busy local machines. */
+    timeout: 300_000,
     env: {
       MYASSIST_USE_MOCK_CONTEXT: "true",
       MYASSIST_AUTH_DISABLED: "true",
