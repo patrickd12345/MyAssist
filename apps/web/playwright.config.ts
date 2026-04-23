@@ -24,7 +24,7 @@ export default defineConfig({
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
-    command: `pnpm exec next dev -H 127.0.0.1 -p ${e2ePort}`,
+    command: `cross-env NODE_OPTIONS=--max-old-space-size=6144 pnpm exec next dev -H 127.0.0.1 -p ${e2ePort}`,
     url: e2eOrigin,
     /**
      * Always start a fresh dev server for E2E.
