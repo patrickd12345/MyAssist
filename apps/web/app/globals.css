@@ -479,6 +479,43 @@ body::after {
   box-shadow: 0 12px 30px -18px var(--accent);
 }
 
+.ui-variant-toggle-shell {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 60;
+}
+
+.ui-variant-toggle {
+  color: #f8fafc;
+  background: rgba(15, 23, 42, 0.92);
+  border-color: rgba(148, 163, 184, 0.38);
+  box-shadow: 0 8px 20px rgba(2, 6, 23, 0.25);
+}
+
+.ui-variant-toggle:disabled {
+  opacity: 0.72;
+}
+
+.ui-variant-refactor-shell,
+.ui-variant-refactor-home,
+.ui-variant-refactor-page,
+.ui-variant-refactor-auth {
+  position: relative;
+}
+
+.ui-variant-refactor-banner {
+  margin: 0 auto 0.75rem;
+  max-width: min(1200px, calc(100% - 1.5rem));
+  border: 1px solid rgba(180, 83, 9, 0.35);
+  background: rgba(252, 211, 77, 0.12);
+  color: #854d0e;
+  border-radius: 0.875rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
 .text-balance {
   text-wrap: balance;
 }

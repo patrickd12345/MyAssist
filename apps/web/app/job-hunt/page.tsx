@@ -1,7 +1,8 @@
-import { Suspense } from "react";
-import { JobHuntCockpit } from "@/components/JobHuntCockpit";
-import { getSessionUserId } from "@/lib/session";
-import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
+import { ClassicJobHuntPage } from "@/components/ui-variants/classic/JobHuntPage";
+import { RefactorJobHuntPage } from "@/components/ui-variants/refactor/JobHuntPage";
+import { UiVariantFrame } from "@/components/ui-variants/switchers/UiVariantFrame";
+import { resolveUiVariantForServerPage } from "@/lib/uiVariant";
 
 export const dynamic = "force-dynamic";
 
@@ -10,21 +11,16 @@ export const metadata = {
   description: "Separate job hunt plugin UI (MCP job-hunt-manager)",
 };
 
-export default async function JobHuntPage() {
-  const userId = await getSessionUserId();
-  if (!userId) {
-    redirect("/sign-in?callbackUrl=/job-hunt");
-  }
+type PageSearchParams = Promise<Record<string, string | string[] | undefined>>;
+
+export default async function JobHuntPage({ searchParams }: { searchParams: PageSearchParams }) {
+  const [sp, cookieStore] = await Promise.all([searchParams, cookies()]);
+  const variant = await resolveUiVariantForServerPage({ searchParams: sp, cookieStore });
 
   return (
-    <Suspense
-      fallback={
-        <div className="theme-shell mx-auto min-h-screen max-w-[1900px] px-4 py-12 text-sm text-zinc-400">
-          Loading job hunt…
-        </div>
-      }
-    >
-      <JobHuntCockpit />
-    </Suspense>
+    <UiVariantFrame variant={variant}>
+      {variant === "refactor" ? <RefactorJobHuntPage /> : <ClassicJobHuntPage />}
+    </UiVariantFrame>
   );
 }
+
