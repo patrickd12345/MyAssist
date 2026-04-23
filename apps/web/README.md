@@ -110,7 +110,9 @@ If Next.js reports that port **3000** is in use and falls back to **3001+**, sto
 
 ## Environment variables
 
-**Infisical is the canonical source for team/shared secrets.** Use `pnpm dev:infisical` for local development, and sync or mirror the same canonical names into Vercel Preview/Production until automated sync is in place. `apps/web/.env.local` is a local fallback only:
+**Infisical is the canonical source for team/shared secrets.** Use `pnpm dev:infisical` for local development, and sync or mirror the same canonical names into Vercel Preview/Production until automated sync is in place. `apps/web/.env.local` is a local fallback only.
+For a consolidated runbook (env, Supabase auth, OAuth/magic links, `NEXT_PUBLIC_SITE_URL`, sessions, Playwright/E2E boot, and common Vercel issues), see the product repo: `../../docs/TROUBLESHOOTING.md`.
+
 
 - `AUTH_SECRET` (or `NEXTAUTH_SECRET`): secret for Auth.js session cookies (required for `next build` / production; dev-only fallback when unset in development). **Store in Infisical** `/myassist` for normal local dev.
 - `MYASSIST_REGISTRATION_INVITE_CODE`: optional; when set, registration must send the same value as `inviteCode` in the JSON body

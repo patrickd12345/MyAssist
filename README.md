@@ -14,6 +14,7 @@ Personal operations system as a unified live operational window over Gmail, Goog
 - `docs/product-kpis.md`: product KPI definitions and structured log event names.
 - `docs/mcp-myassist-tools.md` and `docs/schemas/`: MCP tool list and JSON schemas for interoperability.
 - `docs/owasp-llm-myassist.md`: OWASP LLM Top 10 mapping for MCP and assistant surfaces.
+- `docs/TROUBLESHOOTING.md`: Single runbook for auth, env, Supabase, and OAuth debugging.
 - `apps/myassist-mcp/`: stdio MCP server (`get_daily_context`) calling the web app with bearer auth.
 - `apps/web`: `pnpm check:env` / `pnpm check:env:prod` — env readiness report (no secret values printed).
 - `PROJECT_TRACKER.md`: execution tracker aligned to the live-window model.
