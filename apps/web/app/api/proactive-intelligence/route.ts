@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { getApiRequestId, jsonApiError } from "@/lib/api/error-contract";
 import { buildDailySynthesis } from "@/lib/services/dailySynthesisService";
 import { buildJobHuntExpansion } from "@/lib/services/jobHuntExpansionService";
 import { buildProactiveIntelligence } from "@/lib/services/proactiveIntelligenceService";
@@ -12,26 +13,27 @@ import { isMyAssistDailyContext } from "@/lib/validateContext";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
+  const requestId = getApiRequestId(request);
   const userId = await getSessionUserId();
   if (!userId) {
-    return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
+    return jsonApiError("unauthorized", "Unauthorized", 401, requestId);
   }
 
   let body: unknown;
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ ok: false, error: "invalid_json" }, { status: 400 });
+    return jsonApiError("invalid_json", "Invalid JSON", 400, requestId);
   }
 
   if (!body || typeof body !== "object") {
-    return NextResponse.json({ ok: false, error: "invalid_body" }, { status: 400 });
+    return jsonApiError("invalid_body", "Expected JSON object", 400, requestId);
   }
 
   const ctx = (body as Record<string, unknown>).context ?? body;
   if (!isMyAssistDailyContext(ctx)) {
-    logServerEvent("warn", "proactive_intelligence_invalid_context", {});
-    return NextResponse.json({ ok: false, error: "invalid_context" }, { status: 400 });
+    logServerEvent("warn", "proactive_intelligence_invalid_context", { requestId });
+    return jsonApiError("invalid_context", "Invalid daily context format", 400, requestId);
   }
 
   const currentContext = ctx as MyAssistDailyContext;

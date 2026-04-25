@@ -49,11 +49,8 @@ describe("/api/job-hunt/saved", () => {
 
     const req = new Request("http://localhost/api/job-hunt/saved");
     const res = await GET(req);
-    expect(res.status).toBe(200);
-    const body = (await res.json()) as { ok?: boolean; jobs?: unknown[]; error?: string };
-    expect(body.ok).toBe(false);
-    expect(Array.isArray(body.jobs)).toBe(true);
-    expect(body.jobs).toHaveLength(0);
+    expect(res.status).toBe(500);
+    const body = (await res.json()) as { error?: string };
     expect(typeof body.error).toBe("string");
   });
 

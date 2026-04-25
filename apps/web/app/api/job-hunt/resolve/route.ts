@@ -26,8 +26,8 @@ export async function GET(req: Request) {
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     if (msg.includes("Unknown track")) {
-      return NextResponse.json({ ok: false, error: msg }, { status: 400 });
+      return jsonLegacyApiError(msg, 400);
     }
-    return NextResponse.json({ ok: false, error: msg }, { status: 500 });
+    return jsonLegacyApiError(msg, 500);
   }
 }

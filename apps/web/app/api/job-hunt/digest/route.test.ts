@@ -36,9 +36,8 @@ describe("GET /api/job-hunt/digest", () => {
     globalThis.fetch = vi.fn().mockRejectedValue(new Error("fetch failed"));
 
     const res = await GET();
-    expect(res.status).toBe(200);
-    const body = (await res.json()) as { ok: boolean; error?: string };
-    expect(body.ok).toBe(false);
+    expect(res.status).toBe(500);
+    const body = (await res.json()) as { error?: string };
     expect(body.error).toContain("fetch failed");
   });
 });
