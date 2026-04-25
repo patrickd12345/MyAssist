@@ -1,57 +1,40 @@
 import { NextResponse } from "next/server";
-import { resolveMyAssistRuntimeEnv } from "@/lib/env/runtime";
-import { resolvePublicOrigin } from "@/lib/integrations/origin";
 
 export const dynamic = "force-dynamic";
 
-const GOOGLE_INTEGRATION_CALLBACK_PATH = "/api/integrations/google/callback";
+type OAuthCapabilitySelfCheck = {
+  googleEnabled: boolean;
+  microsoftEnabled: boolean;
+  passwordResetEnabled: boolean;
+  authEnabled: boolean;
+};
 
-function hasBoth(id: string, secret: string): boolean {
-  return Boolean(id && secret);
+function hasEnv(name: string): boolean {
+  return Boolean(process.env[name]?.trim());
 }
 
-/**
- * BKI-019: non-secret production OAuth diagnostic for login/provider console setup.
- *
- * This intentionally returns callback URLs and boolean readiness only. It never returns
- * OAuth client ids, client secrets, Auth.js secrets, reset tokens, or Resend keys.
- */
-export async function GET(req: Request) {
-  const origin = resolvePublicOrigin(req);
-  const runtime = resolveMyAssistRuntimeEnv();
+function disabledCapabilities(): OAuthCapabilitySelfCheck {
+  return {
+    googleEnabled: false,
+    microsoftEnabled: false,
+    passwordResetEnabled: false,
+    authEnabled: false,
+  };
+}
 
-  const googleAuthCallbackUrl = `${origin}/sign-in`;
-  const microsoftAuthCallbackUrl = `${origin}/sign-in`;
-  const googleIntegrationCallbackUrl = `${origin}${GOOGLE_INTEGRATION_CALLBACK_PATH}`;
+function resolveCapabilities(): OAuthCapabilitySelfCheck {
+  return {
+    googleEnabled: hasEnv("GOOGLE_CLIENT_ID"),
+    microsoftEnabled: hasEnv("MICROSOFT_CLIENT_ID") && hasEnv("MICROSOFT_CLIENT_SECRET"),
+    passwordResetEnabled: hasEnv("RESEND_API_KEY") && hasEnv("MYASSIST_PASSWORD_RESET_EMAIL_FROM"),
+    authEnabled: hasEnv("AUTH_SECRET") && hasEnv("AUTH_URL"),
+  };
+}
 
-  return NextResponse.json({
-    ok: true,
-    origin,
-    providerStatus: {
-      authSecretConfigured: Boolean(runtime.authSecret),
-      authUrlConfigured: Boolean(runtime.authUrl || runtime.publicAppUrl),
-      googleLoginConfigured: hasBoth(runtime.googleClientId, runtime.googleClientSecret),
-      microsoftLoginConfigured: hasBoth(runtime.microsoftClientId, runtime.microsoftClientSecret),
-      passwordResetEmailConfigured: hasBoth(runtime.resendApiKey, runtime.passwordResetEmailFrom),
-    },
-    supabaseRedirectTargets: {
-      google: googleAuthCallbackUrl,
-      microsoftEntraId: microsoftAuthCallbackUrl,
-    },
-    integrationCallbacks: {
-      google: googleIntegrationCallbackUrl,
-    },
-    googleCloudConsole: {
-      authorizedJavaScriptOrigin: origin,
-      authorizedRedirectUris: [googleAuthCallbackUrl, googleIntegrationCallbackUrl],
-    },
-    microsoftEntraId: {
-      redirectUri: microsoftAuthCallbackUrl,
-    },
-    notes: [
-      "Google login and Gmail/Calendar integration are separate callback URLs.",
-      "Add both Google redirect URIs to the same OAuth 2.0 Web client that matches this deployment's GOOGLE_CLIENT_ID unless intentionally using separate clients.",
-      "This endpoint does not expose secret values.",
-    ],
-  });
+export async function GET() {
+  try {
+    return NextResponse.json(resolveCapabilities());
+  } catch {
+    return NextResponse.json(disabledCapabilities());
+  }
 }

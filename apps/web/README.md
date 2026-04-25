@@ -8,7 +8,7 @@ Interactive assistant UI as a unified live window over connected provider system
 - Builds the unified Today view in app services and adapters.
 - Exposes an interactive assistant through `/api/assistant`.
 - Exposes bearer-authenticated MCP routes for the [`myassist-mcp`](../../apps/myassist-mcp/README.md) stdio server: `GET /api/mcp/daily-context`, `GET /api/mcp/action-candidates`, `POST /api/mcp/approve`, `POST /api/mcp/execute`. Configure either legacy `MYASSIST_MCP_TOKEN` + `MYASSIST_MCP_USER_ID` or optional `MYASSIST_MCP_CLIENTS_JSON` / `MYASSIST_MCP_CLIENTS_FILE` for multiple bearer-to-user mappings; optional `MYASSIST_ACTION_APPROVAL_SECRET` for signing approval tokens in production.
-- Uses local Ollama when reachable and deterministic fallback when not.
+- Uses AI gateway in production; local Ollama remains supported for development.
 - Uses a light-first visual theme by default, with optional dark/art themes.
 - Supports direct Todoist task completion from the dashboard.
 - Supports press-and-hold defer actions from the task button.
@@ -63,6 +63,9 @@ Session protection is enforced in server components and API route handlers (no E
 
 ## Production (Vercel, e.g. myassist.bookiji.com)
 
+Production smoke checklist: [`docs/MYASSIST_PRODUCTION_SMOKE.md`](../../docs/MYASSIST_PRODUCTION_SMOKE.md).
+Production secrets gap runbook: [`docs/MYASSIST_PRODUCTION_SECRETS_RUNBOOK.md`](../../docs/MYASSIST_PRODUCTION_SECRETS_RUNBOOK.md).
+
 You may have **more than one** Vercel project pointing at this repo (e.g. **`web`** vs **`my-assist`**). **Environment variables are per project.** If runtime logs show `MissingSecret` on one hostname but not another, open **Vercel → that project → Settings → Environment Variables** and ensure **`AUTH_SECRET`** (and **`AUTH_URL`**) exist for **Production** (and **Preview** if you use preview URLs).
 
 The Vercel project linked to production should use this app as the deploy root:
@@ -70,11 +73,20 @@ The Vercel project linked to production should use this app as the deploy root:
 - **Git repository:** `patrickd12345/MyAssist`, branch `main`
 - **Monorepo root:** leave **Root Directory** empty in the Vercel dashboard (repo root). Deployment config lives in **`vercel.json`** at the repo root: install → `pnpm install`, build → **`pnpm run vercel-build`** (`pnpm --filter web run build`), **output** → **`apps/web/.next`** so Vercel finds the Next.js build output.
 - **Next.js detector:** the repo **root** `package.json` lists **`next`** (same version as `apps/web`) so Vercel recognizes the framework while the real app code stays under **`apps/web`**.
-- **Production env:** set at least `AUTH_SECRET` and `AUTH_URL` (public origin, e.g. `https://myassist.bookiji.com`). Add the **same** `AUTH_SECRET` (and other secrets) under **Preview** too if you use preview deployments—otherwise `NODE_ENV=production` previews will fail auth at runtime. Mirror any Supabase / OAuth values from `apps/web/.env.example` so hosted mode matches local behavior. The CLI has no one-shot “import `.env`” command; use the dashboard **bulk paste** or run `scripts/push-env-to-vercel.ps1` from `apps/web` (see script header). Review keys before pushing—overwrite uses `vercel env add --force`.
+- **Production env:** set the exact hosted contract below in Infisical `/platform` + `/myassist` and mirror the same names into the Vercel Production project. Production readiness rejects local-only service URLs such as `localhost` / `127.0.0.1`, requires `AI_MODE=gateway`, and requires `JOB_HUNT_DIGEST_URL` instead of the local `localhost:3847` default. Add the **same** `AUTH_SECRET` (and other secrets) under **Preview** too if you use preview deployments—otherwise `NODE_ENV=production` previews will fail auth at runtime. The CLI has no one-shot “import `.env`” command; use the dashboard **bulk paste** or run `scripts/push-env-to-vercel.ps1` from `apps/web` (see script header). Review keys before pushing—overwrite uses `vercel env add --force`.
 - **Custom domain:** assign `myassist.bookiji.com` to this project’s Production deployment in Vercel → Domains.
 - **Deployment Protection (Vercel Authentication):** If anonymous hits to `*.vercel.app` return **401** and an HTML **Vercel** login page (not your app), the project has **Vercel Authentication** enabled. The Vercel CLI does not toggle this; use **Project → Settings → Deployment Protection** or `PATCH /v10/projects/{name}` with `{"ssoProtection":null}` and a bearer token. Re-enable protection if you need private previews.
 - **OAuth + integration pills on Vercel:** Gmail/Todoist/Calendar tokens are stored in **Supabase** when `SUPABASE_URL` (or `NEXT_PUBLIC_SUPABASE_URL`) and `SUPABASE_SECRET_KEY` are set; otherwise the app falls back to **`.myassist-memory` on disk**, which **does not persist** on serverless. If OAuth finishes but pills stay “disconnected”, configure Supabase env vars and redeploy. After connect, the dashboard shows a short **OAuth completed** banner and refetches status (query `?integrations=connected` is stripped from the URL).
 - **File memory on Vercel:** When `VERCEL` is set, file-backed paths use **`/tmp/myassist-memory`** (writable) instead of `/var/task/.../.myassist-memory`, so **Refresh** and daily context no longer fail with `ENOENT` on `mkdir`. That cache is **ephemeral**; durable memory still needs **Supabase** where the app supports it.
+
+### Required production env names
+
+Infisical/Vercel production must include these names with hosted values:
+
+- `/platform`: `SUPABASE_URL` or `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` or `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` or `SUPABASE_SERVICE_ROLE_KEY`, `SHARED_DB_TIER=prod`, `SHARED_DB_ENV_STRICT=1`
+- `/myassist`: `AUTH_SECRET`, `AUTH_URL`, `NEXT_PUBLIC_SITE_URL`, `MYASSIST_INTEGRATIONS_ENCRYPTION_KEY`, `AI_MODE=gateway`, `VERCEL_AI_BASE_URL` or `AI_GATEWAY_BASE_URL`, `VERCEL_VIRTUAL_KEY` or `AI_GATEWAY_API_KEY` or `OPENAI_API_KEY`, `OPENAI_MODEL` or `AI_GATEWAY_MODEL`, `JOB_HUNT_DIGEST_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `TODOIST_CLIENT_ID`, `TODOIST_CLIENT_SECRET`, `MICROSOFT_CLIENT_ID`, `MICROSOFT_CLIENT_SECRET`, `RESEND_API_KEY`, `MYASSIST_PASSWORD_RESET_EMAIL_FROM`
+
+Optional production names: `BILLING_ENABLED`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `MYASSIST_STRIPE_PRICE_ID` or `STRIPE_PRICE_ID`, `SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_DSN`, `JOB_HUNT_SIGNALS_URL`, `MYASSIST_MCP_TOKEN` / `MYASSIST_MCP_CLIENTS_JSON`, and `MYASSIST_ACTION_APPROVAL_SECRET`.
 
 ## Local run
 
@@ -149,7 +161,7 @@ If Next.js reports that port **3000** is in use and falls back to **3001+**, sto
 - `MYASSIST_PASSWORD_RESET_EMAIL_FROM`: verified sender for MyAssist password-reset email. Aliases: `PASSWORD_RESET_EMAIL_FROM`, `RESEND_FROM_EMAIL`.
 - `TODOIST_CLIENT_ID`: Todoist OAuth client id for direct task actions
 - `TODOIST_CLIENT_SECRET`: Todoist OAuth client secret
-- `AI_MODE`: `ollama` (default), `gateway` (OpenAI-compatible API via `VERCEL_AI_BASE_URL` + key), or `fallback` (deterministic assistant only). On Vercel, `ollama` with default `127.0.0.1` cannot reach a laptop Ollama — use `gateway` or a remote `OLLAMA_BASE_URL`. See [`docs/commercial-pilot-readiness.md`](../docs/commercial-pilot-readiness.md).
+- `AI_MODE`: `ollama` (local dev default), `gateway` (OpenAI-compatible API via `VERCEL_AI_BASE_URL` + key), or `fallback` (deterministic assistant only). Production requires `AI_MODE=gateway`; `ollama` with default `127.0.0.1` is rejected in production readiness/runtime guards. See [`docs/commercial-pilot-readiness.md`](../docs/commercial-pilot-readiness.md).
 - `VERCEL_AI_BASE_URL` / `AI_GATEWAY_BASE_URL`, `VERCEL_VIRTUAL_KEY` / `OPENAI_API_KEY`: gateway inference when `AI_MODE=gateway`
 - `OLLAMA_BASE_URL`: Ollama base URL, default `http://127.0.0.1:11434`
 - `OLLAMA_MODEL`: optional Ollama model name, default `llama3.2:3b`
@@ -161,6 +173,8 @@ Infisical-first minimum local set:
 - `/platform`: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `SHARED_DB_TIER=dev`, `SHARED_DB_ENV_STRICT=1`
 - `/myassist`: `AUTH_SECRET`, `AUTH_URL`, **`NEXT_PUBLIC_SITE_URL`** (public MyAssist origin; OAuth / magic link `redirectTo`), `MYASSIST_INTEGRATIONS_ENCRYPTION_KEY`, `MYASSIST_GMAIL_CLIENT_ID`, `MYASSIST_GMAIL_CLIENT_SECRET`, `MICROSOFT_CLIENT_ID`, `MICROSOFT_CLIENT_SECRET`, `RESEND_API_KEY`, `MYASSIST_PASSWORD_RESET_EMAIL_FROM`, Todoist connect (`TODOIST_CLIENT_ID` / `TODOIST_CLIENT_SECRET` or `MYASSIST_TODOIST_*`), optional `TODOIST_API_TOKEN`, and (for `pnpm dev:all`) job-hunt + Ollama as you use them: `JOB_HUNT_LINKEDIN_RSS_URLS`, `OLLAMA_BASE_URL`, `OLLAMA_MODEL`, `OLLAMA_HEADLINE_MODELS`, `OLLAMA_EMAIL_IMPORTANCE_MODELS`
 
+Infisical-first production set uses the required production env names above. Do not store production `AUTH_URL`, `NEXT_PUBLIC_SITE_URL`, `JOB_HUNT_DIGEST_URL`, gateway URLs, or optional service URLs with localhost values.
+
 **Do not** put the following in `/myassist` for the Next app—they are either unused by `apps/web` or belong elsewhere: `MYASSIST_N8N_WEBHOOK_URL` / `MYASSIST_N8N_WEBHOOK_TOKEN` / `MYASSIST_N8N_API_KEY` (n8n is optional tooling; the dashboard does not call these), duplicate `VITE_SUPABASE_*` if `NEXT_PUBLIC_SUPABASE_*` is already set (same values; runtime reads the `NEXT_PUBLIC` / `SUPABASE_*` names), `SUPABASE_ACCESS_TOKEN` (Supabase **CLI** token for `supabase` commands—not the JS client), and `VERCEL_TOKEN` (Vercel **CLI** / API—not Next.js `process.env` at runtime).
 
 The file `apps/web/.infisical.json` is local machine state from `infisical init` and should not be committed.
@@ -168,7 +182,7 @@ The file `apps/web/.infisical.json` is local machine state from `infisical init`
 Notes:
 
 - **Daily context** default path (`GET /api/daily-context`) builds the Today payload from **live** provider APIs unless **`MYASSIST_DEMO_MODE=true`** (curated demo snapshot in `lib/demoDailyContext.ts`, no provider reads; header **`demo`**) or **`MYASSIST_USE_MOCK_CONTEXT=true`** (minimal mock; header **`mock`**). Demo mode takes precedence over mock. The response header `x-myassist-context-source` is **`live`**, **`demo`**, **`mock`**, or **`cache`** (`?source=cache` loads the last written snapshot from disk under `.myassist-memory` — useful for debugging, not a canonical data store). Demo responses are not written to that snapshot cache.
-- **Timeouts:** `fetchDailyContextLive` caps each parallel provider leg (Gmail, Calendar, Todoist) at **120s** (`withTimeout` in `lib/fetchDailyContext.ts`); optional daily-intelligence / briefing / good-morning AI summary calls cap at **60s** and skip the AI pass entirely when there is nothing meaningful to summarize. The dashboard uses `dailyContextFetchInit()` (`lib/dailyContextClient.ts`, `AbortSignal.timeout`, **180s**) so Refresh cannot spin forever if the route stalls. `/api/assistant` also caps model calls at **60s** and falls back cleanly instead of hanging the chat UI.
+- **Timeouts:** `fetchDailyContextLive` caps each parallel provider leg (Gmail, Calendar, Todoist) at **120s** (`withTimeout` in `lib/fetchDailyContext.ts`); optional daily-intelligence / briefing / good-morning AI summary calls cap at **60s** and skip the AI pass entirely when there is nothing meaningful to summarize. The dashboard uses `dailyContextFetchInit()` (`lib/dailyContextClient.ts`, `AbortSignal.timeout`, **180s**) so Refresh cannot spin forever if the route stalls. `/api/assistant` also caps model calls and falls back cleanly instead of hanging the chat UI. Chat tries the configured Ollama model, then bounded local fallbacks including `tinyllama:latest`; if a local model responds with unusable structured JSON, the route keeps the model metadata and repairs the visible answer with the deterministic assistant reply.
 - Provider data is fetched live on demand.
 - Writes are sent directly to provider APIs.
 - UI state should auto-refresh after successful writes.

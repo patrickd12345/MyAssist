@@ -3,15 +3,22 @@ import { GET } from "./route";
 
 describe("GET /api/job-hunt/digest", () => {
   const originalFetch = globalThis.fetch;
+  const originalEnv = { ...process.env };
 
   beforeEach(() => {
+    process.env = { ...originalEnv };
+    vi.stubEnv("NODE_ENV", "test");
     process.env.MYASSIST_AUTH_DISABLED = "true";
     process.env.MYASSIST_DEV_USER_ID = "test-user";
+    delete process.env.VERCEL_ENV;
+    delete process.env.JOB_HUNT_DIGEST_URL;
   });
 
   afterEach(() => {
     globalThis.fetch = originalFetch;
     vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+    process.env = { ...originalEnv };
   });
 
   it("returns digest when job-hunt digest server responds", async () => {
@@ -40,5 +47,30 @@ describe("GET /api/job-hunt/digest", () => {
     const body = (await res.json()) as { ok: boolean; error?: string };
     expect(body.ok).toBe(false);
     expect(body.error).toContain("fetch failed");
+  });
+
+  it("rejects localhost digest URLs in production", async () => {
+    vi.stubEnv("VERCEL_ENV", "production");
+    process.env.JOB_HUNT_DIGEST_URL = "http://127.0.0.1:3847/digest";
+    globalThis.fetch = vi.fn();
+
+    const res = await GET();
+    expect(res.status).toBe(500);
+    const body = (await res.json()) as { ok: boolean; error?: string };
+    expect(body.ok).toBe(false);
+    expect(body.error).toContain("must not point at localhost");
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+  });
+
+  it("requires JOB_HUNT_DIGEST_URL in production", async () => {
+    vi.stubEnv("VERCEL_ENV", "production");
+    globalThis.fetch = vi.fn();
+
+    const res = await GET();
+    expect(res.status).toBe(500);
+    const body = (await res.json()) as { ok: boolean; error?: string };
+    expect(body.ok).toBe(false);
+    expect(body.error).toContain("JOB_HUNT_DIGEST_URL is required");
+    expect(globalThis.fetch).not.toHaveBeenCalled();
   });
 });

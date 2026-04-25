@@ -2,6 +2,8 @@
  * Pure env readiness analysis for MyAssist (no I/O, no secrets logged).
  */
 
+import { findConfiguredLocalhostServiceUrls, isLocalhostServiceUrl } from "./urlGuards";
+
 export type EnvReadinessItem = {
   id: string;
   ok: boolean;
@@ -52,6 +54,9 @@ export function analyzeMyAssistEnv(
   const googleLoginOk =
     hasAny(env, ["GOOGLE_CLIENT_ID", "MYASSIST_GMAIL_CLIENT_ID", "MYASSIST_GOOGLE_CLIENT_ID"]) &&
     hasAny(env, ["GOOGLE_CLIENT_SECRET", "MYASSIST_GMAIL_CLIENT_SECRET", "MYASSIST_GOOGLE_CLIENT_SECRET"]);
+  const todoistOAuthOk =
+    hasAny(env, ["TODOIST_CLIENT_ID", "MYASSIST_TODOIST_CLIENT_ID"]) &&
+    hasAny(env, ["TODOIST_CLIENT_SECRET", "MYASSIST_TODOIST_CLIENT_SECRET"]);
   const microsoftLoginOk =
     hasAny(env, [
       "MICROSOFT_CLIENT_ID",
@@ -82,7 +87,14 @@ export function analyzeMyAssistEnv(
   });
 
   const supabaseUrlOk = hasAny(env, ["SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_URL", "VITE_SUPABASE_URL"]);
+  const supabaseAnonKeyOk = hasAny(env, [
+    "SUPABASE_ANON_KEY",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+    "VITE_SUPABASE_ANON_KEY",
+    "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+  ]);
   const supabaseKeyOk = hasAny(env, ["SUPABASE_SECRET_KEY", "SUPABASE_SERVICE_ROLE_KEY"]);
+  const integrationsEncryptionKeyOk = hasAny(env, ["MYASSIST_INTEGRATIONS_ENCRYPTION_KEY"]);
   const needsSupabase = productionLike || strictTier;
 
   sections.push({
@@ -96,6 +108,13 @@ export function analyzeMyAssistEnv(
           : "Optional for local file-backed storage.",
       ),
       item(
+        "NEXT_PUBLIC_SUPABASE_ANON_KEY or publishable alias",
+        supabaseAnonKeyOk || !needsSupabase,
+        needsSupabase
+          ? "Required for Supabase Auth PKCE callbacks and browser auth clients."
+          : "Optional when local auth/storage is not using Supabase.",
+      ),
+      item(
         "SUPABASE_SECRET_KEY or SUPABASE_SERVICE_ROLE_KEY",
         supabaseKeyOk || !needsSupabase,
         needsSupabase
@@ -104,8 +123,10 @@ export function analyzeMyAssistEnv(
       ),
       item(
         "MYASSIST_INTEGRATIONS_ENCRYPTION_KEY",
-        hasAny(env, ["MYASSIST_INTEGRATIONS_ENCRYPTION_KEY"]) || !productionLike,
-        "Strongly recommended in production so OAuth tokens survive AUTH_SECRET rotation.",
+        integrationsEncryptionKeyOk || !productionLike,
+        productionLike
+          ? "Required in production so encrypted OAuth tokens survive AUTH_SECRET rotation."
+          : "Strongly recommended when sharing OAuth token storage across environments.",
       ),
     ],
   });
@@ -114,16 +135,21 @@ export function analyzeMyAssistEnv(
     hasAny(env, ["VERCEL_AI_BASE_URL", "AI_GATEWAY_BASE_URL"]) &&
     hasAny(env, ["VERCEL_VIRTUAL_KEY", "AI_GATEWAY_API_KEY", "OPENAI_API_KEY"]);
   const ollamaUrl = env.OLLAMA_BASE_URL || env.OLLAMA_API_URL || "";
-  const ollamaOk = typeof ollamaUrl === "string" && ollamaUrl.trim() !== "" && !ollamaUrl.includes("127.0.0.1");
-  const aiMode = (env.AI_MODE || "ollama").toLowerCase();
+  const ollamaOk = typeof ollamaUrl === "string" && ollamaUrl.trim() !== "" && !isLocalhostServiceUrl(ollamaUrl);
+  const aiMode = (env.AI_MODE || (productionLike ? "gateway" : "ollama")).toLowerCase();
+  const aiModeProductionOk = !productionLike || env.AI_MODE?.trim().toLowerCase() === "gateway";
+  const gatewayUrl = env.VERCEL_AI_BASE_URL || env.AI_GATEWAY_BASE_URL || "";
+  const gatewayUrlOk = !gatewayUrl.trim() || !isLocalhostServiceUrl(gatewayUrl);
 
   sections.push({
     title: "Assistant AI",
     items: [
       item(
-        "AI_MODE",
-        ["gateway", "ollama", "fallback"].includes(aiMode),
-        "gateway | ollama (default) | fallback. Hosted serverless usually needs gateway or remote Ollama URL.",
+        productionLike ? "AI_MODE=gateway" : "AI_MODE",
+        ["gateway", "ollama", "fallback"].includes(aiMode) && aiModeProductionOk,
+        productionLike
+          ? "Production requires AI_MODE=gateway; local Ollama is dev-only."
+          : "gateway | ollama (default) | fallback. Local dev may use Ollama.",
       ),
       item(
         "Gateway (AI_MODE=gateway)",
@@ -131,9 +157,14 @@ export function analyzeMyAssistEnv(
         "Set VERCEL_AI_BASE_URL + VERCEL_VIRTUAL_KEY (or OPENAI_API_KEY) for hosted chat.",
       ),
       item(
-        "Ollama URL (hosted)",
+        "Gateway URL not localhost",
+        gatewayUrlOk,
+        "Gateway base URL must point at a hosted OpenAI-compatible endpoint.",
+      ),
+      item(
+        "Ollama URL (dev/remote only)",
         aiMode !== "ollama" || !productionLike || ollamaOk,
-        "For ollama on Vercel, OLLAMA_BASE_URL must not be localhost-only.",
+        "Production uses gateway; any remote Ollama URL must not be localhost-only.",
       ),
     ],
   });
@@ -216,8 +247,7 @@ export function analyzeMyAssistEnv(
       ),
       item(
         "Todoist",
-        hasAny(env, ["TODOIST_CLIENT_ID", "MYASSIST_TODOIST_CLIENT_ID"]) &&
-          hasAny(env, ["TODOIST_CLIENT_SECRET", "MYASSIST_TODOIST_CLIENT_SECRET"]),
+        todoistOAuthOk,
         "OAuth client for Todoist connect and task actions.",
       ),
       item(
@@ -228,8 +258,37 @@ export function analyzeMyAssistEnv(
     ],
   });
 
+  const jobHuntDigestUrl = env.JOB_HUNT_DIGEST_URL?.trim() ?? "";
+  const configuredLocalhostServiceUrls = findConfiguredLocalhostServiceUrls(env);
+  sections.push({
+    title: "Hosted service URLs",
+    items: [
+      item(
+        "JOB_HUNT_DIGEST_URL",
+        !productionLike || (jobHuntDigestUrl !== "" && !isLocalhostServiceUrl(jobHuntDigestUrl)),
+        "Production digest calls must use JOB_HUNT_DIGEST_URL and must not fall back to localhost:3847.",
+      ),
+      item(
+        "No configured localhost service URLs",
+        !productionLike || configuredLocalhostServiceUrls.length === 0,
+        configuredLocalhostServiceUrls.length > 0
+          ? `Remove or replace: ${configuredLocalhostServiceUrls.map((u) => u.key).join(", ")}.`
+          : "Production service URLs are hosted.",
+      ),
+      item(
+        "MYASSIST_DEMO_MODE=false",
+        !productionLike || (env.MYASSIST_DEMO_MODE ?? "").trim().toLowerCase() !== "true",
+        "Production defaults to live provider reads; enable curated demo data only in local/demo environments.",
+      ),
+    ],
+  });
+
   let passed = true;
-  if (productionLike && needsSupabase && (!supabaseUrlOk || !supabaseKeyOk)) {
+  if (
+    productionLike &&
+    needsSupabase &&
+    (!supabaseUrlOk || !supabaseAnonKeyOk || !supabaseKeyOk || !integrationsEncryptionKeyOk)
+  ) {
     passed = false;
   }
   if (productionLike && !authOk) {
@@ -240,7 +299,19 @@ export function analyzeMyAssistEnv(
   }
   if (
     productionLike &&
-    (!googleLoginOk || !microsoftLoginOk || !passwordResetEmailOk || !publicOriginOk || !nextPublicSiteOk)
+    (!googleLoginOk || !todoistOAuthOk || !microsoftLoginOk || !passwordResetEmailOk || !publicOriginOk || !nextPublicSiteOk)
+  ) {
+    passed = false;
+  }
+  if (
+    productionLike &&
+    (!aiModeProductionOk ||
+      !gatewayOk ||
+      !gatewayUrlOk ||
+      jobHuntDigestUrl === "" ||
+      isLocalhostServiceUrl(jobHuntDigestUrl) ||
+      configuredLocalhostServiceUrls.length > 0 ||
+      (env.MYASSIST_DEMO_MODE ?? "").trim().toLowerCase() === "true")
   ) {
     passed = false;
   }

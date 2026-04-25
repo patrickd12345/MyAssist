@@ -19,8 +19,16 @@ describe("envReadiness", () => {
   const bki019ProdEnv = {
     AUTH_URL: "https://myassist.bookiji.com",
     NEXT_PUBLIC_SITE_URL: "https://myassist.bookiji.com",
+    AI_MODE: "gateway",
+    VERCEL_AI_BASE_URL: "https://api.openai.com",
+    VERCEL_VIRTUAL_KEY: "ai-key",
+    JOB_HUNT_DIGEST_URL: "https://jobhunt.bookiji.com/digest",
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: "sb_publishable_test",
+    MYASSIST_INTEGRATIONS_ENCRYPTION_KEY: "integration-encryption-key",
     GOOGLE_CLIENT_ID: "google-client",
     GOOGLE_CLIENT_SECRET: "google-secret",
+    TODOIST_CLIENT_ID: "todoist-client",
+    TODOIST_CLIENT_SECRET: "todoist-secret",
     MICROSOFT_CLIENT_ID: "microsoft-client",
     MICROSOFT_CLIENT_SECRET: "microsoft-secret",
     RESEND_API_KEY: "re_test",
@@ -94,5 +102,52 @@ describe("envReadiness", () => {
     expect(r.passed).toBe(false);
     expect(formatEnvReadinessReport(r)).toContain("Login OAuth (BKI-019)");
     expect(formatEnvReadinessReport(r)).toContain("Password reset email (BKI-019)");
+  });
+
+  it("production_like fails when AI_MODE is not gateway", () => {
+    const r = analyzeMyAssistEnv(
+      {
+        NODE_ENV: "production",
+        AUTH_SECRET: "x".repeat(32),
+        SUPABASE_URL: "https://abc.supabase.co",
+        SUPABASE_SECRET_KEY: "sb_secret_test",
+        ...bki019ProdEnv,
+        AI_MODE: "ollama",
+        OLLAMA_BASE_URL: "http://127.0.0.1:11434",
+      } as NodeJS.ProcessEnv,
+      { productionLike: true },
+    );
+    expect(r.passed).toBe(false);
+    expect(formatEnvReadinessReport(r)).toContain("AI_MODE=gateway");
+    expect(formatEnvReadinessReport(r)).toContain("No configured localhost service URLs");
+  });
+
+  it("production_like fails when JobHunt digest URL is missing or localhost", () => {
+    const missing = analyzeMyAssistEnv(
+      {
+        NODE_ENV: "production",
+        AUTH_SECRET: "x".repeat(32),
+        SUPABASE_URL: "https://abc.supabase.co",
+        SUPABASE_SECRET_KEY: "sb_secret_test",
+        ...bki019ProdEnv,
+        JOB_HUNT_DIGEST_URL: "",
+      } as NodeJS.ProcessEnv,
+      { productionLike: true },
+    );
+    expect(missing.passed).toBe(false);
+
+    const localhost = analyzeMyAssistEnv(
+      {
+        NODE_ENV: "production",
+        AUTH_SECRET: "x".repeat(32),
+        SUPABASE_URL: "https://abc.supabase.co",
+        SUPABASE_SECRET_KEY: "sb_secret_test",
+        ...bki019ProdEnv,
+        JOB_HUNT_DIGEST_URL: "http://localhost:3847/digest",
+      } as NodeJS.ProcessEnv,
+      { productionLike: true },
+    );
+    expect(localhost.passed).toBe(false);
+    expect(formatEnvReadinessReport(localhost)).toContain("JOB_HUNT_DIGEST_URL");
   });
 });

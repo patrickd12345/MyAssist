@@ -22,8 +22,13 @@
     "test:e2e": "playwright test",
     "test:e2e:verbose": "cross-env DEBUG=pw:webserver playwright test --reporter=line",
     "test:e2e:billing-ui": "cross-env PLAYWRIGHT_BILLING_UI=1 playwright test tests/e2e/billing-status.spec.ts",
+    "test:smoke:prod": "playwright test production-smoke.spec.ts",
+    "readiness:prod": "node scripts/readiness-prod.mjs",
     "check:env": "tsx scripts/check-env-readiness.ts",
     "check:env:prod": "tsx scripts/check-env-readiness.ts --production-like",
+    "with:infisical:prod": "node scripts/run-with-infisical-prod.mjs --",
+    "check:env:prod:infisical": "node scripts/run-with-infisical-prod.mjs -- pnpm run check:env:prod",
+    "readiness:prod:infisical": "node scripts/run-with-infisical-prod.mjs -- pnpm run readiness:prod",
     "verify:infisical": "node scripts/verify-infisical.mjs"
   },
   "dependencies": {

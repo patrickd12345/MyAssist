@@ -15,6 +15,13 @@
 
 **Environment slugs** (e.g. `dev`, `staging`, `prod`) are chosen in Infisical. Local team dev usually uses **`dev`**. Production deployments mirror the same *names* in Vercel and/or a `prod` env in Infisical — do not use `localhost` for production public URLs.
 
+**Production Option 1 required names:**
+
+- `/platform`: `SUPABASE_URL` or `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` or `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` or `SUPABASE_SERVICE_ROLE_KEY`, `SHARED_DB_TIER=prod`, `SHARED_DB_ENV_STRICT=1`
+- `/myassist`: `AUTH_SECRET`, `AUTH_URL`, `NEXT_PUBLIC_SITE_URL`, `MYASSIST_INTEGRATIONS_ENCRYPTION_KEY`, `AI_MODE=gateway`, `VERCEL_AI_BASE_URL` or `AI_GATEWAY_BASE_URL`, `VERCEL_VIRTUAL_KEY` or `AI_GATEWAY_API_KEY` or `OPENAI_API_KEY`, `OPENAI_MODEL` or `AI_GATEWAY_MODEL`, `JOB_HUNT_DIGEST_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `TODOIST_CLIENT_ID`, `TODOIST_CLIENT_SECRET`, `MICROSOFT_CLIENT_ID`, `MICROSOFT_CLIENT_SECRET`, `RESEND_API_KEY`, `MYASSIST_PASSWORD_RESET_EMAIL_FROM`
+
+Production values must point at hosted services. Runtime/readiness guards reject configured `localhost`, `127.0.0.1`, `0.0.0.0`, and `[::1]` service URLs in production.
+
 ---
 
 ## 2. How the app loads secrets locally
@@ -80,6 +87,8 @@ When a **trusted** machine has a complete `apps/web/.env.local` and you want the
 
 - `NEXT_PUBLIC_*` is **baked at build time**; set the MyAssist Vercel project’s env for Production/Preview to match the public origin you use (`NEXT_PUBLIC_SITE_URL`, etc.).
 - Server secrets (`SUPABASE_SECRET_KEY`, `AUTH_SECRET`, …) must exist on the **same** Vercel project that deploys this app. See [apps/web/README.md](../apps/web/README.md) (Production / Vercel) and [commercial-pilot-readiness.md](./commercial-pilot-readiness.md) where applicable.
+- For hosted AI, production must set `AI_MODE=gateway`; local Ollama remains a dev path only.
+- For JobHunt digest, production must set `JOB_HUNT_DIGEST_URL`; the app only falls back to `http://127.0.0.1:3847/digest` outside production.
 
 ---
 

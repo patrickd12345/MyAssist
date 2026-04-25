@@ -176,7 +176,7 @@ describe("POST /api/assistant", () => {
     expect(res.status).toBe(200);
     const json = (await res.json()) as { mode: string; fallbackReason?: string; answer: string };
     expect(json.mode).toBe("fallback");
-    expect(json.fallbackReason).toBe("fetch failed: ECONNREFUSED");
+    expect(json.fallbackReason).toContain("chat-model: fetch failed: ECONNREFUSED");
     expect(json.answer).toContain("Park");
   });
 
@@ -206,8 +206,36 @@ describe("POST /api/assistant", () => {
     expect(res.status).toBe(200);
     const json = (await res.json()) as { mode: string; fallbackReason?: string; answer: string };
     expect(json.mode).toBe("fallback");
-    expect(json.fallbackReason).toBe("assistant_chat_timeout");
+    expect(json.fallbackReason).toContain("assistant_model_timeout:chat-model");
     expect(json.answer.length).toBeGreaterThan(0);
+  });
+
+  it("repairs unusable Ollama chat JSON with deterministic assistant content", async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          message: { content: JSON.stringify({ todoist_overdue: [] }) },
+        }),
+        { status: 200 },
+      ),
+    );
+
+    const res = await POST(
+      new Request("http://localhost/api/assistant", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          kind: "chat",
+          message: "What can I safely defer?",
+          context: minimalContext,
+        }),
+      }),
+    );
+    expect(res.status).toBe(200);
+    const json = (await res.json()) as { mode: string; fallbackReason?: string; answer: string };
+    expect(json.mode).toBe("ollama");
+    expect(json.fallbackReason).toBe("assistant_structured_reply_repaired");
+    expect(json.answer).toContain("Park");
   });
 
   it("routes chief-of-staff day summary chat prompts to situation brief path", async () => {

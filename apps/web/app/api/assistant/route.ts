@@ -38,8 +38,8 @@ import {
 
 export const dynamic = "force-dynamic";
 
-/** Chat path: try primary then these. Heavier models may OOM on low-RAM machines. */
-const OLLAMA_MODEL_FALLBACKS = ["phi3:mini", "llama3.1:8b", "mistral:latest"];
+/** Chat path: try primary then these. Keep a small local model early for demo reliability. */
+const OLLAMA_MODEL_FALLBACKS = ["tinyllama:latest", "phi3:mini", "llama3.1:8b", "mistral:latest"];
 const ASSISTANT_CHAT_TIMEOUT_MS = 8_000;
 const ASSISTANT_MULTI_MODEL_TOTAL_TIMEOUT_MS = 8_000;
 
@@ -253,26 +253,20 @@ async function createReply(context: MyAssistDailyContext, message: string, userI
     const s2b = await startMyAssistStandard2bSession(userId);
     const persistentBlock = formatPersistentMemoryContextForPrompt(s2b);
 
-    const result = await runAssistantChatWithTimeout(
-      executeChat({
-        format: "json",
-        temperature: 0.2,
-        maxTokens: 220,
-        messages: [
-          {
-            role: "system",
-            content: buildAssistantChatSystemPrompt(),
-          },
-          {
-            role: "user",
-            content: `Question:\n${message}\n\nDaily context snapshot:\n${buildContextDigest(context)}\n\nHistorical Rolling Memory:\n${memoryPrompt}\n\n[persistent_memory_context]\n${persistentBlock}`,
-          },
-        ],
-      }),
-      "assistant_chat_timeout",
-      ASSISTANT_CHAT_TIMEOUT_MS,
-    );
-    const parsed = parseAssistantStructuredReply(result.text);
+    const messages = [
+      {
+        role: "system" as const,
+        content: buildAssistantChatSystemPrompt(),
+      },
+      {
+        role: "user" as const,
+        content: `Question:\n${message}\n\nDaily context snapshot:\n${buildContextDigest(context)}\n\nHistorical Rolling Memory:\n${memoryPrompt}\n\n[persistent_memory_context]\n${persistentBlock}`,
+      },
+    ];
+    const completion = await createParsedChatCompletion(messages);
+    const repaired = isUnusableStructuredReply(completion.parsed);
+    const parsed = repaired ? buildFallbackReply(context, message) : completion.parsed;
+    const result = completion.result;
     const response = {
       mode: result.mode,
       answer: parsed.answer,
@@ -282,7 +276,7 @@ async function createReply(context: MyAssistDailyContext, message: string, userI
       provider: result.provider,
       model: result.model,
       latencyMs: result.latencyMs,
-      fallbackReason: result.fallbackReason,
+      fallbackReason: result.fallbackReason ?? (repaired ? "assistant_structured_reply_repaired" : null),
     };
     try {
       await commitMyAssistBoundaryIfMeaningful(s2b, parsed);
@@ -305,6 +299,69 @@ async function createReply(context: MyAssistDailyContext, message: string, userI
     logAiServerEvent("assistant_chat_fallback", response, { route: "assistant", kind: "chat" });
     return response;
   }
+}
+
+function isUnusableStructuredReply(reply: Omit<AssistantReply, "mode">): boolean {
+  return (
+    reply.answer === "I could not generate a useful reply from the current context." &&
+    reply.actions.length === 0 &&
+    reply.followUps.length === 0 &&
+    reply.taskDraft === null
+  );
+}
+
+async function createParsedChatCompletion(
+  messages: Array<{ role: "system" | "user"; content: string }>,
+): Promise<{
+  result: CanonicalAiMetadata & { text: string };
+  parsed: ReturnType<typeof parseAssistantStructuredReply>;
+}> {
+  const runtime = resolveMyAssistRuntimeEnv();
+  if (runtime.aiMode === "gateway" || runtime.aiProvider.toLowerCase() === "gateway") {
+    const result = await runAssistantChatWithTimeout(
+      executeChat({
+        format: "json",
+        temperature: 0.2,
+        maxTokens: 220,
+        messages,
+      }),
+      "assistant_chat_timeout",
+      ASSISTANT_CHAT_TIMEOUT_MS,
+    );
+    return { result, parsed: parseAssistantStructuredReply(result.text) };
+  }
+
+  const attemptErrors: string[] = [];
+  const deadline = Date.now() + ASSISTANT_MULTI_MODEL_TOTAL_TIMEOUT_MS;
+  for (const model of getChatCandidateModels()) {
+    const remainingMs = deadline - Date.now();
+    if (remainingMs <= 0) break;
+    try {
+      const result = await requestOllamaForModel(
+        model,
+        {
+          format: "json",
+          options: {
+            temperature: 0.2,
+            num_predict: 220,
+          },
+          messages,
+        },
+        remainingMs,
+      );
+      return { result, parsed: parseAssistantStructuredReply(result.text) };
+    } catch (error) {
+      attemptErrors.push(
+        `${model}: ${error instanceof Error ? error.message : String(error)}`.slice(0, 220),
+      );
+    }
+  }
+
+  throw new Error(
+    attemptErrors.length > 0
+      ? attemptErrors.slice(0, 6).join(" | ")
+      : "assistant_chat_no_model_attempted",
+  );
 }
 
 function isSituationBriefQuestion(message: string): boolean {
@@ -493,6 +550,13 @@ function getHeadlineCandidateModels(): string[] {
   return DEFAULT_HEADLINE_MODELS.filter((model, index, array) => array.indexOf(model) === index);
 }
 
+function getChatCandidateModels(): string[] {
+  const runtime = resolveMyAssistRuntimeEnv();
+  return [runtime.ollamaModel, ...OLLAMA_MODEL_FALLBACKS].filter(
+    (model, index, array) => Boolean(model) && array.indexOf(model) === index,
+  );
+}
+
 async function requestOllamaForModel(
   model: string,
   body: {
@@ -658,4 +722,3 @@ function parseSituationBrief(raw: string, context: MyAssistDailyContext): Situat
     return fallback;
   }
 }
-

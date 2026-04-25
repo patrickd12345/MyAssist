@@ -1,6 +1,7 @@
 import "server-only";
 
 import { PHASE_PRODUCTION_BUILD } from "next/constants";
+import { findConfiguredLocalhostServiceUrls } from "./urlGuards";
 
 type EnvSource = NodeJS.ProcessEnv;
 
@@ -35,6 +36,15 @@ function readFirst(env: EnvSource, keys: string[], fallback = ""): string {
     }
   }
   return fallback;
+}
+
+function parseEnvBoolean(value: string | undefined): boolean {
+  const v = value?.trim().toLowerCase() ?? "";
+  return v === "1" || v === "true";
+}
+
+export function isMyAssistProductionLikeEnv(env: EnvSource = process.env): boolean {
+  return env.NODE_ENV === "production" || env.VERCEL_ENV === "production";
 }
 
 export type MyAssistRuntimeEnv = {
@@ -94,7 +104,11 @@ export type MyAssistRuntimeEnv = {
 
 export function resolveMyAssistRuntimeEnv(env: EnvSource = process.env): MyAssistRuntimeEnv {
   const aiModeRaw = readFirst(env, ["AI_MODE"]).toLowerCase();
-  const aiMode = aiModeRaw === "gateway" || aiModeRaw === "fallback" ? aiModeRaw : "ollama";
+  const defaultAiMode = isMyAssistProductionLikeEnv(env) ? "gateway" : "ollama";
+  const aiMode =
+    aiModeRaw === "gateway" || aiModeRaw === "fallback" || aiModeRaw === "ollama"
+      ? aiModeRaw
+      : defaultAiMode;
   const aiProvider = readFirst(env, ["AI_PROVIDER"], aiMode);
   const vercelAiBaseUrl = readFirst(env, ["VERCEL_AI_BASE_URL", "AI_GATEWAY_BASE_URL"]);
   const vercelVirtualKey = readFirst(env, ["VERCEL_VIRTUAL_KEY", "AI_GATEWAY_API_KEY", "OPENAI_API_KEY"]);
@@ -244,7 +258,8 @@ export function assertMyAssistRuntimeEnv(env: EnvSource = process.env): MyAssist
     throw new Error("Missing required auth secret: AUTH_SECRET (or NEXTAUTH_SECRET).");
   }
   const strictTier = env.SHARED_DB_ENV_STRICT === "1" || env.SHARED_DB_ENV_STRICT === "true";
-  const requiresHostedSupabase = env.NODE_ENV === "production" || strictTier;
+  const productionLike = isMyAssistProductionLikeEnv(env);
+  const requiresHostedSupabase = productionLike || strictTier;
   if (requiresHostedSupabase && !runtime.supabaseProjectUrl) {
     throw new Error(
       "Missing required Supabase URL: set SUPABASE_URL (or NEXT_PUBLIC_SUPABASE_URL / VITE_SUPABASE_URL)."
@@ -254,6 +269,37 @@ export function assertMyAssistRuntimeEnv(env: EnvSource = process.env): MyAssist
     throw new Error(
       "Missing required Supabase server key: set SUPABASE_SECRET_KEY (or SUPABASE_SERVICE_ROLE_KEY)."
     );
+  }
+  if (productionLike) {
+    if (readFirst(env, ["AI_MODE"]).toLowerCase() !== "gateway") {
+      throw new Error("Production MyAssist requires AI_MODE=gateway; local Ollama is dev-only.");
+    }
+    if (!runtime.vercelAiBaseUrl) {
+      throw new Error("Production MyAssist requires VERCEL_AI_BASE_URL (or AI_GATEWAY_BASE_URL).");
+    }
+    if (!runtime.vercelVirtualKey) {
+      throw new Error("Production MyAssist requires VERCEL_VIRTUAL_KEY (or AI_GATEWAY_API_KEY / OPENAI_API_KEY).");
+    }
+    if (!runtime.jobHuntDigestUrl) {
+      throw new Error("Production MyAssist requires JOB_HUNT_DIGEST_URL; localhost:3847 is dev-only.");
+    }
+    if (!runtime.supabaseAnonKey) {
+      throw new Error(
+        "Production MyAssist requires a Supabase anon/publishable key: set NEXT_PUBLIC_SUPABASE_ANON_KEY (or alias).",
+      );
+    }
+    if (!runtime.integrationsEncryptionKey) {
+      throw new Error("Production MyAssist requires MYASSIST_INTEGRATIONS_ENCRYPTION_KEY for OAuth token storage.");
+    }
+    if (parseEnvBoolean(runtime.myassistDemoMode) && !parseEnvBoolean(env.MYASSIST_DEMO_MODE_PRODUCTION_OVERRIDE)) {
+      throw new Error("MYASSIST_DEMO_MODE must be false in production unless the explicit production override is set.");
+    }
+    const localhostUrls = findConfiguredLocalhostServiceUrls(env);
+    if (localhostUrls.length > 0) {
+      throw new Error(
+        `Production MyAssist rejects localhost service URLs: ${localhostUrls.map((u) => u.key).join(", ")}.`,
+      );
+    }
   }
   return runtime;
 }
