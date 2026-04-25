@@ -65,34 +65,76 @@ Expected preflight result:
 - `check:env:prod:infisical` reports production readiness with hosted URLs, `AI_MODE=gateway`, hosted `JOB_HUNT_DIGEST_URL`, Supabase server storage, and no local-only service URLs.
 - Lint, typecheck, and single-worker Vitest complete without product-code failures.
 
-## 2026-04-24 Production Env Status
+## 2026-04-24 Production Env Status — Option B verification run
 
-Current status after hosted production env corrections:
+Verification run against Infisical prod (`/platform` + `/myassist`) on 2026-04-24.
+Commands run from the repo root (`products/MyAssist`) against main-branch node_modules.
 
-- Infisical production paths checked: `/platform` and `/myassist`.
-- Vercel project confirmed: `my-assist`.
-- Localhost service URLs now pass in the Infisical-backed readiness check.
-- `verify:infisical -- --env=prod` is still blocked on missing production env values.
-- `check:env:prod` reads the current shell environment directly, not Infisical-loaded env, so use `check:env:prod:infisical` for canonical production checks.
+### Commands run and results
 
-Remaining blockers:
+| Command | Exit code | Result |
+| --- | ---: | --- |
+| `pnpm --prefix apps/web run lint` | 0 | PASS — no ESLint warnings or errors |
+| `pnpm --prefix apps/web run typecheck` | 0 | PASS — no TypeScript errors |
+| `NODE_OPTIONS=--max-old-space-size=4096 pnpm --prefix apps/web exec vitest run --maxWorkers=1` | 0 | PASS — 516 passed, 1 skipped (105 test files) |
+| `pnpm --prefix apps/web run verify:infisical -- --env=prod` | 0 | Infisical accessible: `/platform` 8 keys + `/myassist` 18 keys loaded; 4 MISSes (see below) |
+| `pnpm --prefix apps/web run check:env:prod:infisical` | 1 | BLOCKED ON ENV — 4 missing production values |
+| `pnpm --prefix apps/web run readiness:prod:infisical` | 1 | BLOCKED ON ENV — see verdict below |
 
-- `VERCEL_VIRTUAL_KEY` or `OPENAI_API_KEY`
-- `JOB_HUNT_DIGEST_URL`
-- `MICROSOFT_CLIENT_ID`
-- `MICROSOFT_CLIENT_SECRET`
-- `RESEND_API_KEY`
-- `MYASSIST_PASSWORD_RESET_EMAIL_FROM`
+### Infisical prod: values confirmed present
 
-Current go/no-go:
+- `AUTH_SECRET` ✓
+- `SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_URL` ✓
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` ✓
+- `SUPABASE_SECRET_KEY` / `SUPABASE_SERVICE_ROLE_KEY` ✓
+- `MYASSIST_INTEGRATIONS_ENCRYPTION_KEY` ✓
+- `AI_MODE=gateway` ✓
+- `VERCEL_AI_BASE_URL` / `AI_GATEWAY_BASE_URL` ✓ (hosted, not localhost)
+- `AUTH_URL` + `NEXT_PUBLIC_SITE_URL` ✓ (hosted URLs)
+- `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` ✓
+- `TODOIST_CLIENT_ID` + `TODOIST_CLIENT_SECRET` ✓
+- Stripe billing keys ✓
+- No localhost service URLs in any configured value ✓
+
+### Infisical prod: values still missing
+
+These 5 values are absent from Infisical prod and must be provisioned before `readiness:prod:infisical` can return PASS:
+
+| Variable | Infisical path | Reason |
+| --- | --- | --- |
+| `VERCEL_VIRTUAL_KEY` or `OPENAI_API_KEY` | `/myassist` | AI gateway key; `AI_MODE=gateway` is set but the credential is absent |
+| `JOB_HUNT_DIGEST_URL` | `/myassist` | Must be a hosted HTTPS URL; no localhost fallback allowed in production |
+| `MICROSOFT_CLIENT_ID` | `/myassist` | Microsoft/Outlook login; mark N/A only if provider is intentionally disabled |
+| `MICROSOFT_CLIENT_SECRET` | `/myassist` | Same as above |
+| `RESEND_API_KEY` | `/myassist` | Password-reset email delivery; mark N/A only if feature is intentionally disabled |
+| `MYASSIST_PASSWORD_RESET_EMAIL_FROM` | `/myassist` | Verified Resend sender; same condition as `RESEND_API_KEY` |
+
+### Next actions for Option B green
+
+1. Provision `VERCEL_VIRTUAL_KEY` (or `OPENAI_API_KEY`) in Infisical prod `/myassist` and sync to Vercel project `my-assist` Production environment.
+2. Provision `JOB_HUNT_DIGEST_URL` (hosted HTTPS URL) in Infisical prod `/myassist` and sync to Vercel.
+3. Decide Microsoft OAuth: provision `MICROSOFT_CLIENT_ID` + `MICROSOFT_CLIENT_SECRET` **or** formally document the provider as disabled for this release.
+4. Decide password reset: provision `RESEND_API_KEY` + `MYASSIST_PASSWORD_RESET_EMAIL_FROM` **or** formally document the feature as disabled.
+5. After provisioning, redeploy on Vercel and rerun: `pnpm --prefix apps/web run readiness:prod:infisical`
+6. Set `PLAYWRIGHT_PROD_SMOKE_BASE_URL=https://myassist.bookiji.com` and run: `pnpm --prefix apps/web run test:smoke:prod`
+
+### Current go/no-go
 
 | Area | Status |
 | --- | --- |
 | Overall | BLOCKED ON ENV |
-| Assistant | BLOCKED ON ENV |
-| Microsoft OAuth | BLOCKED ON OAUTH if enabled |
-| Password reset | BLOCKED ON ENV if enabled |
-| JobHunt digest | BLOCKED ON ENV |
+| Lint | PASS |
+| Typecheck | PASS |
+| Vitest (516 tests) | PASS |
+| Auth / Supabase | PASS (values confirmed in Infisical prod) |
+| Google OAuth | PASS (values confirmed in Infisical prod) |
+| Todoist OAuth | PASS (values confirmed in Infisical prod) |
+| Assistant (AI gateway) | BLOCKED ON ENV — gateway key absent |
+| Microsoft OAuth | BLOCKED ON OAUTH — credentials absent; decide enabled or N/A |
+| Password reset email | BLOCKED ON ENV — Resend key + sender absent; decide enabled or N/A |
+| JobHunt digest | BLOCKED ON ENV — `JOB_HUNT_DIGEST_URL` absent |
+| No localhost URLs | PASS |
+| Playwright production smoke | BLOCKED ON DEPLOYMENT — set `PLAYWRIGHT_PROD_SMOKE_BASE_URL` after provisioning |
 
 ## Go / No-Go
 
