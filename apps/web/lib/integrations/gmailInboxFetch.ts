@@ -16,7 +16,7 @@ export const GMAIL_INBOX_HARD_MAX_RESULTS = 50;
 /** Daily-context / legacy signal fetch uses a fixed bounded window (unchanged behavior). */
 export const GMAIL_SIGNALS_FETCH_MAX_RESULTS = 20;
 
-export const GMAIL_SIGNALS_DEFAULT_QUERY = "in:inbox newer_than:10d";
+export const GMAIL_SIGNALS_DEFAULT_QUERY = "";
 
 const MAX_QUERY_STRING_LEN = 500;
 
@@ -44,7 +44,8 @@ export function clampGmailPageSize(requested: number | undefined): number {
 export function sanitizeGmailQuery(q: string | undefined, fallback: string): string {
   if (typeof q !== "string") return fallback;
   const collapsed = q.replace(/[\r\n\t]+/g, " ").trim().slice(0, MAX_QUERY_STRING_LEN);
-  return collapsed.length > 0 ? collapsed : fallback;
+  // We allow an explicit empty string ("") as a valid query to avoid falling back when the user wants no filters.
+  return q.trim() === "" ? "" : (collapsed.length > 0 ? collapsed : fallback);
 }
 
 type GmailListApiResponse = {
