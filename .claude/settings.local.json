@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); [print\\(k,':',v\\) for k,v in d.get\\('scripts',{}\\).items\\(\\) if any\\(x in k for x in ['verify','check:env','readiness','smoke','lint','typecheck','vitest']\\)]\")",
+      "Bash(pnpm --prefix apps/web run lint)",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(pnpm --prefix apps/web run typecheck)",
+      "Bash(infisical --version)",
+      "Bash(NODE_OPTIONS=--max-old-space-size=4096 pnpm --prefix apps/web exec vitest run --maxWorkers=1)",
+      "Bash(pnpm --prefix apps/web run check:env:prod:infisical)",
+      "Bash(pnpm --prefix apps/web run readiness:prod:infisical)",
+      "Bash(node --check apps/web/scripts/readiness-prod.mjs)",
+      "Bash(echo \"EXIT_OF_GREP:$?\")"
+    ]
+  }
+}
