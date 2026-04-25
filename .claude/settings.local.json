@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/patri/Projects/Bookiji inc/products/MyAssist/**)",
+      "Bash(pnpm --prefix apps/web run readiness:prod:infisical)"
+    ]
+  }
+}
