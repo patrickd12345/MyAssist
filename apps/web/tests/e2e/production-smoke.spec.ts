@@ -35,6 +35,12 @@ type OAuthSelfCheck = {
 };
 
 test.beforeAll(() => {
+  const isRequested = process.argv.some((arg) => arg.includes("production-smoke.spec"));
+  if (!productionBaseUrl && !isRequested) {
+    test.skip(true, "Skipping production smoke tests because no production URL is configured and they were not explicitly requested.");
+    return;
+  }
+
   expect(
     productionBaseUrl,
     "BLOCKED ON ENV: set PLAYWRIGHT_BASE_URL or NEXT_PUBLIC_SITE_URL before running production smoke.",
