@@ -23,7 +23,7 @@
 ## External Integrations
 - Gmail, Google Calendar, and Todoist are primary provider integrations.
 - Stripe is optional but canonical webhook remains `POST /api/payments/webhook` when billing is enabled.
-- Infisical (`/platform` + `/myassist`) is the canonical shared secret source for team/dev workflows; use **`pnpm dev:infisical`** (or root **`pnpm dev:all`**) for demos and shared env, not `pnpm dev` alone, unless you rely only on `apps/web/.env.local`. Store **`NEXT_PUBLIC_SITE_URL`** in `/myassist` for correct OAuth / magic link redirects. For **AI assistants and secret CRUD**, see [Infisical for agents](#infisical-for-agents) below (official **MCP** + **CLI**).
+- Infisical (`/platform` + `/myassist`) is the canonical shared secret source for team/dev workflows; use **`pnpm dev:infisical`** (or root **`pnpm dev:all`**) for shared env, not `pnpm dev` alone, unless you rely only on `apps/web/.env.local`. For a **curated Today demo** (no live provider reads), use **`pnpm demo`** or **`pnpm demo:infisical`**. Store **`NEXT_PUBLIC_SITE_URL`** in `/myassist` for correct OAuth / magic link redirects. For **AI assistants and secret CRUD**, see [Infisical for agents](#infisical-for-agents) below (official **MCP** + **CLI**).
 - **Troubleshooting (auth, env, OAuth, Supabase, sessions):** [docs/TROUBLESHOOTING.md](./docs/TROUBLESHOOTING.md).
 
 ### Infisical for agents

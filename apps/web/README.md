@@ -108,6 +108,20 @@ Optional production names: `BILLING_ENABLED`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHO
    pnpm dev:infisical
    ```
 
+**Curated demo (single command):** sets **`MYASSIST_DEMO_MODE=true`** for the Next process so Today uses the deterministic demo snapshot (no live Gmail/Calendar/Todoist reads). From repo root:
+
+```sh
+pnpm demo
+```
+
+With Infisical merge first (same rules as `dev:infisical`; demo mode still wins over vault):
+
+```sh
+pnpm demo:infisical
+```
+
+Implementation: `apps/web/scripts/start-demo.mjs`.
+
 `pnpm dev:infisical` uses the same merge helper and exports `/platform` and `/myassist` before launching `next dev`, so shared Supabase keys and app-specific OAuth/auth keys both arrive even though Infisical CLI path injection is single-folder oriented.
 
 **Reference:** [docs/infisical-and-secrets.md](../docs/infisical-and-secrets.md) — Infisical **paths** (`/platform`, `/myassist`), official **@infisical/mcp** for agents, **CLI** usage, and **`node scripts/sync-env-to-infisical-once.mjs`** (and `--all`) to align the vault with a local `.env.local` on a trusted machine.

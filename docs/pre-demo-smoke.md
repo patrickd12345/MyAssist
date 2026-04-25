@@ -16,7 +16,8 @@ Run from repo root (`products/MyAssist`):
    `pnpm --prefix apps/web run check:env` (and `check:env:prod` for production-like checks). Fix any **required** items for the path you are showing (e.g. Supabase + `AUTH_URL` for real login; integration OAuth for live Gmail/Todoist).
 
 3. **Demo without live provider tokens**  
-   For a UI-only or narrative demo, you can set **`MYASSIST_USE_MOCK_CONTEXT=true`** (and optionally **`MYASSIST_DEMO_MODE=true`**) in the server env so daily context is deterministic; see `apps/web/.env.example` and [commercial-pilot-readiness.md](./commercial-pilot-readiness.md).
+   One command from repo root: **`pnpm demo`** (sets `MYASSIST_DEMO_MODE=true`; see `apps/web/scripts/start-demo.mjs`). With Infisical first: **`pnpm demo:infisical`**.  
+   Alternatively set **`MYASSIST_USE_MOCK_CONTEXT=true`** (and optionally **`MYASSIST_DEMO_MODE=true`**) in `.env.local`; see `apps/web/.env.example` and [commercial-pilot-readiness.md](./commercial-pilot-readiness.md).
 
 4. **E2E (optional, longer)**  
    `pnpm --filter web run test:e2e -- --reporter=line` — expect Playwright to start **Next on 127.0.0.1:3005** first (can take a minute on cold boot). See `apps/web/README.md` Playwright section.
