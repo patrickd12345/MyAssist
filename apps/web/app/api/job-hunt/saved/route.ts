@@ -30,20 +30,12 @@ export async function GET(req: Request) {
     const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) {
       const text = await res.text();
-      return NextResponse.json({
-        ok: false,
-        error: `Upstream error: ${res.status} ${text}`,
-        jobs: [],
-      });
+      return jsonLegacyApiError(`Upstream error: ${res.status} ${text}`, 502);
     }
     const data = (await res.json()) as unknown;
     return NextResponse.json(data);
   } catch (e) {
-    return NextResponse.json({
-      ok: false,
-      error: e instanceof Error ? e.message : String(e),
-      jobs: [],
-    });
+    return jsonLegacyApiError(e instanceof Error ? e.message : String(e), 500);
   }
 }
 
@@ -57,15 +49,15 @@ export async function POST(req: Request) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ ok: false, error: "Invalid JSON" }, { status: 400 });
+    return jsonLegacyApiError("Invalid JSON", 400);
   }
   if (!body || typeof body !== "object") {
-    return NextResponse.json({ ok: false, error: "Expected JSON object" }, { status: 400 });
+    return jsonLegacyApiError("Expected JSON object", 400);
   }
   const o = body as Record<string, unknown>;
   const id = typeof o.id === "string" ? o.id.trim() : "";
   if (!id) {
-    return NextResponse.json({ ok: false, error: "Missing id" }, { status: 400 });
+    return jsonLegacyApiError("Missing id", 400);
   }
   const payload: Record<string, unknown> = { id };
   if (o.new_track !== undefined && o.new_track !== null && typeof o.new_track === "object" && !Array.isArray(o.new_track)) {
@@ -88,10 +80,7 @@ export async function POST(req: Request) {
     });
     const data = (await res.json()) as { ok?: boolean; error?: string; saved?: unknown };
     if (!res.ok) {
-      return NextResponse.json(
-        { ok: false, error: data.error ?? `Upstream HTTP ${res.status}` },
-        { status: res.status === 400 ? 400 : 502 },
-      );
+      return jsonLegacyApiError(data.error ?? `Upstream HTTP ${res.status}`, res.status === 400 ? 400 : 502);
     }
     if (!data.ok) {
       return NextResponse.json(data);
@@ -125,6 +114,6 @@ export async function POST(req: Request) {
       contacts_extraction ? { ...data, contacts_extraction } : data,
     );
   } catch (e) {
-    return NextResponse.json({ ok: false, error: e instanceof Error ? e.message : String(e) }, { status: 500 });
+    return jsonLegacyApiError(e instanceof Error ? e.message : String(e), 500);
   }
 }

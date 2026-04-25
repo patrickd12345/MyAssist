@@ -51,21 +51,13 @@ export async function GET() {
     clearTimeout(timer);
 
     if (!res.ok) {
-      return NextResponse.json({
-        ok: false as const,
-        digestUrl,
-        error: `Digest server returned HTTP ${res.status}`,
-      });
+      return jsonLegacyApiError(`Digest server returned HTTP ${res.status}`, 502);
     }
 
     const digest = (await res.json()) as Record<string, unknown>;
     return NextResponse.json({ ok: true as const, digestUrl, digest });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Unknown error";
-    return NextResponse.json({
-      ok: false as const,
-      digestUrl,
-      error: message,
-    });
+    return jsonLegacyApiError(message, 500);
   }
 }
