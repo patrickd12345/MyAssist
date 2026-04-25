@@ -81,16 +81,7 @@ Commands run from the repo root (`products/MyAssist`) against main-branch node_m
 | `pnpm --prefix apps/web run check:env:prod:infisical` | 1 | BLOCKED ON ENV — 4 missing production values |
 | `pnpm --prefix apps/web run readiness:prod:infisical` | 1 | BLOCKED ON ENV (final verdict) — see env-sensitive vitest note below |
 
-**Note — vitest env-sensitivity finding:** When run inside `readiness:prod:infisical` (vitest inherits Infisical prod env), 16 tests fail across 6 files. The same tests pass standalone. Failures are caused by prod env overriding test assumptions: `AI_MODE=gateway` causes Ollama-mock tests to fail, prod `MYASSIST_INTEGRATIONS_ENCRYPTION_KEY` differs from what token-store tests expect, and site-origin + Todoist route tests break under prod URLs. This is a test-isolation gap, not a product-code regression. The unit tests are designed to run without production secrets. The readiness script should clear or mask sensitive env vars before running vitest, or run vitest before loading Infisical prod env. Tracking as a pre-launch fix item.
-
-Failing test files under prod env (vitest step in `readiness:prod:infisical`):
-
-- `lib/fetchDailyContext.test.ts` — 2 tests (`prioritizeGmailSignalsWithAi`)
-- `lib/myassistSiteOrigin.test.ts` — 1 test (`buildMyAssistAuthCallbackUrlForRequest`)
-- `lib/integrations/tokenStore.test.ts` — 2 tests (token store encrypt/decrypt)
-- `app/api/assistant/route.test.ts` — 8 tests (Ollama + situation_brief paths)
-- `app/api/todoist/tasks/[taskId]/complete/route.test.ts` — 1 test
-- `app/api/todoist/tasks/[taskId]/schedule/route.test.ts` — 3 tests
+**Vitest env-sensitivity — RESOLVED:** 16 tests were failing when vitest ran inside `readiness:prod:infisical` because the subprocess inherited Infisical prod env (`AI_MODE=gateway`, prod `MYASSIST_INTEGRATIONS_ENCRYPTION_KEY`, prod Supabase URLs). Fixed in `apps/web/scripts/readiness-prod.mjs`: the Vitest check now carries a `stripEnv` list (10 vars) that are deleted from the subprocess env before vitest spawns. Env-check steps are unaffected. Vitest now passes 516/516 inside `readiness:prod:infisical`.
 
 ### Infisical prod: values confirmed present
 
@@ -137,7 +128,7 @@ These 5 values are absent from Infisical prod and must be provisioned before `re
 | Lint | PASS |
 | Typecheck | PASS |
 | Vitest standalone (516 tests, no prod env) | PASS |
-| Vitest under prod env (inside `readiness:prod:infisical`) | FAIL — 16 env-sensitive tests; fix test isolation before final PASS |
+| Vitest inside `readiness:prod:infisical` (after env-strip fix) | PASS — 516 passed, 1 skipped |
 | Auth / Supabase | PASS (values confirmed in Infisical prod) |
 | Google OAuth | PASS (values confirmed in Infisical prod) |
 | Todoist OAuth | PASS (values confirmed in Infisical prod) |
