@@ -28,11 +28,11 @@ export async function GET(req: Request) {
     const res = await fetch(jobsUrl, { cache: "no-store" });
     if (!res.ok) {
       const text = await res.text();
-      return NextResponse.json({ ok: false, error: `Upstream error: ${res.status} ${text}` }, { status: 502 });
+      return jsonLegacyApiError(`Upstream error: ${res.status} ${text}`, 502);
     }
     const data = await res.json();
     return NextResponse.json({ ok: true, data });
   } catch (e) {
-    return NextResponse.json({ ok: false, error: e instanceof Error ? e.message : String(e) }, { status: 500 });
+    return jsonLegacyApiError(e instanceof Error ? e.message : String(e), 500);
   }
 }
