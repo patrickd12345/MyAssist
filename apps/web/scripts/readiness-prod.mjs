@@ -47,6 +47,20 @@ const checks = [
     command: "NODE_OPTIONS=--max-old-space-size=4096 pnpm --prefix apps/web exec vitest run --maxWorkers=1",
     args: ["--prefix", "apps/web", "exec", "vitest", "run", "--maxWorkers=1"],
     env: { NODE_OPTIONS: "--max-old-space-size=4096" },
+    // Strip prod secrets that override test mocks. Tests use their own fixtures/mocks for
+    // these values; injecting real prod values breaks test isolation without adding coverage.
+    stripEnv: [
+      "AI_MODE",
+      "MYASSIST_INTEGRATIONS_ENCRYPTION_KEY",
+      "NEXT_PUBLIC_SITE_URL",
+      "AUTH_URL",
+      "SUPABASE_URL",
+      "NEXT_PUBLIC_SUPABASE_URL",
+      "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+      "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+      "SUPABASE_SECRET_KEY",
+      "SUPABASE_SERVICE_ROLE_KEY",
+    ],
     failureVerdict: VERDICTS.FAIL,
     failureReason: "Vitest failed.",
   },
@@ -59,9 +73,13 @@ function hasProductionSmokeUrl() {
 }
 
 function runCheck(check) {
+  const merged = { ...process.env, ...(check.env ?? {}) };
+  for (const key of check.stripEnv ?? []) {
+    delete merged[key];
+  }
   const result = spawnSync("pnpm", check.args, {
     cwd: productRoot,
-    env: { ...process.env, ...(check.env ?? {}) },
+    env: merged,
     encoding: "utf8",
     shell: process.platform === "win32",
   });
