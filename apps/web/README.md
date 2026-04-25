@@ -84,9 +84,9 @@ The Vercel project linked to production should use this app as the deploy root:
 Infisical/Vercel production must include these names with hosted values:
 
 - `/platform`: `SUPABASE_URL` or `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` or `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` or `SUPABASE_SERVICE_ROLE_KEY`, `SHARED_DB_TIER=prod`, `SHARED_DB_ENV_STRICT=1`
-- `/myassist`: `AUTH_SECRET`, `AUTH_URL`, `NEXT_PUBLIC_SITE_URL`, `MYASSIST_INTEGRATIONS_ENCRYPTION_KEY`, `AI_MODE=gateway`, `VERCEL_AI_BASE_URL` or `AI_GATEWAY_BASE_URL`, `VERCEL_VIRTUAL_KEY` or `AI_GATEWAY_API_KEY` or `OPENAI_API_KEY`, `OPENAI_MODEL` or `AI_GATEWAY_MODEL`, `JOB_HUNT_DIGEST_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `TODOIST_CLIENT_ID`, `TODOIST_CLIENT_SECRET`, `MICROSOFT_CLIENT_ID`, `MICROSOFT_CLIENT_SECRET`, `RESEND_API_KEY`, `MYASSIST_PASSWORD_RESET_EMAIL_FROM`
+- `/myassist`: `AUTH_SECRET`, `AUTH_URL`, `NEXT_PUBLIC_SITE_URL`, `MYASSIST_INTEGRATIONS_ENCRYPTION_KEY`, `AI_MODE=gateway`, `VERCEL_AI_BASE_URL` or `AI_GATEWAY_BASE_URL`, `VERCEL_VIRTUAL_KEY` or `AI_GATEWAY_API_KEY` or `OPENAI_API_KEY`, `OPENAI_MODEL` or `AI_GATEWAY_MODEL`, `JOB_HUNT_DIGEST_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `TODOIST_CLIENT_ID`, `TODOIST_CLIENT_SECRET`, `MICROSOFT_CLIENT_ID`, `MICROSOFT_CLIENT_SECRET`
 
-Optional production names: `BILLING_ENABLED`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `MYASSIST_STRIPE_PRICE_ID` or `STRIPE_PRICE_ID`, `SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_DSN`, `JOB_HUNT_SIGNALS_URL`, `MYASSIST_MCP_TOKEN` / `MYASSIST_MCP_CLIENTS_JSON`, and `MYASSIST_ACTION_APPROVAL_SECRET`.
+Optional production names: `RESEND_API_KEY` / `MYASSIST_PASSWORD_RESET_EMAIL_FROM` only for custom Resend password-reset delivery, `BILLING_ENABLED`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `MYASSIST_STRIPE_PRICE_ID` or `STRIPE_PRICE_ID`, `SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_DSN`, `JOB_HUNT_SIGNALS_URL`, `MYASSIST_MCP_TOKEN` / `MYASSIST_MCP_CLIENTS_JSON`, and `MYASSIST_ACTION_APPROVAL_SECRET`.
 
 ## Local run
 
@@ -171,8 +171,8 @@ If Next.js reports that port **3000** is in use and falls back to **3001+**, sto
 - `MICROSOFT_CLIENT_ID`: Microsoft / Outlook login OAuth client id for Auth.js. Aliases: `MICROSOFT_ENTRA_ID_CLIENT_ID`, `AUTH_MICROSOFT_ENTRA_ID_ID`, `AZURE_AD_CLIENT_ID`.
 - `MICROSOFT_CLIENT_SECRET`: Microsoft / Outlook login OAuth client secret for Auth.js. Aliases: `MICROSOFT_ENTRA_ID_CLIENT_SECRET`, `AUTH_MICROSOFT_ENTRA_ID_SECRET`, `AZURE_AD_CLIENT_SECRET`.
 - `MICROSOFT_TENANT_ID`: optional Microsoft Entra tenant id override. Aliases: `MICROSOFT_ENTRA_ID_TENANT_ID`, `AUTH_MICROSOFT_ENTRA_ID_TENANT_ID`, `AZURE_AD_TENANT_ID`.
-- `RESEND_API_KEY`: Resend API key for production password-reset email delivery. Alias: `MYASSIST_RESEND_API_KEY`.
-- `MYASSIST_PASSWORD_RESET_EMAIL_FROM`: verified sender for MyAssist password-reset email. Aliases: `PASSWORD_RESET_EMAIL_FROM`, `RESEND_FROM_EMAIL`.
+- `RESEND_API_KEY`: optional Resend API key for custom password-reset email delivery. Supabase Auth handles password-reset email by default. Alias: `MYASSIST_RESEND_API_KEY`.
+- `MYASSIST_PASSWORD_RESET_EMAIL_FROM`: optional verified sender for custom MyAssist password-reset email delivery. Aliases: `PASSWORD_RESET_EMAIL_FROM`, `RESEND_FROM_EMAIL`.
 - `TODOIST_CLIENT_ID`: Todoist OAuth client id for direct task actions
 - `TODOIST_CLIENT_SECRET`: Todoist OAuth client secret
 - `AI_MODE`: `ollama` (local dev default), `gateway` (OpenAI-compatible API via `VERCEL_AI_BASE_URL` + key), or `fallback` (deterministic assistant only). Production requires `AI_MODE=gateway`; `ollama` with default `127.0.0.1` is rejected in production readiness/runtime guards. See [`docs/commercial-pilot-readiness.md`](../docs/commercial-pilot-readiness.md).
@@ -185,7 +185,7 @@ If Next.js reports that port **3000** is in use and falls back to **3001+**, sto
 Infisical-first minimum local set:
 
 - `/platform`: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `SHARED_DB_TIER=dev`, `SHARED_DB_ENV_STRICT=1`
-- `/myassist`: `AUTH_SECRET`, `AUTH_URL`, **`NEXT_PUBLIC_SITE_URL`** (public MyAssist origin; OAuth / magic link `redirectTo`), `MYASSIST_INTEGRATIONS_ENCRYPTION_KEY`, `MYASSIST_GMAIL_CLIENT_ID`, `MYASSIST_GMAIL_CLIENT_SECRET`, `MICROSOFT_CLIENT_ID`, `MICROSOFT_CLIENT_SECRET`, `RESEND_API_KEY`, `MYASSIST_PASSWORD_RESET_EMAIL_FROM`, Todoist connect (`TODOIST_CLIENT_ID` / `TODOIST_CLIENT_SECRET` or `MYASSIST_TODOIST_*`), optional `TODOIST_API_TOKEN`, and (for `pnpm dev:all`) job-hunt + Ollama as you use them: `JOB_HUNT_LINKEDIN_RSS_URLS`, `OLLAMA_BASE_URL`, `OLLAMA_MODEL`, `OLLAMA_HEADLINE_MODELS`, `OLLAMA_EMAIL_IMPORTANCE_MODELS`
+- `/myassist`: `AUTH_SECRET`, `AUTH_URL`, **`NEXT_PUBLIC_SITE_URL`** (public MyAssist origin; OAuth / magic link `redirectTo`), `MYASSIST_INTEGRATIONS_ENCRYPTION_KEY`, `MYASSIST_GMAIL_CLIENT_ID`, `MYASSIST_GMAIL_CLIENT_SECRET`, `MICROSOFT_CLIENT_ID`, `MICROSOFT_CLIENT_SECRET`, Todoist connect (`TODOIST_CLIENT_ID` / `TODOIST_CLIENT_SECRET` or `MYASSIST_TODOIST_*`), optional custom reset email (`RESEND_API_KEY` / `MYASSIST_PASSWORD_RESET_EMAIL_FROM`), optional `TODOIST_API_TOKEN`, and (for `pnpm dev:all`) job-hunt + Ollama as you use them: `JOB_HUNT_LINKEDIN_RSS_URLS`, `OLLAMA_BASE_URL`, `OLLAMA_MODEL`, `OLLAMA_HEADLINE_MODELS`, `OLLAMA_EMAIL_IMPORTANCE_MODELS`
 
 Infisical-first production set uses the required production env names above. Do not store production `AUTH_URL`, `NEXT_PUBLIC_SITE_URL`, `JOB_HUNT_DIGEST_URL`, gateway URLs, or optional service URLs with localhost values.
 

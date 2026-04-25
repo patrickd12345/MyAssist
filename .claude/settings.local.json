@@ -12,6 +12,7 @@
       "Bash(pnpm --prefix apps/web run readiness:prod:infisical)",
       "Bash(node --check apps/web/scripts/readiness-prod.mjs)",
       "Bash(echo \"EXIT_OF_GREP:$?\")"
-    ]
+    ],
+    "defaultMode": "bypassPermissions"
   }
 }

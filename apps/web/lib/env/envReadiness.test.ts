@@ -31,11 +31,9 @@ describe("envReadiness", () => {
     TODOIST_CLIENT_SECRET: "todoist-secret",
     MICROSOFT_CLIENT_ID: "microsoft-client",
     MICROSOFT_CLIENT_SECRET: "microsoft-secret",
-    RESEND_API_KEY: "re_test",
-    MYASSIST_PASSWORD_RESET_EMAIL_FROM: "MyAssist <reset@example.com>",
   };
 
-  it("production_like passes with auth, supabase, OAuth, and reset email vars", () => {
+  it("production_like passes with auth, supabase, and OAuth vars", () => {
     const r = analyzeMyAssistEnv(
       {
         NODE_ENV: "production",
@@ -89,7 +87,7 @@ describe("envReadiness", () => {
     expect(formatEnvReadinessReport(r)).toContain("NEXT_PUBLIC_SITE_URL");
   });
 
-  it("production_like fails when BKI-019 OAuth and email delivery vars are missing", () => {
+  it("production_like fails when BKI-019 OAuth vars are missing", () => {
     const r = analyzeMyAssistEnv(
       {
         NODE_ENV: "production",
@@ -101,7 +99,7 @@ describe("envReadiness", () => {
     );
     expect(r.passed).toBe(false);
     expect(formatEnvReadinessReport(r)).toContain("Login OAuth (BKI-019)");
-    expect(formatEnvReadinessReport(r)).toContain("Password reset email (BKI-019)");
+    expect(formatEnvReadinessReport(r)).toContain("Custom password reset email (optional)");
   });
 
   it("production_like fails when AI_MODE is not gateway", () => {

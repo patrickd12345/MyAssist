@@ -70,9 +70,6 @@ export function analyzeMyAssistEnv(
       "AUTH_MICROSOFT_ENTRA_ID_SECRET",
       "AZURE_AD_CLIENT_SECRET",
     ]);
-  const passwordResetEmailOk =
-    hasAny(env, ["RESEND_API_KEY", "MYASSIST_RESEND_API_KEY"]) &&
-    hasAny(env, ["MYASSIST_PASSWORD_RESET_EMAIL_FROM", "PASSWORD_RESET_EMAIL_FROM", "RESEND_FROM_EMAIL"]);
   sections.push({
     title: "Auth",
     items: [
@@ -221,18 +218,21 @@ export function analyzeMyAssistEnv(
   });
 
   sections.push({
-    title: "Password reset email (BKI-019)",
+    title: "Custom password reset email (optional)",
     items: [
       item(
         "RESEND_API_KEY",
-        hasAny(env, ["RESEND_API_KEY", "MYASSIST_RESEND_API_KEY"]) || !productionLike,
-        "Server-only Resend API key; required in production to deliver reset emails.",
+        true,
+        hasAny(env, ["RESEND_API_KEY", "MYASSIST_RESEND_API_KEY"])
+          ? "Set for custom Resend delivery."
+          : "Optional: Supabase Auth sends password-reset email by default.",
       ),
       item(
         "MYASSIST_PASSWORD_RESET_EMAIL_FROM",
-        hasAny(env, ["MYASSIST_PASSWORD_RESET_EMAIL_FROM", "PASSWORD_RESET_EMAIL_FROM", "RESEND_FROM_EMAIL"]) ||
-          !productionLike,
-        "Verified sender used for MyAssist password-reset emails.",
+        true,
+        hasAny(env, ["MYASSIST_PASSWORD_RESET_EMAIL_FROM", "PASSWORD_RESET_EMAIL_FROM", "RESEND_FROM_EMAIL"])
+          ? "Set for custom Resend delivery."
+          : "Optional: only needed with custom Resend password-reset delivery.",
       ),
     ],
   });
@@ -299,7 +299,7 @@ export function analyzeMyAssistEnv(
   }
   if (
     productionLike &&
-    (!googleLoginOk || !todoistOAuthOk || !microsoftLoginOk || !passwordResetEmailOk || !publicOriginOk || !nextPublicSiteOk)
+    (!googleLoginOk || !todoistOAuthOk || !microsoftLoginOk || !publicOriginOk || !nextPublicSiteOk)
   ) {
     passed = false;
   }
