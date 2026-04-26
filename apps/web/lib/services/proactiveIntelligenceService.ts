@@ -125,16 +125,29 @@ function buildMorningBriefing(
 }
 
 function buildRecommendedActions(changes: ProactiveChange[], actionNow: string[]): string[] {
-  const fromChanges = changes.map((c) => c.title.trim()).filter(Boolean);
   const seen = new Set<string>();
   const out: string[] = [];
-  for (const line of [...fromChanges, ...actionNow.map((x) => x.trim()).filter(Boolean)]) {
+
+  for (const c of changes) {
+    const line = c.title.trim();
+    if (!line) continue;
     const k = line.toLowerCase();
     if (seen.has(k)) continue;
     seen.add(k);
     out.push(line);
-    if (out.length >= 7) break;
+    if (out.length >= 7) return out;
   }
+
+  for (const x of actionNow) {
+    const line = x.trim();
+    if (!line) continue;
+    const k = line.toLowerCase();
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(line);
+    if (out.length >= 7) return out;
+  }
+
   return out;
 }
 

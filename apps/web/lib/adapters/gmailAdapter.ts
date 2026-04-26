@@ -103,7 +103,7 @@ export class GmailAdapter
 
   async getToday(input?: AdapterTodayInput): Promise<GmailMessage[]> {
     const accessToken = await withGoogleAccessToken(this.userId);
-    const query = "category:primary newer_than:1d -in:chats";
+    const query = "";
     const maxResults = String(Math.max(1, Math.min(input?.limit ?? 25, 100)));
     const list = await fetchGmailJson<{ messages?: Array<{ id?: string }> }>(
       accessToken,

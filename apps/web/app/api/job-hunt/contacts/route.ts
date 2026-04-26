@@ -44,25 +44,59 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "Expected JSON object" }, { status: 400 });
   }
   const o = body as Record<string, unknown>;
-  const input = {
-    job_id: typeof o.job_id === "string" ? o.job_id : undefined,
-    name: typeof o.name === "string" ? o.name : undefined,
-    phone: typeof o.phone === "string" ? o.phone : undefined,
-    email: typeof o.email === "string" ? o.email : undefined,
-    role: typeof o.role === "string" ? o.role : undefined,
-    company: typeof o.company === "string" ? o.company : undefined,
-    linked_job_ids: Array.isArray(o.linked_job_ids) ? o.linked_job_ids : undefined,
+
+  // Validation to prevent excessively large inputs or invalid types
+  const validateString = (val: unknown, maxLen: number, fieldName: string) => {
+    if (val === undefined || val === null) return undefined;
+    if (typeof val !== "string") {
+      throw { status: 400, message: `${fieldName} must be a string` };
+    }
+    const s = val.trim();
+    if (s.length > maxLen) {
+      throw { status: 400, message: `${fieldName} exceeds maximum length of ${maxLen}` };
+    }
+    return s;
   };
 
   try {
+    const job_id = validateString(o.job_id, 255, "job_id") ?? "";
+    const name = validateString(o.name, 255, "name");
+    const phone = validateString(o.phone, 50, "phone");
+    const email = validateString(o.email, 255, "email");
+    const role = validateString(o.role, 255, "role");
+    const company = validateString(o.company, 255, "company");
+
+    if (email && !email.includes("@")) {
+      throw { status: 400, message: "Invalid email format" };
+    }
+
+    let linked_job_ids: string[] | undefined;
+    if (o.linked_job_ids !== undefined) {
+      if (!Array.isArray(o.linked_job_ids)) {
+        throw { status: 400, message: "linked_job_ids must be an array" };
+      }
+      if (o.linked_job_ids.length > 50) {
+        throw { status: 400, message: "Too many linked jobs" };
+      }
+      linked_job_ids = o.linked_job_ids
+        .map((id, i) => validateString(id, 255, `linked_job_ids[${i}]`))
+        .filter((x): x is string => !!x);
+    }
+
     const person = await createManualContact(userId, {
-      ...input,
-      linked_job_ids: Array.isArray(input.linked_job_ids)
-        ? input.linked_job_ids.filter((x): x is string => typeof x === "string")
-        : undefined,
+      job_id,
+      name,
+      phone,
+      email,
+      role,
+      company,
+      linked_job_ids,
     });
     return NextResponse.json({ ok: true, person });
-  } catch (e) {
+  } catch (e: any) {
+    if (e && typeof e === "object" && "status" in e) {
+      return NextResponse.json({ ok: false, error: e.message }, { status: e.status });
+    }
     return NextResponse.json({ ok: false, error: e instanceof Error ? e.message : String(e) }, { status: 500 });
   }
 }
