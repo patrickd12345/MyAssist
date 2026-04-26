@@ -25,9 +25,9 @@ describe("gmailInboxFetch limits", () => {
 });
 
 describe("sanitizeGmailQuery", () => {
-  it("uses fallback for empty or whitespace", () => {
-    expect(sanitizeGmailQuery("", "in:inbox")).toBe("in:inbox");
-    expect(sanitizeGmailQuery("   ", "in:inbox")).toBe("in:inbox");
+  it("allows explicit empty or whitespace (no fallback)", () => {
+    expect(sanitizeGmailQuery("", "in:inbox")).toBe("");
+    expect(sanitizeGmailQuery("   ", "in:inbox")).toBe("");
   });
 
   it("collapses newlines and trims length", () => {
