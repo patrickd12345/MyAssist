@@ -11,7 +11,12 @@
       "Bash(pnpm --prefix apps/web run check:env:prod:infisical)",
       "Bash(pnpm --prefix apps/web run readiness:prod:infisical)",
       "Bash(node --check apps/web/scripts/readiness-prod.mjs)",
-      "Bash(echo \"EXIT_OF_GREP:$?\")"
+      "Bash(echo \"EXIT_OF_GREP:$?\")",
+      "Bash(pnpm --prefix apps/web exec vitest run lib/integrations/origin.test.ts --reporter=verbose)",
+      "Bash(pnpm --prefix apps/web exec playwright test auth-redirects.spec.ts --reporter=list)",
+      "Bash(PLAYWRIGHT_REUSE_SERVER=1 pnpm --prefix apps/web exec playwright test auth-redirects.spec.ts --reporter=list)",
+      "Bash(netstat -ano)",
+      "Bash(taskkill /PID 54356 /F)"
     ],
     "defaultMode": "bypassPermissions"
   }
