@@ -1,18 +1,30 @@
-﻿import { describe, expect, it, vi } from "vitest";
+﻿import { describe, expect, it, vi, beforeEach } from "vitest";
+import { logServerEvent } from "@/lib/serverLog";
 import {
   fingerprintSecretMaterial,
   inferSharedDbTierFromDatabaseUrl,
+  logLandscapeContext,
   parseSupabaseProjectRef,
   resolveSharedDbTier,
   validateOptionalSharedDbTierLabel,
   validateSharedDbUrlMatchesDeploymentTier,
 } from "./sharedDbEnv";
 
+vi.mock("@/lib/serverLog", () => ({
+  logServerEvent: vi.fn(),
+}));
+
+vi.mock("server-only", () => ({}));
+
 function env(partial: Record<string, string | undefined>): NodeJS.ProcessEnv {
   return partial as NodeJS.ProcessEnv;
 }
 
 describe("sharedDbEnv", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it("resolveSharedDbTier: production on Vercel prod", () => {
     expect(resolveSharedDbTier(env({ VERCEL_ENV: "production" }))).toBe("prod");
   });
@@ -37,15 +49,20 @@ describe("sharedDbEnv", () => {
   });
 
   it("validateOptionalSharedDbTierLabel: warns on mismatch when not strict", () => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     validateOptionalSharedDbTierLabel(
       env({
         SHARED_DB_TIER: "prod",
         VERCEL_ENV: "preview",
       }),
     );
-    expect(warn).toHaveBeenCalled();
-    warn.mockRestore();
+    expect(logServerEvent).toHaveBeenCalledWith(
+      "warn",
+      "shared_db_tier_mismatch",
+      expect.objectContaining({
+        resolved: "dev",
+        label: "prod",
+      }),
+    );
   });
 
   it("validateOptionalSharedDbTierLabel: throws when strict and mismatch", () => {
@@ -78,6 +95,19 @@ describe("sharedDbEnv", () => {
     ).toBe("dev");
   });
 
+  it("logLandscapeContext: logs context", () => {
+    logLandscapeContext("myassist", env({ VERCEL_ENV: "production" }));
+    expect(logServerEvent).toHaveBeenCalledWith(
+      "warn",
+      "landscape_context",
+      expect.objectContaining({
+        slot: "prod",
+        tier: "prod",
+        app: "myassist",
+      }),
+    );
+  });
+
   it("validateSharedDbUrlMatchesDeploymentTier: no-op without both refs", () => {
     expect(() =>
       validateSharedDbUrlMatchesDeploymentTier(
@@ -99,5 +129,24 @@ describe("sharedDbEnv", () => {
         "https://devproj.supabase.co",
       ),
     ).toThrow(/does not match deployment tier/);
+  });
+
+  it("validateSharedDbUrlMatchesDeploymentTier: warns when not strict and tier mismatch", () => {
+    validateSharedDbUrlMatchesDeploymentTier(
+      env({
+        VERCEL_ENV: "production",
+        SHARED_DB_DEV_PROJECT_REF: "devproj",
+        SHARED_DB_PROD_PROJECT_REF: "prodproj",
+      }),
+      "https://devproj.supabase.co",
+    );
+    expect(logServerEvent).toHaveBeenCalledWith(
+      "warn",
+      "shared_db_url_tier_mismatch",
+      expect.objectContaining({
+        inferred: "dev",
+        deployment: "prod",
+      }),
+    );
   });
 });
