@@ -1,4 +1,6 @@
+import "server-only";
 import { createHash } from "crypto";
+import { logServerEvent } from "@/lib/serverLog";
 
 export type SharedDbTier = "dev" | "prod";
 
@@ -37,16 +39,17 @@ export function validateOptionalSharedDbTierLabel(env: NodeJS.ProcessEnv = proce
     return;
   }
   if (label !== "dev" && label !== "prod") {
-    console.warn(`[shared-db] SHARED_DB_TIER="${label}" is not dev|prod; ignoring.`);
+    logServerEvent("warn", "shared_db_tier_invalid", { label });
     return;
   }
   const resolved = resolveSharedDbTier(env);
   if (label !== resolved) {
-    const msg = `[shared-db] Tier mismatch: deployment resolves to "${resolved}" but SHARED_DB_TIER="${label}".`;
     if (env.SHARED_DB_ENV_STRICT === "1" || env.SHARED_DB_ENV_STRICT === "true") {
-      throw new Error(msg);
+      throw new Error(
+        `[shared-db] Tier mismatch: deployment resolves to "${resolved}" but SHARED_DB_TIER="${label}".`
+      );
     }
-    console.warn(msg);
+    logServerEvent("warn", "shared_db_tier_mismatch", { resolved, label });
   }
 }
 
@@ -77,9 +80,8 @@ export function logLandscapeContext(
 ): void {
   const slot = resolveLandscapeSlot(env);
   const tier = resolveSharedDbTier(env);
-  const displayTier = tier === "prod" ? "shared-prod" : "shared-dev";
   const app = env.LANDSCAPE_APP?.trim() || appId;
-  console.warn(`[landscape]\nenv=${slot}\ntier=${displayTier}\napp=${app}`);
+  logServerEvent("warn", "landscape_context", { slot, tier, app });
 }
 
 export function parseSupabaseProjectRef(url: string | undefined): string | null {
@@ -137,18 +139,20 @@ export function validateSharedDbUrlMatchesDeploymentTier(
   if (inferred === "unknown") {
     const ref = parseSupabaseProjectRef(dbUrl);
     if (strict && ref) {
-      console.warn(
-        `[shared-db] Supabase project ref "${ref}" does not match SHARED_DB_DEV_PROJECT_REF or SHARED_DB_PROD_PROJECT_REF.`
-      );
+      logServerEvent("warn", "shared_db_ref_unknown", { ref });
     }
     return;
   }
 
   if (inferred !== deployment) {
-    const msg = `[shared-db] Database URL tier (${inferred}) does not match deployment tier (${deployment}).`;
     if (strict) {
-      throw new Error(msg);
+      throw new Error(
+        `[shared-db] Database URL tier (${inferred}) does not match deployment tier (${deployment}).`
+      );
     }
-    console.warn(msg);
+    logServerEvent("warn", "shared_db_url_tier_mismatch", {
+      inferred,
+      deployment,
+    });
   }
 }

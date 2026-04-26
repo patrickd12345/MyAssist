@@ -1,4 +1,5 @@
 import "server-only";
+import { logServerEvent } from "@/lib/serverLog";
 
 import {
   fingerprintSecretMaterial,
@@ -22,10 +23,12 @@ export function runMyAssistSharedDbBootstrap(env: NodeJS.ProcessEnv = process.en
   const supabaseHost = safeUrlHost(runtime.supabaseProjectUrl);
   const serviceFp = fingerprintSecretMaterial(runtime.supabaseSecretKey);
 
-  console.warn(
-    `[shared-db] myassist tier=${tier} vercelEnv=${env.VERCEL_ENV ?? "unset"} ` +
-      `supabaseHost=${supabaseHost ?? "none"} serviceKeyFp=${serviceFp}`
-  );
+  logServerEvent("warn", "shared_db_bootstrap", {
+    tier,
+    vercelEnv: env.VERCEL_ENV ?? "unset",
+    supabaseHost: supabaseHost ?? "none",
+    serviceKeyFp: serviceFp,
+  });
 
   const authDisabled =
     runtime.authDisabledRaw === "1" || runtime.authDisabledRaw.toLowerCase() === "true";
